@@ -1,0 +1,6 @@
+@ArtAssetManager.Api_HostAddress = http://localhost:5244
+
+GET {{ArtAssetManager.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

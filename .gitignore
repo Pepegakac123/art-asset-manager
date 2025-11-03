@@ -1,0 +1,48 @@
+# ----------------------------------------
+# GENERAL GIT IGNORE
+# ----------------------------------------
+.DS_Store
+.vscode/
+
+# ----------------------------------------
+# .NET CORE / C# IGNORE (Backend: ArtAssetManager.Api)
+# ----------------------------------------
+# Zbudowane pliki i foldery
+[Bb]in/
+[Oo]bj/
+*.pdb
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.vsp
+*.log
+*.vspscc
+*.lck
+
+# Pakiety NuGet
+.nuget/
+!/.nuget/NuGet.Config
+*.nupkg
+# Lokalne cache NuGet (jeśli jest w projekcie)
+packages/
+
+# ----------------------------------------
+# FRONTEND IGNORE (art-asset-manager.client)
+# ----------------------------------------
+# Zależności Node/Bun/npm
+node_modules/
+# Wyniki kompilacji Vite/Webpack
+dist/
+# Logi debugowania
+npm-debug.log
+yarn-error.log
+.pnpm-debug.log
+
+# ----------------------------------------
+# BAZA DANYCH (SQLite) - BARDZO WAŻNE!
+# ----------------------------------------
+# Nasza lokalna baza danych (zgodnie z planem, będzie to plik SQLite)
+assets.db
+*.sqlite
+*.db-journal

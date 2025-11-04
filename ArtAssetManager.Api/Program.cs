@@ -1,4 +1,5 @@
 using ArtAssetManager.Api.Data;
+using ArtAssetManager.Api.DTOs;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +14,7 @@ builder.Services.AddDbContext<AssetDbContext>(options =>
 {
     options.UseSqlite("Data Source=assets.db;Foreign Keys=True");
 });
+builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
 
 var app = builder.Build();
 

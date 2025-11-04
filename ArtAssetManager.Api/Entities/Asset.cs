@@ -1,0 +1,23 @@
+namespace ArtAssetManager.Api.Entities
+{
+    public class Asset
+    {
+        public int Id { get; set; }
+        public int? ScanFolderId { get; set; }
+        public ScanFolder? ScanFolder { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string FileExtension => Path.GetExtension(FileName).ToLower();
+        public string FilePath { get; set; } = string.Empty;
+        public string FileType { get; set; } = string.Empty;
+        public long FileSize { get; set; } = 0;
+        public string ThumbnailPath { get; set; } = string.Empty;
+        public DateTime DateAdded { get; set; }
+        public DateTime LastScanned { get; set; }
+        public DateTime LastModified { get; set; }
+        public string? FileHash { get; set; }
+        public bool IsDeleted { get; set; }
+        public DateTime? DeletedAt { get; set; }
+
+        public ICollection<Tag> Tags { get; set; } = new List<Tag>();
+    }
+}

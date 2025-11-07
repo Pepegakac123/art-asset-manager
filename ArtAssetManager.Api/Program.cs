@@ -1,5 +1,7 @@
 using ArtAssetManager.Api.Data;
+using ArtAssetManager.Api.Data.Repositories;
 using ArtAssetManager.Api.DTOs;
+using ArtAssetManager.Api.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +17,9 @@ builder.Services.AddDbContext<AssetDbContext>(options =>
     options.UseSqlite("Data Source=assets.db;Foreign Keys=True");
 });
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
+builder.Services.AddScoped<IAssetRepository, AssetRepository>();
+builder.Services.AddScoped<ISettingsRepository, SettingsRepository>();
+builder.Services.AddScoped<ITagRepository, TagRepository>();
 
 var app = builder.Build();
 

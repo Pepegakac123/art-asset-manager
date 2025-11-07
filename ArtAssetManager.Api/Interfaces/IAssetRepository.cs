@@ -12,7 +12,7 @@ namespace ArtAssetManager.Api.Interfaces
         Task<IEnumerable<Asset>> GetPagedAssetsAsync(int pageNumber, int numOfItems);
         // TODO: Paginacja z metadanymi
         // Todo: Dodanie opcjonalnego parametru w getPagedAssetsSync do filtrowania po FileType
-        Task<IEnumerable<Asset>> SearchAssetsByTagsAsync(Tag[] tags);
+        Task<IEnumerable<Asset>> SearchAssetsByTagsAsync(Tag[] tags, bool matchAll = false);
 
 
     }

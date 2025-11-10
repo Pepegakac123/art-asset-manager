@@ -43,6 +43,7 @@ namespace ArtAssetManager.Api.Data.Repositories
         public async Task<IEnumerable<Asset>> GetPagedAssetsAsync(int pageNumber, int numOfItems)
         {
             return await _context.Assets
+        .OrderBy(a => a.DateAdded)
        .Skip((pageNumber - 1) * numOfItems)
        .Take(numOfItems)
        .ToListAsync();

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ArtAssetManager.Api.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreateWithScanFolders : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

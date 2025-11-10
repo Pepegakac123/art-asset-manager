@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ArtAssetManager.Api.Migrations
 {
     [DbContext(typeof(AssetDbContext))]
-    [Migration("20251104181750_InitialCreateWithScanFolders")]
-    partial class InitialCreateWithScanFolders
+    [Migration("20251110204825_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

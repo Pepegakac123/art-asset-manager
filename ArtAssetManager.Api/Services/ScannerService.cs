@@ -107,8 +107,8 @@ namespace ArtAssetManager.Api.Services
         {
             return extension switch
             {
-                ".jpg" or ".jpeg" or ".png" => FileTypes.Image,
-                ".blend" or ".fbx" or ".obj" => FileTypes.Model,
+                ".jpg" or ".jpeg" or ".png" or ".gif" or ".webp" => FileTypes.Image,
+                ".blend" or ".fbx" or ".obj" or ".ztl" or ".zpr" => FileTypes.Model,
                 ".psd" or ".ai" or ".svg" => FileTypes.Texture,
                 _ => FileTypes.Other
             };

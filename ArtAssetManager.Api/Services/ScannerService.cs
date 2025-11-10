@@ -1,10 +1,20 @@
+using System.Runtime.CompilerServices;
 using ArtAssetManager.Api.Config;
+using ArtAssetManager.Api.Data;
+using ArtAssetManager.Api.Entities;
 using ArtAssetManager.Api.Interfaces;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace ArtAssetManager.Api.Services
 {
+    public static class FileTypes
+    {
+        public const string Image = "image";
+        public const string Model = "model";
+        public const string Texture = "texture";
+        public const string Other = "other";
+    }
     public class ScannerService : BackgroundService
     {
         private readonly ILogger<ScannerService> _logger;
@@ -32,8 +42,56 @@ namespace ArtAssetManager.Api.Services
 
                         var scannedFolders = await settingsRepo.GetScanFoldersAsync();
                         _logger.LogInformation("📂 Retrieved {Count} folders", scannedFolders.Count());
+
+                        foreach (var folder in scannedFolders)
+                        {
+                            if (!Directory.Exists(folder.Path))
+                            {
+                                _logger.LogWarning("⚠️ Folder not found: {Path}", folder.Path);
+                                continue;
+                            }
+                            var files = Directory.EnumerateFiles(
+                                path: folder.Path,
+                                searchPattern: "*.*",
+                                searchOption: SearchOption.AllDirectories
+                            );
+                            foreach (var filePath in files)
+                            {
+                                var extension = Path.GetExtension(filePath).ToLower();
+                                if (!_scannerSettings.AllowedExtensions.Contains(extension))
+                                {
+                                    continue;
+                                }
+                                var existingAsset = await assetRepo.GetAssetByPathAsync(filePath);
+                                if (existingAsset != null)
+                                {
+                                    continue;
+                                }
+                                Asset newAsset = new Asset()
+                                {
+                                    ScanFolderId = folder.Id,
+                                    FileName = Path.GetFileName(filePath),
+                                    FileType = DetermineFileType(extension),
+                                    FilePath = filePath,
+                                    FileSize = GetFileSize(filePath),
+                                    FileHash = await ComputeFileHashAsync(filePath, GetFileSize(filePath)),
+                                    ThumbnailPath = await GenerateThumbnailAsync(filePath, extension),
+                                    DateAdded = DateTime.UtcNow,
+                                    LastScanned = DateTime.UtcNow,
+                                    LastModified = GetFileLastModifiedDate(filePath),
+                                    IsDeleted = false,
+                                    DeletedAt = null,
+
+
+
+                                };
+                                await assetRepo.AddAssetAsync(newAsset);
+                                _logger.LogInformation("✅ Added new asset: {FileName}", newAsset.FileName);
+                            }
+
+                        }
                     }
-                    await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+                    await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
                 }
             }
             catch (OperationCanceledException)
@@ -44,5 +102,61 @@ namespace ArtAssetManager.Api.Services
 
             _logger.LogInformation("⛔ Scanner Service stopped.");
         }
+
+        private string DetermineFileType(string extension)
+        {
+            return extension switch
+            {
+                ".jpg" or ".jpeg" or ".png" => FileTypes.Image,
+                ".blend" or ".fbx" or ".obj" => FileTypes.Model,
+                ".psd" or ".ai" or ".svg" => FileTypes.Texture,
+                _ => FileTypes.Other
+            };
+        }
+        private long GetFileSize(string filePath)
+        {
+            var fileInfo = new FileInfo(filePath);
+            return fileInfo.Length;
+        }
+        private DateTime GetFileLastModifiedDate(string filePath)
+        {
+            var fileInfo = new FileInfo(filePath);
+            return fileInfo.LastWriteTimeUtc;
+        }
+
+        private async Task<string> GenerateThumbnailAsync(string filePath, string extension)
+        {
+            if (extension is ".jpg" or ".jpeg" or ".png")
+            {
+                // TODO: Użyj ImageSharp do generowania miniaturki
+                return _scannerSettings.PlaceholderThumbnail;
+            }
+
+            if (extension is ".blend")
+            {
+                // TODO: Wywołaj Blender w trybie headless
+                return _scannerSettings.PlaceholderThumbnail;
+            }
+
+            return _scannerSettings.PlaceholderThumbnail;
+        }
+
+        private async Task<string?> ComputeFileHashAsync(string filePath, long fileSizeBytes)
+        {
+            if (!_scannerSettings.EnableHashing)
+                return null;
+            var maxBytes = _scannerSettings.MaxHashFileSizeMB * 1024 * 1024;
+            if (fileSizeBytes > maxBytes)
+            {
+                _logger.LogDebug("⏭️ Skipping hash for large file: {FileName}", Path.GetFileName(filePath));
+                return null;
+            }
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            await using var stream = File.OpenRead(filePath);
+            var hash = await sha256.ComputeHashAsync(stream);
+            return BitConverter.ToString(hash).Replace("-", "").ToLower();
+        }
     }
 }
+
+

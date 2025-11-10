@@ -4,6 +4,7 @@ using ArtAssetManager.Api.Data.Repositories;
 using ArtAssetManager.Api.DTOs;
 using ArtAssetManager.Api.Entities;
 using ArtAssetManager.Api.Interfaces;
+using ArtAssetManager.Api.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +20,8 @@ builder.Services.AddScoped<IAssetRepository, AssetRepository>();
 builder.Services.AddScoped<ISettingsRepository, SettingsRepository>();
 builder.Services.AddScoped<ITagRepository, TagRepository>();
 builder.Services.Configure<ScannerSettings>(builder.Configuration.GetSection("ScannerSettings"));
+
+builder.Services.AddHostedService<ScannerService>();
 
 var app = builder.Build();
 

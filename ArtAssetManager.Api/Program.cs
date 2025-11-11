@@ -2,9 +2,9 @@ using ArtAssetManager.Api.Config;
 using ArtAssetManager.Api.Data;
 using ArtAssetManager.Api.Data.Repositories;
 using ArtAssetManager.Api.DTOs;
-using ArtAssetManager.Api.Entities;
 using ArtAssetManager.Api.Interfaces;
 using ArtAssetManager.Api.Services;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,12 +21,14 @@ builder.Services.AddScoped<ISettingsRepository, SettingsRepository>();
 builder.Services.AddScoped<ITagRepository, TagRepository>();
 builder.Services.Configure<ScannerSettings>(builder.Configuration.GetSection("ScannerSettings"));
 builder.Services.AddHostedService<StartupInitializationService>();
-
 builder.Services.AddHostedService<ScannerService>();
+builder.Services.AddControllers();
 
 var app = builder.Build();
+app.UseExceptionHandler("/error");
 
-// Configure the HTTP request pipeline.
+
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -34,5 +36,33 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.MapControllers();
+
+app.Map("/error", (HttpContext context) =>
+{
+    var exceptionFeature = context.Features.Get<IExceptionHandlerFeature>();
+    var exception = exceptionFeature?.Error;
+
+    var isDevelopment = app.Environment.IsDevelopment();
+
+    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+
+    if (exception != null)
+    {
+        logger.LogError(exception, "An error occurred");
+    }
+
+    return Results.Json(new
+    {
+        status = 500,
+        message = "An error occurred",
+        path = context.Request.Path,
+        timestamp = DateTime.UtcNow,
+        error = isDevelopment ? exception?.Message : null,
+        stackTrace = isDevelopment ? exception?.StackTrace : null
+
+    }, statusCode: 500);
+});
 
 app.Run();

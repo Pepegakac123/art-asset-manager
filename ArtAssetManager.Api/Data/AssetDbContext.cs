@@ -26,6 +26,14 @@ namespace ArtAssetManager.Api.Data
             modelBuilder.Entity<Asset>()
                 .HasIndex(a => a.FilePath)
                 .IsUnique();
+            modelBuilder.Entity<Asset>()
+                .HasOne(a => a.Parent)
+                .WithMany(a => a.Children)
+                .HasForeignKey(a => a.ParentAssetId)
+                .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<Asset>()
+                .HasIndex(a => a.ParentAssetId);
+
         }
     }
 }

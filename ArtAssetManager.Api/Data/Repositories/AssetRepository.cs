@@ -1,7 +1,11 @@
+using ArtAssetManager.Api.Data.Helpers;
+using ArtAssetManager.Api.DTOs;
 using ArtAssetManager.Api.Entities;
 using ArtAssetManager.Api.Interfaces;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 namespace ArtAssetManager.Api.Data.Repositories
+
 {
     public class AssetRepository : IAssetRepository
     {
@@ -29,6 +33,7 @@ namespace ArtAssetManager.Api.Data.Repositories
         }
         public async Task UpdateAssetTagsAsync(int assetId, Tag[] tags)
         {
+
             var asset = await _context.Assets
             .Include(a => a.Tags)
             .FirstOrDefaultAsync(a => a.Id == assetId);
@@ -43,35 +48,97 @@ namespace ArtAssetManager.Api.Data.Repositories
         }
         // TODO (Phase 4): Refactor to return PagedResult<Asset> with metadata
         // - TotalItems, TotalPages, HasNext, HasPrevious
-        public async Task<IEnumerable<Asset>> GetPagedAssetsAsync(int pageNumber, int numOfItems)
+        public async Task<PagedResult<Asset>> GetPagedAssetsAsync(
+      int pageNumber,
+      int numOfItems,
+      string? fileName,
+      List<string>? fileType,
+      List<string>? tags,
+      bool matchAll = false,
+      string? sortBy = null,
+      bool sortDesc = false,
+      DateTime? dateFrom = null,
+      DateTime? dateTo = null
+    )
         {
-            return await _context.Assets
-        .OrderBy(a => a.DateAdded)
-       .Skip((pageNumber - 1) * numOfItems)
-       .Take(numOfItems)
-       .ToListAsync();
-        }
 
-        public async Task<IEnumerable<Asset>> SearchAssetsByTagsAsync(
-     Tag[] tags,
-     bool matchAll = false)
-        {
-            var tagIds = tags.Select(t => t.Id).ToList();
+            IQueryable<Asset> query = _context.Assets;
 
 
-            IQueryable<Asset> query = _context.Assets.Include(a => a.Tags);
-
-
-            if (matchAll)
+            if (!string.IsNullOrEmpty(fileName))
             {
-                query = query.Where(a => tagIds.All(id => a.Tags.Any(t => t.Id == id)));
+                var keyword = $"%{fileName}%";
+                query = query.Where(a => EF.Functions.Like(a.FileName, keyword));
             }
+            if (tags?.Count > 0)
+            {
+
+                if (matchAll)
+                {
+                    query = query.Where(a => tags.All(tagName => a.Tags.Any(t => t.Name == tagName)));
+                }
+                else
+                {
+                    query = query.Where(a => a.Tags.Any(t => tags.Contains(t.Name)));
+                }
+            }
+            if (fileType?.Count > 0)
+            {
+                query = query.Where(a => fileType.Any(type => a.FileType == type));
+            }
+            if (dateFrom != null)
+            {
+                query = query.Where(a => a.DateAdded >= dateFrom);
+            }
+            if (dateTo != null)
+            {
+                query = query.Where(a => a.DateAdded <= dateTo);
+            }
+            if (!string.IsNullOrEmpty(sortBy))
+            {
+
+                var normalizedSortBy = sortBy.ToLowerInvariant();
+
+                switch (normalizedSortBy)
+                {
+                    case "filename":
+                        query = sortDesc
+                            ? query.OrderByDescending(a => a.FileName)
+                            : query.OrderBy(a => a.FileName);
+                        break;
+
+                    case "filesize":
+                        query = sortDesc
+                            ? query.OrderByDescending(a => a.FileSize)
+                            : query.OrderBy(a => a.FileSize);
+                        break;
+
+                    case "lastmodified":
+                        query = sortDesc
+                            ? query.OrderByDescending(a => a.LastModified)
+                            : query.OrderBy(a => a.LastModified);
+                        break;
+
+                    case "dateadded":
+                    default:
+                        query = sortDesc
+                            ? query.OrderByDescending(a => a.DateAdded)
+                            : query.OrderBy(a => a.DateAdded);
+                        break;
+                }
+            }
+
             else
             {
-                query = query.Where(a => a.Tags.Any(t => tagIds.Contains(t.Id)));
+                query = query.OrderByDescending(a => a.DateAdded);
             }
-
-            return await query.ToListAsync();
+            var totalItems = await query.CountAsync();
+            return new PagedResult<Asset>
+            {
+                Items = await query.Skip((pageNumber - 1) * numOfItems)
+        .Take(numOfItems).ToListAsync(),
+                TotalItems = totalItems
+            };
         }
     }
 }

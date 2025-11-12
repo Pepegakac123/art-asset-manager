@@ -1,3 +1,4 @@
+using ArtAssetManager.Api.Data.Helpers;
 using ArtAssetManager.Api.Entities;
 
 namespace ArtAssetManager.Api.Interfaces
@@ -9,10 +10,18 @@ namespace ArtAssetManager.Api.Interfaces
         Task<Asset?> GetAssetByPathAsync(string path);
         Task<Asset> AddAssetAsync(Asset asset);
         Task UpdateAssetTagsAsync(int assetId, Tag[] tags);
-        Task<IEnumerable<Asset>> GetPagedAssetsAsync(int pageNumber, int numOfItems);
-        // TODO: Paginacja z metadanymi
-        // Todo: Dodanie opcjonalnego parametru w getPagedAssetsSync do filtrowania po FileType
-        Task<IEnumerable<Asset>> SearchAssetsByTagsAsync(Tag[] tags, bool matchAll = false);
+        Task<PagedResult<Asset>> GetPagedAssetsAsync(
+       int pageNumber,
+       int numOfItems,
+       string? fileName,
+       List<string>? fileType,
+       List<string>? tags,
+       bool matchAll = false,
+       string? sortBy = null,
+       bool sortDesc = false,
+       DateTime? dateFrom = null,
+       DateTime? dateTo = null
+   );
 
 
     }

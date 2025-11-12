@@ -8,5 +8,6 @@ namespace ArtAssetManager.Api.DTOs
         public string FileName { get; set; } = string.Empty;
         public string FilePath { get; set; } = string.Empty;
         public List<TagDto> Tags { get; set; } = new List<TagDto>();
+        public List<ChildDto> Children { get; set; } = new List<ChildDto>();
     }
 }

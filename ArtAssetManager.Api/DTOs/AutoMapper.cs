@@ -7,8 +7,9 @@ namespace ArtAssetManager.Api.DTOs
     {
         public AutoMapperProfile()
         {
-            // Tutaj dodaj CreateMap dla każdego DTO
+
             CreateMap<Asset, AssetDetailsDto>();
+            CreateMap<Asset, ChildDto>();
             CreateMap<Tag, TagDto>();
             CreateMap<Asset, AssetDto>().ForMember(
                 dest => dest.ThumbnailUrl, opt => opt.MapFrom(src => src.ThumbnailPath)

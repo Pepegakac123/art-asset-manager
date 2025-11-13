@@ -1,7 +1,9 @@
+using System.Globalization;
 using ArtAssetManager.Api.Data.Helpers;
 using ArtAssetManager.Api.DTOs;
 using ArtAssetManager.Api.Interfaces;
 using AutoMapper;
+using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -12,11 +14,13 @@ namespace ArtAssetManager.Api.Controllers
     public class AssetsController : ControllerBase
     {
         private readonly IAssetRepository _assetRepo;
+        private readonly ITagRepository _tagRepo;
         private readonly IMapper _mapper;
 
-        public AssetsController(IAssetRepository assetRepo, IMapper mapper)
+        public AssetsController(IAssetRepository assetRepo, ITagRepository tagRepo, IMapper mapper)
         {
             _assetRepo = assetRepo;
+            _tagRepo = tagRepo;
             _mapper = mapper;
         }
 
@@ -86,6 +90,21 @@ namespace ArtAssetManager.Api.Controllers
             }
             var assetDto = _mapper.Map<AssetDetailsDto>(asset);
             return Ok(assetDto);
+        }
+
+        [HttpPost("{id}/tags")]
+        public async Task<ActionResult> UpdateAssetTagsAsync(
+        [FromRoute] int id,
+        [FromBody] UpdateTagsRequest reqTag
+        )
+        {
+            if (id <= 0) return BadRequest();
+            var asset = await _assetRepo.GetAssetByIdAsync(id);
+            if (asset == null) return NotFound();
+
+            var tags = await _tagRepo.GetOrCreateTagsAsync(reqTag.TagsNames);
+            await _assetRepo.UpdateAssetTagsAsync(id, tags);
+            return NoContent();
         }
 
     }

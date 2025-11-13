@@ -9,7 +9,7 @@ namespace ArtAssetManager.Api.Interfaces
         Task<Asset?> GetAssetByIdAsync(int id);
         Task<Asset?> GetAssetByPathAsync(string path);
         Task<Asset> AddAssetAsync(Asset asset);
-        Task UpdateAssetTagsAsync(int assetId, Tag[] tags);
+        Task UpdateAssetTagsAsync(int assetId, IEnumerable<Tag> tags);
         Task<PagedResult<Asset>> GetPagedAssetsAsync(
        int pageNumber,
        int numOfItems,

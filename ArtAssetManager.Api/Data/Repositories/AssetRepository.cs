@@ -31,7 +31,7 @@ namespace ArtAssetManager.Api.Data.Repositories
             await _context.SaveChangesAsync();
             return asset;
         }
-        public async Task UpdateAssetTagsAsync(int assetId, Tag[] tags)
+        public async Task UpdateAssetTagsAsync(int assetId, IEnumerable<Tag> tags)
         {
 
             var asset = await _context.Assets

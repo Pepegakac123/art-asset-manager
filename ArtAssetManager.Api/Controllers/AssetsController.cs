@@ -95,14 +95,14 @@ namespace ArtAssetManager.Api.Controllers
         [HttpPost("{id}/tags")]
         public async Task<ActionResult> UpdateAssetTagsAsync(
         [FromRoute] int id,
-        [FromBody] UpdateTagsRequest reqTag
+        [FromBody] UpdateTagsRequest body
         )
         {
             if (id <= 0) return BadRequest();
             var asset = await _assetRepo.GetAssetByIdAsync(id);
             if (asset == null) return NotFound();
 
-            var tags = await _tagRepo.GetOrCreateTagsAsync(reqTag.TagsNames);
+            var tags = await _tagRepo.GetOrCreateTagsAsync(body.TagsNames);
             await _assetRepo.UpdateAssetTagsAsync(id, tags);
             return NoContent();
         }

@@ -24,6 +24,17 @@ builder.Services.AddHostedService<StartupInitializationService>();
 builder.Services.AddHostedService<ScannerService>();
 builder.Services.AddControllers();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowDevClient",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:5173")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
+
 var app = builder.Build();
 app.UseExceptionHandler("/error");
 
@@ -37,6 +48,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors("AllowDevClient");
+}
 app.MapControllers();
 
 app.Map("/error", (HttpContext context) =>

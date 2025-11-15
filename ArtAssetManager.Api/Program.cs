@@ -22,6 +22,10 @@ builder.Services.AddScoped<ITagRepository, TagRepository>();
 builder.Services.Configure<ScannerSettings>(builder.Configuration.GetSection("ScannerSettings"));
 builder.Services.AddHostedService<StartupInitializationService>();
 builder.Services.AddHostedService<ScannerService>();
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+});
 builder.Services.AddControllers();
 
 builder.Services.AddCors(options =>

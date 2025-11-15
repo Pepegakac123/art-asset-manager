@@ -6,6 +6,8 @@ using AutoMapper;
 using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Net; // <-- Wymagany do HttpStatusCode
+using ArtAssetManager.Api.Errors; // <-- Wymagany do ApiErrorResponse
 
 namespace ArtAssetManager.Api.Controllers
 {
@@ -24,54 +26,31 @@ namespace ArtAssetManager.Api.Controllers
             _mapper = mapper;
         }
 
-        private const int DefaultPage = 1;
-        private const int DefaultPageSize = 20;
-        private const int MaxPageSize = 60;
+
 
         [HttpGet] // GET /api/assets
         public async Task<ActionResult<PagedResponse<AssetDto>>> GetAssets(
-    [FromQuery] int pageNumber = DefaultPage,
-    [FromQuery] int pageSize = DefaultPageSize,
-    [FromQuery] bool matchAll = false,
-    [FromQuery] bool sortDesc = false,
-    [FromQuery] string? fileName = null,
-    [FromQuery] List<string>? fileType = null,
-    [FromQuery] List<string>? tags = null,
-    [FromQuery] DateTime? dateFrom = null,
-    [FromQuery] DateTime? dateTo = null,
-    [FromQuery] string? sortBy = null
-)
+             [FromQuery] AssetQueryParameters queryParams
+         )
         {
+            if (queryParams.PageNumber <= 0) queryParams.PageNumber = AssetQueryParameters.DefaultPage;
+            if (queryParams.PageSize <= 0) queryParams.PageSize = AssetQueryParameters.DefaultPageSize;
+            if (queryParams.PageSize > AssetQueryParameters.MaxPageSize) queryParams.PageSize = AssetQueryParameters.MaxPageSize;
 
-            if (pageNumber <= 0) pageNumber = DefaultPage;
-            if (pageSize <= 0) pageSize = DefaultPageSize;
-            if (pageSize > MaxPageSize) pageSize = MaxPageSize;
+            var pagedResult = await _assetRepo.GetPagedAssetsAsync(queryParams);
 
-            var pagedResult = await _assetRepo.GetPagedAssetsAsync(
-                pageNumber,
-                pageSize,
-                fileName,
-                fileType,
-                tags,
-                matchAll,
-                sortBy,
-                sortDesc,
-                dateFrom,
-                dateTo
-            );
             var assetsDto = _mapper.Map<IEnumerable<AssetDto>>(pagedResult.Items);
 
-            var totalPages = (int)Math.Ceiling(pagedResult.TotalItems / (double)pageSize);
-            var hasNext = pageNumber < totalPages;
-            var hasPrevious = pageNumber > 1;
-
+            var totalPages = (int)Math.Ceiling(pagedResult.TotalItems / (double)queryParams.PageSize);
+            var hasNext = queryParams.PageNumber < totalPages;
+            var hasPrevious = queryParams.PageNumber > 1;
 
             var response = new PagedResponse<AssetDto>
             {
                 Items = assetsDto.ToList(),
                 TotalItems = pagedResult.TotalItems,
-                PageSize = pageSize,
-                CurrentPage = pageNumber,
+                PageSize = queryParams.PageSize,
+                CurrentPage = queryParams.PageNumber,
                 TotalPages = totalPages,
                 HasNextPage = hasNext,
                 HasPreviousPage = hasPrevious
@@ -79,14 +58,20 @@ namespace ArtAssetManager.Api.Controllers
 
             return Ok(response);
         }
-
         [HttpGet("{id}")]
         public async Task<ActionResult<AssetDetailsDto>> GetAssetById(int id)
         {
+
+            if (id <= 0)
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "ID musi być większe od 0.", HttpContext.Request.Path));
+            }
+
             var asset = await _assetRepo.GetAssetByIdAsync(id);
             if (asset == null)
             {
-                return NotFound();
+
+                return NotFound(new ApiErrorResponse(HttpStatusCode.NotFound, $"Asset o ID {id} nie został znaleziony.", HttpContext.Request.Path));
             }
             var assetDto = _mapper.Map<AssetDetailsDto>(asset);
             return Ok(assetDto);
@@ -94,18 +79,32 @@ namespace ArtAssetManager.Api.Controllers
 
         [HttpPost("{id}/tags")]
         public async Task<ActionResult> UpdateAssetTagsAsync(
-        [FromRoute] int id,
-        [FromBody] UpdateTagsRequest body
+            [FromRoute] int id,
+            [FromBody] UpdateTagsRequest body
         )
         {
-            if (id <= 0) return BadRequest();
-            var asset = await _assetRepo.GetAssetByIdAsync(id);
-            if (asset == null) return NotFound();
 
-            var tags = await _tagRepo.GetOrCreateTagsAsync(body.TagsNames);
-            await _assetRepo.UpdateAssetTagsAsync(id, tags);
+            if (id <= 0)
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "ID musi być większe od 0.", HttpContext.Request.Path));
+            }
+
+            var asset = await _assetRepo.GetAssetByIdAsync(id);
+
+
+            if (asset == null)
+            {
+                return NotFound(new ApiErrorResponse(HttpStatusCode.NotFound, $"Asset o ID {id} nie został znaleziony.", HttpContext.Request.Path));
+            }
+
+            var tagsResult = await _tagRepo.GetOrCreateTagsAsync(body.TagsNames);
+            if (!tagsResult.IsSuccess)
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, tagsResult?.Error ?? "Nieprawidłowe tagi.", HttpContext.Request.Path));
+            }
+
+            await _assetRepo.UpdateAssetTagsAsync(id, tagsResult?.Value);
             return NoContent();
         }
-
     }
 }

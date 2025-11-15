@@ -33,6 +33,7 @@ namespace ArtAssetManager.Api.Data
                 .OnDelete(DeleteBehavior.SetNull);
             modelBuilder.Entity<Asset>()
                 .HasIndex(a => a.ParentAssetId);
+            modelBuilder.Entity<Asset>().HasQueryFilter(a => a.IsDeleted == false);
 
         }
     }

@@ -22,5 +22,37 @@ namespace ArtAssetManager.Api.Entities
 
         public ICollection<Tag> Tags { get; set; } = new List<Tag>();
         public ICollection<Asset> Children { get; set; } = new List<Asset>();
+
+        private Asset() { }
+
+        public static Asset Create(
+            int scanFolderId,
+            string filePath,
+            long fileSize,
+            string fileType,
+            string thumbnailPath,
+            DateTime lastModified,
+            string? FileHash
+        )
+        {
+            var newAsset = new Asset
+            {
+                ScanFolderId = scanFolderId,
+                FilePath = filePath,
+                FileName = Path.GetFileName(filePath),
+                FileType = fileType,
+                FileSize = fileSize,
+                FileHash = FileHash,
+                ThumbnailPath = thumbnailPath,
+                DateAdded = DateTime.UtcNow,
+                LastScanned = DateTime.UtcNow,
+                LastModified = lastModified,
+                IsDeleted = false,
+                DeletedAt = null
+            };
+            return newAsset;
+        }
+
+
     }
 }

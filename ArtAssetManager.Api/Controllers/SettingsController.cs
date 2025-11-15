@@ -1,5 +1,7 @@
+using System.Net;
 using ArtAssetManager.Api.DTOs;
 using ArtAssetManager.Api.Entities;
+using ArtAssetManager.Api.Errors;
 using ArtAssetManager.Api.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
@@ -23,9 +25,18 @@ namespace ArtAssetManager.Api.Controllers
         [HttpGet("folders/{id}")]
         public async Task<ActionResult<ScanFolderDto>> GetScanFoldersById([FromRoute] int id)
         {
-            if (id <= 0) return BadRequest();
+            if (id <= 0)
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "ID musi być większe od 0.", HttpContext.Request.Path));
+            }
+
             var scanFolder = await _settingsRepo.GetScanFolderByIdAsync(id);
-            if (scanFolder == null) return NotFound();
+
+            if (scanFolder == null)
+            {
+                return NotFound(new ApiErrorResponse(HttpStatusCode.NotFound, $"Folder skanowania o ID {id} nie został znaleziony.", HttpContext.Request.Path));
+            }
+
             var scanFolderDto = _mapper.Map<ScanFolderDto>(scanFolder);
             return Ok(scanFolderDto);
         }
@@ -41,27 +52,57 @@ namespace ArtAssetManager.Api.Controllers
         [HttpPost("folders")]
         public async Task<ActionResult<ScanFolderDto>> AddScanFolderAsync([FromBody] AddScanFolderRequest body)
         {
-            if (!string.IsNullOrWhiteSpace(body.FolderPath) && Directory.Exists(body?.FolderPath))
+            if (string.IsNullOrWhiteSpace(body?.FolderPath))
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "Ścieżka do folderu nie może być pusta", HttpContext.Request.Path));
+            }
+            string normalizedPath;
+            try
+            {
+                normalizedPath = Path.GetFullPath(body.FolderPath);
+            }
+            catch (ArgumentException ex)
             {
 
-                ScanFolder newScanFolder = new ScanFolder
-                {
-                    Path = body.FolderPath,
-                    DateAdded = DateTime.UtcNow,
-                    IsActive = true,
-                };
-                var scanFolder = await _settingsRepo.AddScanFolderAsync(newScanFolder);
-                var ScanFolderDto = _mapper.Map<ScanFolderDto>(scanFolder);
-                return CreatedAtAction(nameof(GetScanFoldersById), new { id = ScanFolderDto.Id }, ScanFolderDto);
-
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "Nieprawidłowy znak w ścieżce folderu", HttpContext.Request.Path));
             }
-            return BadRequest();
+            catch (PathTooLongException ex)
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "Długość Ścieżki jest za długa", HttpContext.Request.Path));
+            }
+            catch (Exception)
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "Ścieżka jest niepoprawna", HttpContext.Request.Path));
+            }
+            if (!Directory.Exists(normalizedPath))
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "Podany folder nie istnieje", HttpContext.Request.Path));
+            }
+            if (normalizedPath.Length <= 3)
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "Nie można skanować głownego dysku", HttpContext.Request.Path));
+            }
+
+
+            ScanFolder newScanFolder = new ScanFolder
+            {
+                Path = normalizedPath,
+                DateAdded = DateTime.UtcNow,
+                IsActive = true,
+            };
+            var scanFolder = await _settingsRepo.AddScanFolderAsync(newScanFolder);
+            var ScanFolderDto = _mapper.Map<ScanFolderDto>(scanFolder);
+            return CreatedAtAction(nameof(GetScanFoldersById), new { id = ScanFolderDto.Id }, ScanFolderDto);
 
         }
         [HttpDelete("folders/{id}")]
         public async Task<ActionResult> DeleteScanFolder([FromRoute] int id)
         {
-            if (id <= 0) return BadRequest();
+            if (id <= 0)
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "ID musi być większe od 0.", HttpContext.Request.Path));
+            }
+
             try
             {
                 await _settingsRepo.DeleteScanFolderAsync(id);
@@ -69,8 +110,7 @@ namespace ArtAssetManager.Api.Controllers
             }
             catch (KeyNotFoundException)
             {
-
-                return NotFound();
+                return NotFound(new ApiErrorResponse(HttpStatusCode.NotFound, $"Folder skanowania o ID {id} nie został znaleziony.", HttpContext.Request.Path));
             }
         }
 

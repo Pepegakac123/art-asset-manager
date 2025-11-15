@@ -46,82 +46,75 @@ namespace ArtAssetManager.Api.Data.Repositories
             await _context.SaveChangesAsync();
 
         }
-        // TODO (Phase 4): Refactor to return PagedResult<Asset> with metadata
-        // - TotalItems, TotalPages, HasNext, HasPrevious
         public async Task<PagedResult<Asset>> GetPagedAssetsAsync(
-      int pageNumber,
-      int numOfItems,
-      string? fileName,
-      List<string>? fileType,
-      List<string>? tags,
-      bool matchAll = false,
-      string? sortBy = null,
-      bool sortDesc = false,
-      DateTime? dateFrom = null,
-      DateTime? dateTo = null
+            AssetQueryParameters queryParams
     )
         {
 
             IQueryable<Asset> query = _context.Assets;
 
 
-            if (!string.IsNullOrEmpty(fileName))
+            if (!string.IsNullOrEmpty(queryParams.FileName))
             {
-                var keyword = $"%{fileName}%";
+                var keyword = $"%{queryParams.FileName}%";
                 query = query.Where(a => EF.Functions.Like(a.FileName, keyword));
             }
-            if (tags?.Count > 0)
+            if (queryParams.Tags?.Count > 0)
             {
 
-                if (matchAll)
+                if (queryParams.MatchAll)
                 {
-                    query = query.Where(a => tags.All(tagName => a.Tags.Any(t => t.Name == tagName)));
+                    foreach (var tagName in queryParams.Tags)
+                    {
+                        query = query.Where(a => a.Tags.Any(t => tagName == t.Name));
+                    }
+
                 }
                 else
                 {
-                    query = query.Where(a => a.Tags.Any(t => tags.Contains(t.Name)));
+                    query = query.Where(a => a.Tags.Any(t => queryParams.Tags.Contains(t.Name)));
                 }
             }
-            if (fileType?.Count > 0)
+            if (queryParams.FileType?.Count > 0)
             {
-                query = query.Where(a => fileType.Any(type => a.FileType == type));
+                query = query.Where(a => queryParams.FileType.Any(type => a.FileType == type));
             }
-            if (dateFrom != null)
+            if (queryParams.DateFrom != null)
             {
-                query = query.Where(a => a.DateAdded >= dateFrom);
+                query = query.Where(a => a.DateAdded >= queryParams.DateFrom);
             }
-            if (dateTo != null)
+            if (queryParams.DateTo != null)
             {
-                query = query.Where(a => a.DateAdded <= dateTo);
+                query = query.Where(a => a.DateAdded <= queryParams.DateTo);
             }
-            if (!string.IsNullOrEmpty(sortBy))
+            if (!string.IsNullOrEmpty(queryParams.SortBy))
             {
 
-                var normalizedSortBy = sortBy.ToLowerInvariant();
+                var normalizedSortBy = queryParams.SortBy.ToLowerInvariant();
 
                 switch (normalizedSortBy)
                 {
                     case "filename":
-                        query = sortDesc
+                        query = queryParams.SortDesc
                             ? query.OrderByDescending(a => a.FileName)
                             : query.OrderBy(a => a.FileName);
                         break;
 
                     case "filesize":
-                        query = sortDesc
+                        query = queryParams.SortDesc
                             ? query.OrderByDescending(a => a.FileSize)
                             : query.OrderBy(a => a.FileSize);
                         break;
 
                     case "lastmodified":
-                        query = sortDesc
+                        query = queryParams.SortDesc
                             ? query.OrderByDescending(a => a.LastModified)
                             : query.OrderBy(a => a.LastModified);
                         break;
 
                     case "dateadded":
                     default:
-                        query = sortDesc
+                        query = queryParams.SortDesc
                             ? query.OrderByDescending(a => a.DateAdded)
                             : query.OrderBy(a => a.DateAdded);
                         break;
@@ -135,8 +128,8 @@ namespace ArtAssetManager.Api.Data.Repositories
             var totalItems = await query.CountAsync();
             return new PagedResult<Asset>
             {
-                Items = await query.Skip((pageNumber - 1) * numOfItems)
-        .Take(numOfItems).ToListAsync(),
+                Items = await query.Skip((queryParams.PageNumber - 1) * queryParams.PageSize)
+        .Take(queryParams.PageSize).ToListAsync(),
                 TotalItems = totalItems
             };
         }

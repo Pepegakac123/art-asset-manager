@@ -67,24 +67,10 @@ namespace ArtAssetManager.Api.Services
                                 {
                                     continue;
                                 }
-                                Asset newAsset = new Asset()
-                                {
-                                    ScanFolderId = folder.Id,
-                                    FileName = Path.GetFileName(filePath),
-                                    FileType = DetermineFileType(extension),
-                                    FilePath = filePath,
-                                    FileSize = GetFileSize(filePath),
-                                    FileHash = await ComputeFileHashAsync(filePath, GetFileSize(filePath)),
-                                    ThumbnailPath = await GenerateThumbnailAsync(filePath, extension),
-                                    DateAdded = DateTime.UtcNow,
-                                    LastScanned = DateTime.UtcNow,
-                                    LastModified = GetFileLastModifiedDate(filePath),
-                                    IsDeleted = false,
-                                    DeletedAt = null,
-
-
-
-                                };
+                                var thumbnailPath = await GenerateThumbnailAsync(filePath, extension);
+                                var (fileSize, lastModified) = GetFileSizeAndLastModifiedDate(filePath);
+                                var fileHash = await ComputeFileHashAsync(filePath, fileSize);
+                                Asset newAsset = Asset.Create(folder.Id, filePath, fileSize, DetermineFileType(extension), thumbnailPath, lastModified, fileHash);
                                 await assetRepo.AddAssetAsync(newAsset);
                                 _logger.LogInformation("✅ Added new asset: {FileName}", newAsset.FileName);
                             }
@@ -113,15 +99,10 @@ namespace ArtAssetManager.Api.Services
                 _ => FileTypes.Other
             };
         }
-        private long GetFileSize(string filePath)
+        private (long, DateTime) GetFileSizeAndLastModifiedDate(string filePath)
         {
             var fileInfo = new FileInfo(filePath);
-            return fileInfo.Length;
-        }
-        private DateTime GetFileLastModifiedDate(string filePath)
-        {
-            var fileInfo = new FileInfo(filePath);
-            return fileInfo.LastWriteTimeUtc;
+            return (fileInfo.Length, fileInfo.LastWriteTimeUtc);
         }
 
         private async Task<string> GenerateThumbnailAsync(string filePath, string extension)

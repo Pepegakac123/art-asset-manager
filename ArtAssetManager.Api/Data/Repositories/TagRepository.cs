@@ -1,5 +1,6 @@
 using ArtAssetManager.Api.Entities;
 using ArtAssetManager.Api.Interfaces;
+using ArtAssetManager.Api.Shared;
 using Microsoft.EntityFrameworkCore;
 
 namespace ArtAssetManager.Api.Data.Repositories
@@ -12,14 +13,26 @@ namespace ArtAssetManager.Api.Data.Repositories
         {
             _context = context;
         }
-        public async Task<IEnumerable<Tag>> GetOrCreateTagsAsync(IEnumerable<string> tagNames)
+        public async Task<Result<IEnumerable<Tag>>> GetOrCreateTagsAsync(IEnumerable<string> tagNames)
         {
+            var normalizedTagNames = tagNames.Select(n => n.Trim().ToLower()).Distinct().ToList();
+            foreach (var tagName in normalizedTagNames)
+            {
+                if (string.IsNullOrEmpty(tagName))
+                {
+                    return Result<IEnumerable<Tag>>.Failure("Nazwa Tagu nie może być pusta");
+                }
+                if (tagName.Length > 50)
+                {
+                    return Result<IEnumerable<Tag>>.Failure("Nazwa tagu nie moze byc dłuższa niz 50 znakow");
+                }
+            }
             var existingTags = await _context.Tags
-            .Where(t => tagNames.Contains(t.Name))
+            .Where(t => normalizedTagNames.Contains(t.Name))
             .ToListAsync();
 
             var existingNames = existingTags.Select(t => t.Name).ToHashSet();
-            var missingNames = tagNames.Where(n => !existingNames.Contains(n));
+            var missingNames = normalizedTagNames.Where(n => !existingNames.Contains(n));
 
             var newTags = missingNames.Select(n => new Tag
             {
@@ -31,8 +44,7 @@ namespace ArtAssetManager.Api.Data.Repositories
                 _context.Tags.AddRange(newTags);
                 await _context.SaveChangesAsync();
             }
-            return existingTags.Concat(newTags);
-
+            return Result<IEnumerable<Tag>>.Success(existingTags.Concat(newTags));
         }
         public async Task<IEnumerable<Tag>> GetAllTagsAsync()
         {

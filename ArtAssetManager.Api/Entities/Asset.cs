@@ -13,6 +13,8 @@ namespace ArtAssetManager.Api.Entities
         public string FileType { get; set; } = string.Empty;
         public long FileSize { get; set; } = 0;
         public string ThumbnailPath { get; set; } = string.Empty;
+        public int Rating { get; set; }
+        public string? MetadataJson { get; set; }
         public DateTime DateAdded { get; set; }
         public DateTime LastScanned { get; set; }
         public DateTime LastModified { get; set; }
@@ -22,6 +24,7 @@ namespace ArtAssetManager.Api.Entities
 
         public ICollection<Tag> Tags { get; set; } = new List<Tag>();
         public ICollection<Asset> Children { get; set; } = new List<Asset>();
+        public ICollection<MaterialSet> MaterialSets { get; set; } = new List<MaterialSet>();
 
         private Asset() { }
 
@@ -48,7 +51,8 @@ namespace ArtAssetManager.Api.Entities
                 LastScanned = DateTime.UtcNow,
                 LastModified = lastModified,
                 IsDeleted = false,
-                DeletedAt = null
+                DeletedAt = null,
+                Rating = 0
             };
             return newAsset;
         }

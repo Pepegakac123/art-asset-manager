@@ -11,6 +11,7 @@ namespace ArtAssetManager.Api.Data
         public DbSet<Asset> Assets { get; set; }
         public DbSet<Tag> Tags { get; set; }
         public DbSet<ScanFolder> ScanFolders { get; set; }
+        public DbSet<MaterialSet> MaterialSets { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -34,6 +35,16 @@ namespace ArtAssetManager.Api.Data
             modelBuilder.Entity<Asset>()
                 .HasIndex(a => a.ParentAssetId);
             modelBuilder.Entity<Asset>().HasQueryFilter(a => a.IsDeleted == false);
+
+            modelBuilder.Entity<MaterialSet>()
+            .HasIndex(s => s.Name)
+            .IsUnique();
+            modelBuilder.Entity<MaterialSet>()
+          .HasOne(m => m.CoverAsset)
+          .WithMany()
+          .HasForeignKey(m => m.CoverAssetId)
+          .OnDelete(DeleteBehavior.SetNull);
+
 
         }
     }

@@ -4,6 +4,7 @@ using ArtAssetManager.Api.Entities;
 using ArtAssetManager.Api.Interfaces;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using SQLitePCL;
 namespace ArtAssetManager.Api.Data.Repositories
 
 {
@@ -48,7 +49,7 @@ namespace ArtAssetManager.Api.Data.Repositories
         }
         public async Task<PagedResult<Asset>> GetPagedAssetsAsync(
             AssetQueryParameters queryParams
-    )
+        )
         {
 
             IQueryable<Asset> query = _context.Assets;
@@ -133,5 +134,45 @@ namespace ArtAssetManager.Api.Data.Repositories
                 TotalItems = totalItems
             };
         }
-    }
+        public async Task<IEnumerable<Asset>> GetAssetVersionAsync(int id)
+        {
+            List<Asset> assets = new List<Asset>();
+            var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Id == id);
+            if (asset == null) throw new KeyNotFoundException($"Asset {id} nie istnieje");
+            var rootId = asset.ParentAssetId ?? asset.Id;
+            var versions = await _context.Assets
+        .Where(a => a.Id == rootId || a.ParentAssetId == rootId)
+        .OrderByDescending(a => a.LastModified)
+        .ToListAsync();
+
+            return versions;
+
+        }
+        public async Task LinkAssetToParentAsync(int childId, int parentId)
+        {
+            var parentAsset = await _context.Assets
+            .FirstOrDefaultAsync(a => a.Id == parentId);
+            if (parentAsset == null)
+            {
+                throw new KeyNotFoundException($"Asset 'Rodzic'  {parentId} nie istnieje");
+            }
+            if (parentAsset.ParentAssetId != null)
+            {
+                throw new Exception($"{parentAsset.FileName} jest już dzieckiem");
+            }
+            var childAsset = await _context.Assets.FirstOrDefaultAsync(a => a.Id == childId);
+            if (childAsset == null)
+            {
+                throw new KeyNotFoundException($"Asset 'dziecko' {childId} nie istnieje");
+            }
+            if (childAsset.ParentAssetId != null)
+            {
+                throw new Exception("Asset jest już połączony, rozłącz go najpierw");
+            }
+            childAsset.ParentAssetId = parentId;
+            await _context.SaveChangesAsync();
+
+        }
+    };
+
 }

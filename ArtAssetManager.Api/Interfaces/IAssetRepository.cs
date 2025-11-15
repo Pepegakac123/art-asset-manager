@@ -11,8 +11,9 @@ namespace ArtAssetManager.Api.Interfaces
         Task<Asset> AddAssetAsync(Asset asset);
         Task UpdateAssetTagsAsync(int assetId, IEnumerable<Tag> tags);
         Task<PagedResult<Asset>> GetPagedAssetsAsync(
-      AssetQueryParameters queryParams
-   );
+      AssetQueryParameters queryParams);
+        Task<IEnumerable<Asset>> GetAssetVersionAsync(int assetId);
+        Task LinkAssetToParentAsync(int assetId, int parentId);
 
 
     }

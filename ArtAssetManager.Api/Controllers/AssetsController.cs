@@ -77,6 +77,55 @@ namespace ArtAssetManager.Api.Controllers
             return Ok(assetDto);
         }
 
+        [HttpGet("{id}/versions")]
+        public async Task<ActionResult<IEnumerable<AssetDto>>> GetAssetVersions(int id)
+        {
+            if (id <= 0)
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "ID musi byćwiększe od 0.", HttpContext.Request.Path));
+            }
+            try
+            {
+                var versions = await _assetRepo.GetAssetVersionAsync(id);
+
+                var versionsDto = _mapper.Map<IEnumerable<AssetDto>>(versions);
+                return Ok(versionsDto);
+            }
+            catch (KeyNotFoundException)
+            {
+
+                return NotFound(new ApiErrorResponse(HttpStatusCode.NotFound, $"Asset o ID {id} nie został znaleziony.", HttpContext.Request.Path));
+            }
+
+        }
+        [HttpPost("{childId}/link-to/{parentId}")]
+        public async Task<ActionResult> LinkAssetToParentAsync(int childId, int parentId)
+        {
+            if (childId <= 0 || parentId <= 0)
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "ID musi być większe od 0.", HttpContext.Request.Path));
+            }
+            if (childId == parentId)
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "Nie można powiązać ze sobą takich samych assetów", HttpContext.Request.Path));
+            }
+            try
+            {
+                await _assetRepo.LinkAssetToParentAsync(childId, parentId);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+
+                return NotFound(new ApiErrorResponse(HttpStatusCode.NotFound, $"Błąd: {ex.Message}", HttpContext.Request.Path));
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, $"Błąd: {ex.Message}", HttpContext.Request.Path));
+            }
+        }
+
         [HttpPost("{id}/tags")]
         public async Task<ActionResult> UpdateAssetTagsAsync(
             [FromRoute] int id,
@@ -106,5 +155,6 @@ namespace ArtAssetManager.Api.Controllers
             await _assetRepo.UpdateAssetTagsAsync(id, tagsResult?.Value);
             return NoContent();
         }
+
     }
 }

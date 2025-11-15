@@ -14,6 +14,7 @@ namespace ArtAssetManager.Api.Interfaces
       AssetQueryParameters queryParams);
         Task<IEnumerable<Asset>> GetAssetVersionAsync(int assetId);
         Task LinkAssetToParentAsync(int assetId, int parentId);
+        Task SetAssetRatingAsync(int assetId, int rating);
 
 
     }

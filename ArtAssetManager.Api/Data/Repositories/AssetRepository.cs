@@ -173,6 +173,13 @@ namespace ArtAssetManager.Api.Data.Repositories
             await _context.SaveChangesAsync();
 
         }
+        public async Task SetAssetRatingAsync(int id, int rating)
+        {
+            var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Id == id);
+            if (asset == null) throw new KeyNotFoundException($"Asset {id} nie istnieje");
+            asset.Rating = rating;
+            await _context.SaveChangesAsync();
+        }
     };
 
 }

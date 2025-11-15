@@ -152,8 +152,31 @@ namespace ArtAssetManager.Api.Controllers
                 return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, tagsResult?.Error ?? "Nieprawidłowe tagi.", HttpContext.Request.Path));
             }
 
-            await _assetRepo.UpdateAssetTagsAsync(id, tagsResult?.Value);
+            await _assetRepo.UpdateAssetTagsAsync(id, tagsResult.Value!);
             return NoContent();
+        }
+        [HttpPost("{id}/rating")]
+        public async Task<ActionResult> SetAssetRatingAsync([FromRoute] int id, [FromBody] int rating)
+        {
+            if (id <= 0)
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "ID musi być większe od 0.", HttpContext.Request.Path));
+            }
+            if (rating < 0 || rating > 5)
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "Ocena musi znajdować sie w przedziale od 0 do 5.", HttpContext.Request.Path));
+            }
+            try
+            {
+                await _assetRepo.SetAssetRatingAsync(id, rating);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+
+                return NotFound(new ApiErrorResponse(HttpStatusCode.NotFound, $"Błąd: {ex.Message}", HttpContext.Request.Path));
+            }
+
         }
 
     }

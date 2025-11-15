@@ -12,5 +12,12 @@ namespace ArtAssetManager.Api.Entities
         public DateTime LastModified { get; set; }
 
         public ICollection<Asset> Assets { get; set; } = new List<Asset>();
+
+        // private MaterialSet() { }
+
+        // public static MaterialSet Create()
+        // {
+
+        // }
     }
 }

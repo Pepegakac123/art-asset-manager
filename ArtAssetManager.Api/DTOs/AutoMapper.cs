@@ -16,6 +16,22 @@ namespace ArtAssetManager.Api.DTOs
             );
             CreateMap<ScanFolder, ScanFolderDto>()
                 .ReverseMap();
+            CreateMap<MaterialSet, MaterialSetDto>()
+                        .ForMember(
+
+                            dest => dest.TotalAssets,
+                            opt => opt.MapFrom(src => src.Assets.Count)
+                        );
+            CreateMap<MaterialSet, MaterialSetDetailsDto>();
+            CreateMap<CreateMaterialSetRequest, MaterialSet>()
+                .ForMember(
+                    dest => dest.DateAdded,
+                    opt => opt.MapFrom(src => DateTime.UtcNow)
+                )
+                .ForMember(
+                    dest => dest.LastModified,
+                    opt => opt.MapFrom(src => DateTime.UtcNow)
+                );
         }
     }
 }

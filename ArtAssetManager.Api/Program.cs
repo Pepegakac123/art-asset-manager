@@ -19,6 +19,8 @@ builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
 builder.Services.AddScoped<IAssetRepository, AssetRepository>();
 builder.Services.AddScoped<ISettingsRepository, SettingsRepository>();
 builder.Services.AddScoped<ITagRepository, TagRepository>();
+builder.Services.AddScoped<IMaterialSetRepository, MaterialSetRepository>();
+
 builder.Services.Configure<ScannerSettings>(builder.Configuration.GetSection("ScannerSettings"));
 builder.Services.AddHostedService<StartupInitializationService>();
 builder.Services.AddHostedService<ScannerService>();

@@ -58,8 +58,9 @@ namespace ArtAssetManager.Api.Controllers
 
             return Ok(response);
         }
+
         [HttpGet("{id}")]
-        public async Task<ActionResult<AssetDetailsDto>> GetAssetById(int id)
+        public async Task<ActionResult<AssetDetailsDto>> GetAssetById([FromRoute] int id) //
         {
 
             if (id <= 0)
@@ -78,7 +79,7 @@ namespace ArtAssetManager.Api.Controllers
         }
 
         [HttpGet("{id}/versions")]
-        public async Task<ActionResult<IEnumerable<AssetDto>>> GetAssetVersions(int id)
+        public async Task<ActionResult<IEnumerable<AssetDto>>> GetAssetVersions([FromRoute] int id)
         {
             if (id <= 0)
             {
@@ -98,8 +99,12 @@ namespace ArtAssetManager.Api.Controllers
             }
 
         }
+
         [HttpPost("{childId}/link-to/{parentId}")]
-        public async Task<ActionResult> LinkAssetToParentAsync(int childId, int parentId)
+        public async Task<ActionResult> LinkAssetToParentAsync(
+            [FromRoute] int childId,
+            [FromRoute] int parentId
+        )
         {
             if (childId <= 0 || parentId <= 0)
             {
@@ -155,8 +160,12 @@ namespace ArtAssetManager.Api.Controllers
             await _assetRepo.UpdateAssetTagsAsync(id, tagsResult.Value!);
             return NoContent();
         }
+
         [HttpPost("{id}/rating")]
-        public async Task<ActionResult> SetAssetRatingAsync([FromRoute] int id, [FromBody] int rating)
+        public async Task<ActionResult> SetAssetRatingAsync(
+            [FromRoute] int id,
+            [FromBody] int rating
+        )
         {
             if (id <= 0)
             {

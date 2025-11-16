@@ -52,44 +52,14 @@ namespace ArtAssetManager.Api.Controllers
         [HttpPost("folders")]
         public async Task<ActionResult<ScanFolderDto>> AddScanFolderAsync([FromBody] AddScanFolderRequest body)
         {
-            if (string.IsNullOrWhiteSpace(body?.FolderPath))
-            {
-                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "Ścieżka do folderu nie może być pusta", HttpContext.Request.Path));
-            }
-            string normalizedPath;
-            try
-            {
-                normalizedPath = Path.GetFullPath(body.FolderPath);
-            }
-            catch (ArgumentException ex)
-            {
 
-                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "Nieprawidłowy znak w ścieżce folderu", HttpContext.Request.Path));
-            }
-            catch (PathTooLongException ex)
-            {
-                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "Długość Ścieżki jest za długa", HttpContext.Request.Path));
-            }
-            catch (Exception)
-            {
-                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "Ścieżka jest niepoprawna", HttpContext.Request.Path));
-            }
+            var normalizedPath = Path.GetFullPath(body.FolderPath);
+
             if (!Directory.Exists(normalizedPath))
             {
                 return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "Podany folder nie istnieje", HttpContext.Request.Path));
             }
-            if (normalizedPath.Length <= 3)
-            {
-                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "Nie można skanować głownego dysku", HttpContext.Request.Path));
-            }
-
-
-            ScanFolder newScanFolder = new ScanFolder
-            {
-                Path = normalizedPath,
-                DateAdded = DateTime.UtcNow,
-                IsActive = true,
-            };
+            ScanFolder newScanFolder = ScanFolder.Create(normalizedPath);
             var scanFolder = await _settingsRepo.AddScanFolderAsync(newScanFolder);
             var ScanFolderDto = _mapper.Map<ScanFolderDto>(scanFolder);
             return CreatedAtAction(nameof(GetScanFoldersById), new { id = ScanFolderDto.Id }, ScanFolderDto);

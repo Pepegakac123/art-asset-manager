@@ -23,14 +23,16 @@ builder.Services.AddDbContext<AssetDbContext>(options =>
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+//Boilerplate do ujednolicenia walidacji i error response
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.InvalidModelStateResponseFactory = context =>
     {
         var errors = context.ModelState
             .Where(e => e.Value.Errors.Count > 0)
-            .SelectMany(x => x.Value.Errors.Select(e => e.ErrorMessage))
-            .ToList();
+            .ToDictionary(
+                e => e.Key,
+                e => e.Value.Errors.Select(e => e.ErrorMessage).ToList());
 
         var errorResponse = new ApiErrorResponse(
             System.Net.HttpStatusCode.BadRequest,

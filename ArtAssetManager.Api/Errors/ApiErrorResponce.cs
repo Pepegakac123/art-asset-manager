@@ -6,9 +6,9 @@ namespace ArtAssetManager.Api.Errors
         public string Message { get; set; } = string.Empty;
         public string Path { get; set; } = string.Empty;
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
-        public List<string>? ValidationErrors { get; set; } = null;
+        public Dictionary<string, List<string>>? ValidationErrors { get; set; } = null;
 
-        public ApiErrorResponse(System.Net.HttpStatusCode status, string msg, string path, List<string>? errors = null)
+        public ApiErrorResponse(System.Net.HttpStatusCode status, string msg, string path, Dictionary<string, List<string>>? errors = null)
         {
             Status = status;
             Message = msg;

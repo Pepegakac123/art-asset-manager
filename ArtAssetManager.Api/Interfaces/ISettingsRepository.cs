@@ -9,8 +9,7 @@ namespace ArtAssetManager.Api.Interfaces
         Task DeleteScanFolderAsync(int id);
         Task<ScanFolder?> GetScanFolderByIdAsync(int id);
 
-        // TODO: Updatowanie Statusu aktywnosci folderow zamiast ich usuwania kompletnego
-        // Todo: Task MarkAsDeletedAsync(int id)
+        Task<ScanFolder> ToggleScanFolderActiveAsync(int id);
 
     }
 }

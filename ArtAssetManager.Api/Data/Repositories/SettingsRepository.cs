@@ -35,6 +35,15 @@ namespace ArtAssetManager.Api.Data.Repositories
             return await _context.ScanFolders.FindAsync(id);
         }
 
+        public async Task<ScanFolder> ToggleScanFolderActiveAsync(int id)
+        {
+            var folder = await _context.ScanFolders.FindAsync(id);
+            if (folder == null) throw new KeyNotFoundException($"Folder {id} not found");
+            folder.IsActive = !folder.IsActive;
+            await _context.SaveChangesAsync();
+            return folder;
+        }
+
 
     }
 }

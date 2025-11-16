@@ -50,6 +50,7 @@ namespace ArtAssetManager.Api.Services
 
                         foreach (var folder in scannedFolders)
                         {
+                            if (!folder.IsActive) continue;
                             if (!Directory.Exists(folder.Path))
                             {
                                 _logger.LogWarning("⚠️ Folder not found: {Path}", folder.Path);

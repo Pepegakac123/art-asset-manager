@@ -22,7 +22,7 @@ namespace ArtAssetManager.Api.Data
             modelBuilder.Entity<ScanFolder>()
                 .HasIndex(s => s.Path)
                 .IsUnique();
-
+            modelBuilder.Entity<ScanFolder>().HasQueryFilter(a => a.IsDeleted == false);
 
             modelBuilder.Entity<Asset>()
                 .HasIndex(a => a.FilePath)

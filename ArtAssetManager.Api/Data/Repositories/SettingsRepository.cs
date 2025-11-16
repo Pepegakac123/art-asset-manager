@@ -27,7 +27,7 @@ namespace ArtAssetManager.Api.Data.Repositories
         {
             var folder = await _context.ScanFolders.FindAsync(id);
             if (folder == null) throw new KeyNotFoundException($"Folder {id} not found");
-            _context.ScanFolders.Remove(folder);
+            folder.IsDeleted = true;
             await _context.SaveChangesAsync();
         }
         public async Task<ScanFolder?> GetScanFolderByIdAsync(int id)

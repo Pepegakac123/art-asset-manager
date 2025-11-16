@@ -28,11 +28,20 @@ namespace ArtAssetManager.Api.Data.Repositories
             await _context.SaveChangesAsync();
             return materialSet;
         }
-        public async Task<MaterialSet> UpdateAsync(MaterialSet materialSet)
+        public async Task<MaterialSet> UpdateAsync(int id, MaterialSet updateData)
         {
-            _context.MaterialSets.Update(materialSet);
+            var existingSet = await _context.MaterialSets.FindAsync(id);
+            if (existingSet == null)
+            {
+                throw new KeyNotFoundException($"Nie znaleziono setu o ID: {id}");
+            }
+            existingSet.Name = updateData.Name;
+            existingSet.Description = updateData.Description;
+            existingSet.CoverAssetId = updateData.CoverAssetId;
+            existingSet.CustomCoverUrl = updateData.CustomCoverUrl;
+            existingSet.LastModified = DateTime.UtcNow;
             await _context.SaveChangesAsync();
-            return materialSet;
+            return existingSet;
         }
         public async Task DeleteAsync(int id)
         {
@@ -52,6 +61,10 @@ namespace ArtAssetManager.Api.Data.Repositories
             {
                 throw new InvalidOperationException($"Asset o Nazwie {asset.FileName} jest już w zestawie.");
             }
+            if (materialSet.CoverAssetId == null && materialSet.CustomCoverUrl == null)
+            {
+                materialSet.CoverAssetId = asset.Id;
+            }
             materialSet.Assets.Add(asset);
             await _context.SaveChangesAsync();
         }
@@ -65,6 +78,10 @@ namespace ArtAssetManager.Api.Data.Repositories
             if (!materialSet.Assets.Any(a => a.Id == asset.Id))
             {
                 throw new InvalidOperationException($"Asset o Nazwie {asset.FileName} nie istnieje już w zestawie.");
+            }
+            if (materialSet.CoverAssetId == asset.Id)
+            {
+                materialSet.CoverAssetId = null;
             }
             materialSet.Assets.Remove(asset);
             await _context.SaveChangesAsync();

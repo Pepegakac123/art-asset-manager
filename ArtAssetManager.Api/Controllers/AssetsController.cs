@@ -6,8 +6,8 @@ using AutoMapper;
 using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.Net; // <-- Wymagany do HttpStatusCode
-using ArtAssetManager.Api.Errors; // <-- Wymagany do ApiErrorResponse
+using System.Net;
+using ArtAssetManager.Api.Errors;
 
 namespace ArtAssetManager.Api.Controllers
 {

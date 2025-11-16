@@ -32,6 +32,9 @@ namespace ArtAssetManager.Api.DTOs
                     dest => dest.LastModified,
                     opt => opt.MapFrom(src => DateTime.UtcNow)
                 );
+            CreateMap<UpdateMaterialSet, MaterialSet>();
+
+
         }
     }
 }

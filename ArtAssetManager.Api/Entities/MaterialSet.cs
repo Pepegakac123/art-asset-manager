@@ -13,11 +13,6 @@ namespace ArtAssetManager.Api.Entities
 
         public ICollection<Asset> Assets { get; set; } = new List<Asset>();
 
-        // private MaterialSet() { }
 
-        // public static MaterialSet Create()
-        // {
-
-        // }
     }
 }

@@ -8,7 +8,7 @@ namespace ArtAssetManager.Api.Interfaces
         Task<IEnumerable<MaterialSet>> GetAllAsync();
         Task<MaterialSet> GetByIdAsync(int id);
         Task<MaterialSet> AddAsync(MaterialSet materialSet);
-        Task<MaterialSet> UpdateAsync(MaterialSet materialSet);
+        Task<MaterialSet> UpdateAsync(int id, MaterialSet updateData);
         Task DeleteAsync(int id);
 
         Task AddAssetToSetAsync(int assetId, int materialSetId);

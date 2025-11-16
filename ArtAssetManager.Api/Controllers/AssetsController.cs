@@ -137,28 +137,27 @@ namespace ArtAssetManager.Api.Controllers
             [FromBody] UpdateTagsRequest body
         )
         {
-
             if (id <= 0)
             {
                 return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "ID musi być większe od 0.", HttpContext.Request.Path));
             }
-
-            var asset = await _assetRepo.GetAssetByIdAsync(id);
-
-
-            if (asset == null)
+            try
             {
-                return NotFound(new ApiErrorResponse(HttpStatusCode.NotFound, $"Asset o ID {id} nie został znaleziony.", HttpContext.Request.Path));
+                var tagsResult = await _tagRepo.GetOrCreateTagsAsync(body.TagsNames);
+                if (!tagsResult.IsSuccess)
+                {
+                    return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, tagsResult?.Error ?? "Nieprawidłowe tagi.", HttpContext.Request.Path));
+                }
+
+                await _assetRepo.UpdateAssetTagsAsync(id, tagsResult.Value!);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+
+                return NotFound(new ApiErrorResponse(HttpStatusCode.NotFound, $"Błąd: {ex.Message}", HttpContext.Request.Path));
             }
 
-            var tagsResult = await _tagRepo.GetOrCreateTagsAsync(body.TagsNames);
-            if (!tagsResult.IsSuccess)
-            {
-                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, tagsResult?.Error ?? "Nieprawidłowe tagi.", HttpContext.Request.Path));
-            }
-
-            await _assetRepo.UpdateAssetTagsAsync(id, tagsResult.Value!);
-            return NoContent();
         }
 
         [HttpPost("{id}/rating")]

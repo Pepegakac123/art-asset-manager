@@ -12,7 +12,12 @@ namespace ArtAssetManager.Api.Data.Helpers
         public DateTime? DateFrom { get; set; } = null;
         public DateTime? DateTo { get; set; } = null;
         public string? SortBy { get; set; } = null;
-
+        public long? FileSizeMin { get; set; }
+        public long? FileSizeMax { get; set; }
+        public int? RatingMin { get; set; }
+        public int? RatingMax { get; set; }
+        public string? FileHash { get; set; }
+        public string? MetadataValue { get; set; } // Do wyszukiwania w JSON
         public const int DefaultPage = 1;
         public const int DefaultPageSize = 20;
         public const int MaxPageSize = 60;

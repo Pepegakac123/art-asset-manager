@@ -36,6 +36,43 @@ namespace ArtAssetManager.Api.Data.Helpers
                 query = query.Where(a => queryParams.FileType.Any(type => a.FileType == type));
             }
 
+            // Filtrowanie po Rating
+            if (queryParams.RatingMin != null)
+            {
+                var minRating = Math.Min(Math.Max(0, Math.Abs(queryParams.RatingMin.Value)), 5);
+
+                query = query.Where(a => a.Rating >= minRating);
+            }
+            if (queryParams.RatingMax != null)
+            {
+                var maxRating = Math.Max(Math.Min(5, Math.Abs(queryParams.RatingMax.Value)), 0);
+                query = query.Where(a => a.Rating <= maxRating);
+            }
+
+            // Filtrowanie po FileSize
+            if (queryParams.FileSizeMin != null)
+            {
+                query = query.Where(a => a.FileSize >= Math.Abs((decimal)queryParams.FileSizeMin));
+            }
+            if (queryParams.FileSizeMax != null)
+            {
+                query = query.Where(a => a.FileSize <= Math.Abs((decimal)queryParams.FileSizeMax));
+            }
+
+            // Filtrowanie po polu Metadata
+            if (!string.IsNullOrEmpty(queryParams.MetadataValue))
+            {
+                var keyword = $"%{queryParams.MetadataValue}%";
+                query = query.Where(a => EF.Functions.Like(a.MetadataJson, keyword));
+            }
+
+            // Filtrowanie po hashData
+            if (!string.IsNullOrEmpty(queryParams.FileHash))
+            {
+
+                query = query.Where(a => a.FileHash == queryParams.FileHash);
+            }
+
             // Filtrowanie po DateRange
             if (queryParams.DateFrom != null)
             {

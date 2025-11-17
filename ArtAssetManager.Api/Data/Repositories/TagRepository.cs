@@ -16,17 +16,6 @@ namespace ArtAssetManager.Api.Data.Repositories
         public async Task<Result<IEnumerable<Tag>>> GetOrCreateTagsAsync(IEnumerable<string> tagNames)
         {
             var normalizedTagNames = tagNames.Select(n => n.Trim().ToLower()).Distinct().ToList();
-            foreach (var tagName in normalizedTagNames)
-            {
-                if (string.IsNullOrEmpty(tagName))
-                {
-                    return Result<IEnumerable<Tag>>.Failure("Nazwa Tagu nie może być pusta");
-                }
-                if (tagName.Length > 50)
-                {
-                    return Result<IEnumerable<Tag>>.Failure("Nazwa tagu nie moze byc dłuższa niz 50 znakow");
-                }
-            }
             var existingTags = await _context.Tags
             .Where(t => normalizedTagNames.Contains(t.Name))
             .ToListAsync();
@@ -34,11 +23,7 @@ namespace ArtAssetManager.Api.Data.Repositories
             var existingNames = existingTags.Select(t => t.Name).ToHashSet();
             var missingNames = normalizedTagNames.Where(n => !existingNames.Contains(n));
 
-            var newTags = missingNames.Select(n => new Tag
-            {
-                Name = n,
-                DateCreated = DateTime.UtcNow
-            }).ToList();
+            var newTags = missingNames.Select(n => Tag.Create(n)).ToList();
             if (newTags.Any())
             {
                 _context.Tags.AddRange(newTags);

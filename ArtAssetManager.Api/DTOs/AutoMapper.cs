@@ -24,14 +24,12 @@ namespace ArtAssetManager.Api.DTOs
                         );
             CreateMap<MaterialSet, MaterialSetDetailsDto>();
             CreateMap<CreateMaterialSetRequest, MaterialSet>()
-                .ForMember(
-                    dest => dest.DateAdded,
-                    opt => opt.MapFrom(src => DateTime.UtcNow)
-                )
-                .ForMember(
-                    dest => dest.LastModified,
-                    opt => opt.MapFrom(src => DateTime.UtcNow)
-                );
+            .ConstructUsing(src => MaterialSet.Create(
+                src.Name,
+                src.Description,
+                src.CoverAssetId,
+                src.CustomCoverUrl
+            ));
             CreateMap<UpdateMaterialSet, MaterialSet>();
 
 

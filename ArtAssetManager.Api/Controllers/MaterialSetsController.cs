@@ -54,14 +54,6 @@ namespace ArtAssetManager.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<MaterialSetDto>> AddMaterialSet([FromBody] CreateMaterialSetRequest body)
         {
-            if (string.IsNullOrWhiteSpace(body.Name))
-            {
-                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, $"Nazwa setu nie może być pusta", HttpContext.Request.Path));
-            }
-            if (body?.Description?.Length > 150)
-            {
-                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, $"Opis nie może być dłuższy niż 150 znaków", HttpContext.Request.Path));
-            }
             var newMaterialSet = _mapper.Map<MaterialSet>(body);
             var createdMaterialSet = await _materialSetRepository.AddAsync(newMaterialSet);
             var materialSetDto = _mapper.Map<MaterialSetDto>(createdMaterialSet);
@@ -77,14 +69,6 @@ namespace ArtAssetManager.Api.Controllers
             if (id <= 0)
             {
                 return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "ID musi być większe od 0.", HttpContext.Request.Path));
-            }
-            if (string.IsNullOrWhiteSpace(body.Name))
-            {
-                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, $"Nazwa setu nie może być pusta", HttpContext.Request.Path));
-            }
-            if (body?.Description?.Length > 150)
-            {
-                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, $"Opis nie może być dłuższy niż 150 znaków", HttpContext.Request.Path));
             }
             try
             {

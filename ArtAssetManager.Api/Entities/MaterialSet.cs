@@ -13,6 +13,22 @@ namespace ArtAssetManager.Api.Entities
 
         public ICollection<Asset> Assets { get; set; } = new List<Asset>();
 
+        private MaterialSet() { }
+
+        public static MaterialSet Create(string Name, string? Description, int? CoverAssetId, string? CustomCoverUrl)
+        {
+            var newMaterialSet = new MaterialSet
+            {
+                Name = Name,
+                Description = Description,
+                CoverAssetId = CoverAssetId,
+                CustomCoverUrl = CustomCoverUrl,
+                DateAdded = DateTime.UtcNow,
+                LastModified = DateTime.UtcNow
+            };
+            return newMaterialSet;
+        }
+
 
     }
 }

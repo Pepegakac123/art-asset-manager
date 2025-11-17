@@ -69,15 +69,27 @@ namespace ArtAssetManager.Api.Services
                                 {
                                     continue;
                                 }
-                                var existingAsset = await assetRepo.GetAssetByPathAsync(filePath);
-                                if (existingAsset != null)
+                                var existingAssetByPath = await assetRepo.GetAssetByPathAsync(filePath);
+
+                                if (existingAssetByPath != null)
                                 {
                                     continue;
                                 }
+
                                 var (thumbnailPath, metadata) = await GenerateThumbnailAsync(filePath, extension);
                                 var (fileSize, lastModified) = GetFileSizeAndLastModifiedDate(filePath);
                                 var fileHash = await ComputeFileHashAsync(filePath, fileSize);
                                 Asset newAsset = Asset.Create(folder.Id, filePath, fileSize, DetermineFileType(extension), thumbnailPath, lastModified, fileHash, metadata?.Width, metadata?.Height, metadata?.DominantColor, metadata?.BitDepth, metadata?.HasAlphaChannel);
+                                if (fileHash != null)
+                                {
+                                    var existingAssetByHash = await assetRepo.GetAssetByFileHashAsync(fileHash ?? "");
+                                    if (existingAssetByHash != null)
+                                    {
+                                        _logger.LogInformation($"⏭️ Found duplicate asset: {newAsset.FileName} on Path: {newAsset.FilePath}.\nAssigning to parent: ){existingAssetByHash.FileName} on Path: {existingAssetByHash.FilePath}");
+                                        var rootId = existingAssetByHash.ParentAssetId ?? existingAssetByHash.Id;
+                                        newAsset.ParentAssetId = rootId;
+                                    }
+                                }
                                 await assetRepo.AddAssetAsync(newAsset);
                                 _logger.LogInformation("✅ Added new asset: {FileName}", newAsset.FileName);
                             }

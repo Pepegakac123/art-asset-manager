@@ -26,6 +26,11 @@ namespace ArtAssetManager.Api.Data.Repositories
         {
             return await _context.Assets.FirstOrDefaultAsync(x => x.FilePath == path);
         }
+        public async Task<Asset?> GetAssetByFileHashAsync(string fileHash)
+        {
+            return await _context.Assets
+          .FirstOrDefaultAsync(x => x.FileHash == fileHash && x.FileHash != null);
+        }
         public async Task<Asset> AddAssetAsync(Asset asset)
         {
             _context.Add(asset);

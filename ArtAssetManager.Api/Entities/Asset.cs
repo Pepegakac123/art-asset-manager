@@ -14,6 +14,7 @@ namespace ArtAssetManager.Api.Entities
         public long FileSize { get; set; } = 0;
         public string ThumbnailPath { get; set; } = string.Empty;
         public int Rating { get; set; }
+        public bool? IsFavorite { get; set; }
         public int? ImageWidth { get; set; }
         public int? ImageHeight { get; set; }
 
@@ -67,7 +68,9 @@ namespace ArtAssetManager.Api.Entities
                 LastModified = lastModified,
                 IsDeleted = false,
                 DeletedAt = null,
-                Rating = 0
+                Rating = 0,
+                IsFavorite = false
+
             };
             return newAsset;
         }

@@ -184,7 +184,7 @@ namespace ArtAssetManager.Api.Controllers
         }
 
 
-        [HttpPost("{id}/rating")]
+        [HttpPatch("{id}/rating")]
         public async Task<ActionResult> SetAssetRatingAsync(
             [FromRoute] int id,
             [FromBody] int rating
@@ -209,6 +209,51 @@ namespace ArtAssetManager.Api.Controllers
                 return NotFound(new ApiErrorResponse(HttpStatusCode.NotFound, $"Błąd: {ex.Message}", HttpContext.Request.Path));
             }
 
+        }
+        [HttpPatch("{id}/toggle-favorite")]
+        public async Task<ActionResult> ToggleAssetFavoriteAsync([FromRoute] int id)
+        {
+            if (id <= 0)
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "ID musi byćwiększe od 0.", HttpContext.Request.Path));
+            }
+            try
+            {
+                await _assetRepo.ToggleAssetFavoriteAsync(id);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+
+                return NotFound(new ApiErrorResponse(HttpStatusCode.NotFound, $"Błąd: {ex.Message}", HttpContext.Request.Path));
+            }
+        }
+        [HttpGet("favorites")]
+        public async Task<ActionResult<PagedResponse<AssetDto>>> GetFavoriteAssets([FromQuery] AssetQueryParameters queryParams)
+        {
+            if (queryParams.PageNumber <= 0) queryParams.PageNumber = AssetQueryParameters.DefaultPage;
+            if (queryParams.PageSize <= 0) queryParams.PageSize = AssetQueryParameters.DefaultPageSize;
+            if (queryParams.PageSize > AssetQueryParameters.MaxPageSize) queryParams.PageSize = AssetQueryParameters.MaxPageSize;
+
+            var pagedResult = await _assetRepo.GetFavoritesAssetsAsync(queryParams);
+
+            var assetsDto = _mapper.Map<IEnumerable<AssetDto>>(pagedResult.Items);
+
+            var totalPages = (int)Math.Ceiling(pagedResult.TotalItems / (double)queryParams.PageSize);
+            var hasNext = queryParams.PageNumber < totalPages;
+            var hasPrevious = queryParams.PageNumber > 1;
+
+            var response = new PagedResponse<AssetDto>
+            {
+                Items = assetsDto.ToList(),
+                TotalItems = pagedResult.TotalItems,
+                PageSize = queryParams.PageSize,
+                CurrentPage = queryParams.PageNumber,
+                TotalPages = totalPages,
+                HasNextPage = hasNext,
+                HasPreviousPage = hasPrevious
+            };
+            return Ok(response);
         }
 
         [HttpDelete("{id}")]

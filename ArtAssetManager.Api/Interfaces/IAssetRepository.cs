@@ -17,6 +17,8 @@ namespace ArtAssetManager.Api.Interfaces
     Task<IEnumerable<Asset>> GetAssetVersionAsync(int assetId);
     Task LinkAssetToParentAsync(int assetId, int parentId);
     Task SetAssetRatingAsync(int assetId, int rating);
+    Task ToggleAssetFavoriteAsync(int assetId);
+    Task<PagedResult<Asset>> GetFavoritesAssetsAsync(AssetQueryParameters queryParams);
 
     Task SoftDeleteAssetAsync(int assetId);
     Task BulkSoftDeleteAssetsAsync(List<int> assetIds);

@@ -11,11 +11,9 @@ namespace ArtAssetManager.Api.Data.Repositories
     public class AssetRepository : IAssetRepository
     {
         private readonly AssetDbContext _context;
-        private readonly TagRepository _tagRepository;
-        public AssetRepository(AssetDbContext context, TagRepository tagRepository)
+        public AssetRepository(AssetDbContext context)
         {
             _context = context;
-            _tagRepository = tagRepository;
         }
         public async Task<Asset?> GetAssetByIdAsync(int id)
         {
@@ -132,6 +130,31 @@ namespace ArtAssetManager.Api.Data.Repositories
             if (asset == null) throw new KeyNotFoundException($"Asset {id} nie istnieje");
             asset.Rating = rating;
             await _context.SaveChangesAsync();
+        }
+
+        public async Task ToggleAssetFavoriteAsync(int assetId)
+        {
+            var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Id == assetId);
+            if (asset == null) throw new KeyNotFoundException($"Asset {assetId} nie istnieje");
+            asset.IsFavorite = !(asset.IsFavorite ?? false);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<PagedResult<Asset>> GetFavoritesAssetsAsync(
+           AssetQueryParameters queryParams
+       )
+        {
+            IQueryable<Asset> query = _context.Assets.Where(a => a.IsFavorite == true);
+
+            query = query.ApplyFilteringAndSorting(queryParams);
+
+            var totalItems = await query.CountAsync();
+            return new PagedResult<Asset>
+            {
+                Items = await query.Skip((queryParams.PageNumber - 1) * queryParams.PageSize)
+        .Take(queryParams.PageSize).ToListAsync(),
+                TotalItems = totalItems
+            };
         }
 
 

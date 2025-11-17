@@ -64,34 +64,47 @@ namespace ArtAssetManager.Api.Services
                             );
                             foreach (var filePath in files)
                             {
-                                var extension = Path.GetExtension(filePath).ToLower();
-                                if (!_scannerSettings.AllowedExtensions.Contains(extension))
+                                try
                                 {
-                                    continue;
-                                }
-                                var existingAssetByPath = await assetRepo.GetAssetByPathAsync(filePath, stoppingToken);
-
-                                if (existingAssetByPath != null)
-                                {
-                                    continue;
-                                }
-
-                                var (thumbnailPath, metadata) = await GenerateThumbnailAsync(filePath, extension);
-                                var (fileSize, lastModified) = GetFileSizeAndLastModifiedDate(filePath);
-                                var fileHash = await ComputeFileHashAsync(filePath, fileSize);
-                                Asset newAsset = Asset.Create(folder.Id, filePath, fileSize, DetermineFileType(extension), thumbnailPath, lastModified, fileHash, metadata?.Width, metadata?.Height, metadata?.DominantColor, metadata?.BitDepth, metadata?.HasAlphaChannel);
-                                if (fileHash != null)
-                                {
-                                    var existingAssetByHash = await assetRepo.GetAssetByFileHashAsync(fileHash ?? "", stoppingToken);
-                                    if (existingAssetByHash != null)
+                                    var extension = Path.GetExtension(filePath).ToLower();
+                                    if (!_scannerSettings.AllowedExtensions.Contains(extension))
                                     {
-                                        _logger.LogInformation($"⏭️ Found duplicate asset: {newAsset.FileName} on Path: {newAsset.FilePath}.\nAssigning to parent: ){existingAssetByHash.FileName} on Path: {existingAssetByHash.FilePath}");
-                                        var rootId = existingAssetByHash.ParentAssetId ?? existingAssetByHash.Id;
-                                        newAsset.ParentAssetId = rootId;
+                                        continue;
                                     }
+                                    var existingAssetByPath = await assetRepo.GetAssetByPathAsync(filePath, stoppingToken);
+
+                                    if (existingAssetByPath != null)
+                                    {
+                                        continue;
+                                    }
+
+                                    var (thumbnailPath, metadata) = await GenerateThumbnailAsync(filePath, extension);
+                                    var (fileSize, lastModified) = GetFileSizeAndLastModifiedDate(filePath);
+                                    var fileHash = await ComputeFileHashAsync(filePath, fileSize, stoppingToken);
+                                    Asset newAsset = Asset.Create(folder.Id, filePath, fileSize, DetermineFileType(extension), thumbnailPath, lastModified, fileHash, metadata?.Width, metadata?.Height, metadata?.DominantColor, metadata?.BitDepth, metadata?.HasAlphaChannel);
+                                    if (fileHash != null)
+                                    {
+                                        var existingAssetByHash = await assetRepo.GetAssetByFileHashAsync(fileHash ?? "", stoppingToken);
+                                        if (existingAssetByHash != null)
+                                        {
+                                            _logger.LogInformation($"⏭️ Found duplicate asset: {newAsset.FileName} on Path: {newAsset.FilePath}.\nAssigning to parent: ){existingAssetByHash.FileName} on Path: {existingAssetByHash.FilePath}");
+                                            var rootId = existingAssetByHash.ParentAssetId ?? existingAssetByHash.Id;
+                                            newAsset.ParentAssetId = rootId;
+                                        }
+                                    }
+                                    await assetRepo.AddAssetAsync(newAsset, stoppingToken);
+                                    _logger.LogInformation("✅ Added new asset: {FileName}", newAsset.FileName);
                                 }
-                                await assetRepo.AddAssetAsync(newAsset, stoppingToken);
-                                _logger.LogInformation("✅ Added new asset: {FileName}", newAsset.FileName);
+                                catch (OperationCanceledException)
+                                {
+                                    _logger.LogInformation("Scanner loop was cancelled.");
+                                    break;
+                                }
+                                catch (Exception ex)
+                                {
+                                    _logger.LogWarning(ex, "Failed to process file {FilePath}. Skipping.", filePath);
+                                }
+
                             }
 
                         }
@@ -169,7 +182,7 @@ namespace ArtAssetManager.Api.Services
             return (_scannerSettings.PlaceholderThumbnail, null);
         }
 
-        private async Task<string?> ComputeFileHashAsync(string filePath, long fileSizeBytes)
+        private async Task<string?> ComputeFileHashAsync(string filePath, long fileSizeBytes, CancellationToken cancellationToken)
         {
             if (!_scannerSettings.EnableHashing)
                 return null;
@@ -181,7 +194,7 @@ namespace ArtAssetManager.Api.Services
             }
             using var sha256 = System.Security.Cryptography.SHA256.Create();
             await using var stream = File.OpenRead(filePath);
-            var hash = await sha256.ComputeHashAsync(stream);
+            var hash = await sha256.ComputeHashAsync(stream, cancellationToken);
             return BitConverter.ToString(hash).Replace("-", "").ToLower();
         }
 

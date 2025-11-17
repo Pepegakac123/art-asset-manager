@@ -1,15 +1,11 @@
 using System.Text.Json;
 using ArtAssetManager.Api.Config;
 using ArtAssetManager.Api.Data;
-using ArtAssetManager.Api.Data.Repositories;
 using ArtAssetManager.Api.DTOs;
 using ArtAssetManager.Api.Errors;
-using ArtAssetManager.Api.Interfaces;
-using ArtAssetManager.Api.Services;
-using FluentValidation;
+using ArtAssetManager.Api.Extensions;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,39 +17,13 @@ builder.Services.AddDbContext<AssetDbContext>(options =>
     options.UseSqlite("Data Source=assets.db;Foreign Keys=True");
 });
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
-builder.Services.AddFluentValidationAutoValidation();
-builder.Services.AddValidatorsFromAssemblyContaining<Program>();
-//Boilerplate do ujednolicenia walidacji i error response
-builder.Services.Configure<ApiBehaviorOptions>(options =>
-{
-    options.InvalidModelStateResponseFactory = context =>
-    {
-        var errors = context.ModelState
-     .Where(e => e.Value?.Errors.Count > 0)
-     .ToDictionary(
-         e => e.Key,
-         e => e.Value?.Errors.Select(e => e.ErrorMessage).ToList() ?? new List<string>()
-     );
-
-        var errorResponse = new ApiErrorResponse(
-            System.Net.HttpStatusCode.BadRequest,
-            "Wystąpiły błędy walidacji",
-            context.HttpContext.Request.Path,
-            errors
-        );
-
-        return new BadRequestObjectResult(errorResponse);
-    };
-});
-
-builder.Services.AddScoped<IAssetRepository, AssetRepository>();
-builder.Services.AddScoped<ISettingsRepository, SettingsRepository>();
-builder.Services.AddScoped<ITagRepository, TagRepository>();
-builder.Services.AddScoped<IMaterialSetRepository, MaterialSetRepository>();
+builder.Services.AddFluentValidation();
+builder.Services.AddRepositories();
+builder.Services.ErrorResponseConfig();
 
 builder.Services.Configure<ScannerSettings>(builder.Configuration.GetSection("ScannerSettings"));
-builder.Services.AddHostedService<StartupInitializationService>();
-builder.Services.AddHostedService<ScannerService>();
+builder.Services.AddHostedServices();
+
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;

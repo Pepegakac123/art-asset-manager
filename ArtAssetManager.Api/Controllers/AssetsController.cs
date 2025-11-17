@@ -180,7 +180,6 @@ namespace ArtAssetManager.Api.Controllers
 
                 return NotFound(new ApiErrorResponse(HttpStatusCode.NotFound, $"Błąd: {ex.Message}", HttpContext.Request.Path));
             }
-
         }
 
 

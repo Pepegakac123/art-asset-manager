@@ -44,30 +44,53 @@ namespace ArtAssetManager.Api.Data.Repositories
             .Include(a => a.Tags)
             .FirstOrDefaultAsync(a => a.Id == assetId);
             if (asset == null) throw new KeyNotFoundException($"Asset {assetId} not found");
-            asset.Tags.Clear();
-            foreach (var tag in tags)
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                asset.Tags.Add(tag);
-            }
-            await _context.SaveChangesAsync();
-
-        }
-        public async Task BulkUpdateAssetTagsAsync(List<int> assetIds, IEnumerable<Tag> tags)
-        {
-            var assets = await _context.Assets
-                .Include(a => a.Tags)
-                .Where(a => assetIds.Contains(a.Id))
-                .ToListAsync();
-            foreach (var asset in assets)
-            {
-
                 asset.Tags.Clear();
                 foreach (var tag in tags)
                 {
                     asset.Tags.Add(tag);
                 }
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
             }
-            await _context.SaveChangesAsync();
+            catch (Exception)
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+
+
+
+        }
+        public async Task BulkUpdateAssetTagsAsync(List<int> assetIds, IEnumerable<Tag> tags)
+        {
+
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var assets = await _context.Assets
+                .Include(a => a.Tags)
+                .Where(a => assetIds.Contains(a.Id))
+                .ToListAsync();
+                foreach (var asset in assets)
+                {
+                    asset.Tags.Clear();
+                    foreach (var tag in tags)
+                    {
+                        asset.Tags.Add(tag);
+                    }
+                }
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch (Exception)
+            {
+
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
         public async Task<PagedResult<Asset>> GetPagedAssetsAsync(
             AssetQueryParameters queryParams

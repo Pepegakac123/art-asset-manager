@@ -59,11 +59,36 @@ namespace ArtAssetManager.Api.Data.Helpers
                 query = query.Where(a => a.FileSize <= Math.Abs((decimal)queryParams.FileSizeMax));
             }
 
-            // Filtrowanie po polu Metadata
-            if (!string.IsNullOrEmpty(queryParams.MetadataValue))
+            // Filtrowanie po Width
+            if (queryParams.MinWidth != null)
             {
-                var keyword = $"%{queryParams.MetadataValue}%";
-                query = query.Where(a => EF.Functions.Like(a.MetadataJson, keyword));
+                query = query.Where(a => a.ImageWidth >= queryParams.MinWidth);
+            }
+            if (queryParams.MaxWidth != null)
+            {
+                query = query.Where(a => a.ImageWidth <= queryParams.MaxWidth);
+            }
+
+            // Filtrowanie po Height
+            if (queryParams.MinHeight != null)
+            {
+                query = query.Where(a => a.ImageHeight >= queryParams.MinHeight);
+            }
+            if (queryParams.MaxHeight != null)
+            {
+                query = query.Where(a => a.ImageHeight <= queryParams.MaxHeight);
+            }
+
+            //Filtrowanie po Kolorach
+            if (queryParams.DominantColors?.Count > 0)
+            {
+                query = query.Where(a => a.DominantColor != null && queryParams.DominantColors.Contains(a.DominantColor));
+            }
+
+            //Filtrowanie po Alpha
+            if (queryParams.HasAlphaChannel != null)
+            {
+                query = query.Where(a => a.HasAlphaChannel == queryParams.HasAlphaChannel);
             }
 
             // Filtrowanie po hashData

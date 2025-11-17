@@ -3,6 +3,7 @@ using System;
 using ArtAssetManager.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ArtAssetManager.Api.Migrations
 {
     [DbContext(typeof(AssetDbContext))]
-    partial class AssetDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251117121615_AddAssetMetadataColumns")]
+    partial class AddAssetMetadataColumns
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.10");
@@ -86,30 +89,10 @@ namespace ArtAssetManager.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DateAdded");
-
-                    b.HasIndex("DominantColor");
-
-                    b.HasIndex("FileHash");
-
                     b.HasIndex("FilePath")
                         .IsUnique();
 
-                    b.HasIndex("FileSize");
-
-                    b.HasIndex("FileType");
-
-                    b.HasIndex("HasAlphaChannel");
-
-                    b.HasIndex("ImageHeight");
-
-                    b.HasIndex("ImageWidth");
-
-                    b.HasIndex("LastModified");
-
                     b.HasIndex("ParentAssetId");
-
-                    b.HasIndex("Rating");
 
                     b.HasIndex("ScanFolderId");
 

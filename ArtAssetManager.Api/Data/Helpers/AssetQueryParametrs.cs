@@ -17,7 +17,12 @@ namespace ArtAssetManager.Api.Data.Helpers
         public int? RatingMin { get; set; }
         public int? RatingMax { get; set; }
         public string? FileHash { get; set; }
-        public string? MetadataValue { get; set; } // Do wyszukiwania w JSON
+        public List<string>? DominantColors { get; set; } = null;
+        public int? MinWidth { get; set; }
+        public int? MaxWidth { get; set; }
+        public int? MinHeight { get; set; }
+        public int? MaxHeight { get; set; }
+        public bool? HasAlphaChannel { get; set; }
         public const int DefaultPage = 1;
         public const int DefaultPageSize = 20;
         public const int MaxPageSize = 60;

@@ -29,10 +29,11 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     options.InvalidModelStateResponseFactory = context =>
     {
         var errors = context.ModelState
-            .Where(e => e.Value.Errors.Count > 0)
-            .ToDictionary(
-                e => e.Key,
-                e => e.Value.Errors.Select(e => e.ErrorMessage).ToList());
+     .Where(e => e.Value?.Errors.Count > 0)
+     .ToDictionary(
+         e => e.Key,
+         e => e.Value?.Errors.Select(e => e.ErrorMessage).ToList() ?? new List<string>()
+     );
 
         var errorResponse = new ApiErrorResponse(
             System.Net.HttpStatusCode.BadRequest,

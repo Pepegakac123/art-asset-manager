@@ -32,8 +32,20 @@ namespace ArtAssetManager.Api.Data
                 .WithMany(a => a.Children)
                 .HasForeignKey(a => a.ParentAssetId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            // INDEKSY DLA WYDAJNOŚCI FILTROWANIA I SORTOWANIA
             modelBuilder.Entity<Asset>()
                 .HasIndex(a => a.ParentAssetId);
+            modelBuilder.Entity<Asset>().HasIndex(a => a.FileType);
+            modelBuilder.Entity<Asset>().HasIndex(a => a.Rating);
+            modelBuilder.Entity<Asset>().HasIndex(a => a.FileSize);
+            modelBuilder.Entity<Asset>().HasIndex(a => a.ImageWidth);
+            modelBuilder.Entity<Asset>().HasIndex(a => a.ImageHeight);
+            modelBuilder.Entity<Asset>().HasIndex(a => a.DominantColor);
+            modelBuilder.Entity<Asset>().HasIndex(a => a.HasAlphaChannel);
+            modelBuilder.Entity<Asset>().HasIndex(a => a.FileHash);
+            modelBuilder.Entity<Asset>().HasIndex(a => a.DateAdded);
+            modelBuilder.Entity<Asset>().HasIndex(a => a.LastModified);
             modelBuilder.Entity<Asset>().HasQueryFilter(a => a.IsDeleted == false);
 
             modelBuilder.Entity<MaterialSet>()

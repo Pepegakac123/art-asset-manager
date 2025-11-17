@@ -4,6 +4,7 @@ using ArtAssetManager.Api.Config;
 using ArtAssetManager.Api.Data;
 using ArtAssetManager.Api.Entities;
 using ArtAssetManager.Api.Interfaces;
+using ArtAssetManager.Api.Services.Helpers;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
@@ -73,11 +74,10 @@ namespace ArtAssetManager.Api.Services
                                 {
                                     continue;
                                 }
-                                var (thumbnailPath, metadataJson) = await GenerateThumbnailAsync(filePath, extension);
+                                var (thumbnailPath, metadata) = await GenerateThumbnailAsync(filePath, extension);
                                 var (fileSize, lastModified) = GetFileSizeAndLastModifiedDate(filePath);
                                 var fileHash = await ComputeFileHashAsync(filePath, fileSize);
-                                Asset newAsset = Asset.Create(folder.Id, filePath, fileSize, DetermineFileType(extension), thumbnailPath, lastModified, fileHash);
-                                newAsset.MetadataJson = metadataJson;
+                                Asset newAsset = Asset.Create(folder.Id, filePath, fileSize, DetermineFileType(extension), thumbnailPath, lastModified, fileHash, metadata?.Width, metadata?.Height, metadata?.DominantColor, metadata?.BitDepth, metadata?.HasAlphaChannel);
                                 await assetRepo.AddAssetAsync(newAsset);
                                 _logger.LogInformation("✅ Added new asset: {FileName}", newAsset.FileName);
                             }
@@ -112,7 +112,7 @@ namespace ArtAssetManager.Api.Services
             return (fileInfo.Length, fileInfo.LastWriteTimeUtc);
         }
 
-        private async Task<(string ThumbnailPath, string? MetadataJson)> GenerateThumbnailAsync(string filePath, string extension)
+        private async Task<(string ThumbnailPath, AssetMetadata? Metadata)> GenerateThumbnailAsync(string filePath, string extension)
         {
             if (extension is ".jpg" or ".jpeg" or ".png" or ".webp")
             {
@@ -124,22 +124,20 @@ namespace ArtAssetManager.Api.Services
                     {
                         bool hasAlphaChannel = image.PixelType.AlphaRepresentation.HasValue;
                         int bitDepth = image.PixelType.BitsPerPixel;
-                        var metadata = new
-                        {
-                            Width = image.Width,
-                            Height = image.Height,
-                            DominantColor = GetDominantColor(image),
-                            BitDepth = bitDepth,
-                            HasAlphaChannel = hasAlphaChannel
-                        };
-                        string metadataJson = JsonSerializer.Serialize(metadata);
+                        AssetMetadata metadata = new(
+                            image.Width,
+                           image.Height,
+                          GetDominantColor(image),
+                            bitDepth,
+                            hasAlphaChannel
+                        );
                         image.Mutate(x => x.Resize(400, 0));
                         var uniqueFileName = $"{Guid.NewGuid()}.webp";
                         var fullSavePath = Path.Combine(Directory.GetCurrentDirectory(), _scannerSettings.ThumbnailsFolder, uniqueFileName);
                         var relativeDir = Path.GetDirectoryName(_scannerSettings.PlaceholderThumbnail).Replace("\\", "/");
                         var relativePath = $"{relativeDir}/{uniqueFileName}";
                         await image.SaveAsWebpAsync(fullSavePath);
-                        return (relativePath, metadataJson);
+                        return (relativePath, metadata);
                     }
                 }
                 catch (Exception ex)

@@ -14,7 +14,12 @@ namespace ArtAssetManager.Api.Entities
         public long FileSize { get; set; } = 0;
         public string ThumbnailPath { get; set; } = string.Empty;
         public int Rating { get; set; }
-        public string? MetadataJson { get; set; }
+        public int? ImageWidth { get; set; }
+        public int? ImageHeight { get; set; }
+
+        public string? DominantColor { get; set; }
+        public int? BitDepth { get; set; }
+        public bool? HasAlphaChannel { get; set; }
         public DateTime DateAdded { get; set; }
         public DateTime LastScanned { get; set; }
         public DateTime LastModified { get; set; }
@@ -35,7 +40,12 @@ namespace ArtAssetManager.Api.Entities
             string fileType,
             string thumbnailPath,
             DateTime lastModified,
-            string? FileHash
+            string? FileHash = null,
+            int? FileWidth = null,
+            int? FileHeight = null,
+            string? DominantColor = null,
+            int? BitDepth = null,
+            bool? HasAlphaChannel = null
         )
         {
             var newAsset = new Asset
@@ -46,6 +56,11 @@ namespace ArtAssetManager.Api.Entities
                 FileType = fileType,
                 FileSize = fileSize,
                 FileHash = FileHash,
+                ImageWidth = FileWidth,
+                ImageHeight = FileHeight,
+                DominantColor = DominantColor,
+                BitDepth = BitDepth,
+                HasAlphaChannel = HasAlphaChannel,
                 ThumbnailPath = thumbnailPath,
                 DateAdded = DateTime.UtcNow,
                 LastScanned = DateTime.UtcNow,

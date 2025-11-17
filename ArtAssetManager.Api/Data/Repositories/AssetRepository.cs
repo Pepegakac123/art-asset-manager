@@ -11,9 +11,11 @@ namespace ArtAssetManager.Api.Data.Repositories
     public class AssetRepository : IAssetRepository
     {
         private readonly AssetDbContext _context;
-        public AssetRepository(AssetDbContext context)
+        private readonly TagRepository _tagRepository;
+        public AssetRepository(AssetDbContext context, TagRepository tagRepository)
         {
             _context = context;
+            _tagRepository = tagRepository;
         }
         public async Task<Asset?> GetAssetByIdAsync(int id)
         {
@@ -51,6 +53,23 @@ namespace ArtAssetManager.Api.Data.Repositories
             }
             await _context.SaveChangesAsync();
 
+        }
+        public async Task BulkUpdateAssetTagsAsync(List<int> assetIds, IEnumerable<Tag> tags)
+        {
+            var assets = await _context.Assets
+                .Include(a => a.Tags)
+                .Where(a => assetIds.Contains(a.Id))
+                .ToListAsync();
+            foreach (var asset in assets)
+            {
+
+                asset.Tags.Clear();
+                foreach (var tag in tags)
+                {
+                    asset.Tags.Add(tag);
+                }
+            }
+            await _context.SaveChangesAsync();
         }
         public async Task<PagedResult<Asset>> GetPagedAssetsAsync(
             AssetQueryParameters queryParams
@@ -113,6 +132,87 @@ namespace ArtAssetManager.Api.Data.Repositories
             if (asset == null) throw new KeyNotFoundException($"Asset {id} nie istnieje");
             asset.Rating = rating;
             await _context.SaveChangesAsync();
+        }
+
+
+        private async Task<Asset> GetAssetIgnoreFilters(int assetId)
+        {
+
+            var markedAsset = await _context.Assets
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(a => a.Id == assetId);
+
+            if (markedAsset == null)
+            {
+                throw new KeyNotFoundException($"Asset {assetId} nie istnieje");
+            }
+            return markedAsset;
+        }
+
+        public async Task SoftDeleteAssetAsync(int assetId)
+        {
+            var markedAsset = await GetAssetIgnoreFilters(assetId);
+            markedAsset.IsDeleted = true;
+            await _context.SaveChangesAsync();
+        }
+        public async Task BulkSoftDeleteAssetsAsync(List<int> assetIds)
+        {
+            if (assetIds == null || assetIds.Count == 0)
+            {
+                throw new ArgumentException("Lista ID nie może być pusta.");
+            }
+            await _context.Assets
+        .IgnoreQueryFilters()
+        .Where(a => assetIds.Contains(a.Id))
+        .ExecuteUpdateAsync(s => s.SetProperty(a => a.IsDeleted, true));
+        }
+        public async Task RestoreAssetAsync(int assetId)
+        {
+            var markedAsset = await GetAssetIgnoreFilters(assetId);
+            markedAsset.IsDeleted = false;
+            await _context.SaveChangesAsync();
+        }
+        public async Task BulkRestoreAssetsAsync(List<int> assetIds)
+        {
+            if (assetIds == null || assetIds.Count == 0)
+            {
+                throw new ArgumentException("Lista ID nie może być pusta.");
+            }
+            await _context.Assets
+         .IgnoreQueryFilters()
+         .Where(a => assetIds.Contains(a.Id))
+         .ExecuteUpdateAsync(s => s.SetProperty(a => a.IsDeleted, false));
+        }
+        public async Task<PagedResult<Asset>> GetDeletedAssetsAsync(AssetQueryParameters queryParams)
+        {
+            IQueryable<Asset> query = _context.Assets.IgnoreQueryFilters().Where(a => a.IsDeleted == true);
+
+            query = query.ApplyFilteringAndSorting(queryParams);
+
+            var totalItems = await query.CountAsync();
+            return new PagedResult<Asset>
+            {
+                Items = await query.Skip((queryParams.PageNumber - 1) * queryParams.PageSize)
+        .Take(queryParams.PageSize).ToListAsync(),
+                TotalItems = totalItems
+            };
+        }
+        public async Task PermanentDeleteAssetAsync(int assetId)
+        {
+            var markedAsset = await GetAssetIgnoreFilters(assetId);
+            _context.Assets.Remove(markedAsset);
+            await _context.SaveChangesAsync();
+        }
+        public async Task BulkPermanentDeleteAssetsAsync(List<int> assetIds)
+        {
+            if (assetIds == null || assetIds.Count == 0)
+            {
+                throw new ArgumentException("Lista ID nie może być pusta.");
+            }
+            await _context.Assets
+.IgnoreQueryFilters()
+.Where(a => assetIds.Contains(a.Id))
+.ExecuteDeleteAsync();
         }
     };
 

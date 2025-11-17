@@ -159,6 +159,30 @@ namespace ArtAssetManager.Api.Controllers
             }
 
         }
+        [HttpPost("bulk/tags")]
+        public async Task<ActionResult> BulkUpdateAssetTagsAsync(
+           [FromBody] BulkUpdateAssetTagsRequest body
+       )
+        {
+            try
+            {
+                var tagsResult = await _tagRepo.GetOrCreateTagsAsync(body.TagNames);
+                if (!tagsResult.IsSuccess)
+                {
+                    return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, tagsResult?.Error ?? "Nieprawidłowe tagi.", HttpContext.Request.Path));
+                }
+                if (tagsResult.Value == null) return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "Brak tagów.", HttpContext.Request.Path));
+                await _assetRepo.BulkUpdateAssetTagsAsync(body.AssetIds, tagsResult.Value);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+
+                return NotFound(new ApiErrorResponse(HttpStatusCode.NotFound, $"Błąd: {ex.Message}", HttpContext.Request.Path));
+            }
+
+        }
+
 
         [HttpPost("{id}/rating")]
         public async Task<ActionResult> SetAssetRatingAsync(
@@ -187,5 +211,142 @@ namespace ArtAssetManager.Api.Controllers
 
         }
 
+        [HttpDelete("{id}")]
+        public async Task<ActionResult> SoftlyDeleteAsset([FromRoute] int id)
+        {
+            if (id <= 0)
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "ID musi być większe od 0.", HttpContext.Request.Path));
+            }
+            try
+            {
+                await _assetRepo.SoftDeleteAssetAsync(id);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+
+                return NotFound(new ApiErrorResponse(HttpStatusCode.NotFound, $"Błąd: {ex.Message}", HttpContext.Request.Path));
+            }
+        }
+        [HttpGet("deleted")]
+        public async Task<ActionResult<PagedResponse<AssetDto>>> GetDeletedAssets([FromQuery] AssetQueryParameters queryParams)
+        {
+            if (queryParams.PageNumber <= 0) queryParams.PageNumber = AssetQueryParameters.DefaultPage;
+            if (queryParams.PageSize <= 0) queryParams.PageSize = AssetQueryParameters.DefaultPageSize;
+            if (queryParams.PageSize > AssetQueryParameters.MaxPageSize) queryParams.PageSize = AssetQueryParameters.MaxPageSize;
+
+            var pagedResult = await _assetRepo.GetDeletedAssetsAsync(queryParams);
+
+            var assetsDto = _mapper.Map<IEnumerable<AssetDto>>(pagedResult.Items);
+
+            var totalPages = (int)Math.Ceiling(pagedResult.TotalItems / (double)queryParams.PageSize);
+            var hasNext = queryParams.PageNumber < totalPages;
+            var hasPrevious = queryParams.PageNumber > 1;
+
+            var response = new PagedResponse<AssetDto>
+            {
+                Items = assetsDto.ToList(),
+                TotalItems = pagedResult.TotalItems,
+                PageSize = queryParams.PageSize,
+                CurrentPage = queryParams.PageNumber,
+                TotalPages = totalPages,
+                HasNextPage = hasNext,
+                HasPreviousPage = hasPrevious
+            };
+            return Ok(response);
+        }
+        [HttpPost("{id}/restore")]
+        public async Task<ActionResult> RestoreAsset([FromRoute] int id)
+        {
+            if (id <= 0)
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "ID musi byćwiększe od 0.", HttpContext.Request.Path));
+            }
+            try
+            {
+                await _assetRepo.RestoreAssetAsync(id);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+
+                return NotFound(new ApiErrorResponse(HttpStatusCode.NotFound, $"Błąd: {ex.Message}", HttpContext.Request.Path));
+            }
+        }
+        [HttpDelete("{id}/permanent")]
+        public async Task<ActionResult> PermanentlyDeleteAsset([FromRoute] int id)
+        {
+            if (id <= 0)
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "ID musi byćwiększe od 0.", HttpContext.Request.Path));
+            }
+            try
+            {
+                await _assetRepo.PermanentDeleteAssetAsync(id);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+
+                return NotFound(new ApiErrorResponse(HttpStatusCode.NotFound, $"Błąd: {ex.Message}", HttpContext.Request.Path));
+            }
+        }
+        // --- BULK OPERACJE DLA KOSZA ---
+
+        [HttpPost("bulk/delete")]
+        public async Task<ActionResult> BulkSoftlyDeleteAssets([FromBody] List<int> assetIds)
+        {
+            if (assetIds == null || assetIds.Count == 0)
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "Lista ID nie może być pusta.", HttpContext.Request.Path));
+            }
+            try
+            {
+                await _assetRepo.BulkSoftDeleteAssetsAsync(assetIds);
+                return NoContent();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, ex.Message, HttpContext.Request.Path));
+            }
+        }
+
+        [HttpPost("bulk/restore")]
+        public async Task<ActionResult> BulkRestoreAssets([FromBody] List<int> assetIds)
+        {
+            if (assetIds == null || assetIds.Count == 0)
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "Lista ID nie może być pusta.", HttpContext.Request.Path));
+            }
+            try
+            {
+                await _assetRepo.BulkRestoreAssetsAsync(assetIds);
+                return NoContent();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, ex.Message, HttpContext.Request.Path));
+            }
+        }
+
+        [HttpPost("bulk/permanent-delete")]
+        public async Task<ActionResult> BulkPermanentlyDeleteAssets([FromBody] List<int> assetIds)
+        {
+            if (assetIds == null || assetIds.Count == 0)
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "Lista ID nie może być pusta.", HttpContext.Request.Path));
+            }
+            try
+            {
+                await _assetRepo.BulkPermanentDeleteAssetsAsync(assetIds);
+                return NoContent();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, ex.Message, HttpContext.Request.Path));
+            }
+        }
     }
+
 }

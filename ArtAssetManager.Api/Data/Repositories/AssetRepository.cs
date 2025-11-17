@@ -110,10 +110,11 @@ namespace ArtAssetManager.Api.Data.Repositories
         }
         public async Task<IEnumerable<Asset>> GetAssetVersionAsync(int id)
         {
-            List<Asset> assets = new List<Asset>();
-            var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Id == id);
-            if (asset == null) throw new KeyNotFoundException($"Asset {id} nie istnieje");
-            var rootId = asset.ParentAssetId ?? asset.Id;
+            var rootId = await _context.Assets.Where(a => a.Id == id).Select(a => a.ParentAssetId ?? (int?)a.Id).FirstOrDefaultAsync();
+            if (rootId == null)
+            {
+                throw new KeyNotFoundException($"Asset o ID {id} nie został znaleziony.");
+            }
             var versions = await _context.Assets
         .Where(a => a.Id == rootId || a.ParentAssetId == rootId)
         .OrderByDescending(a => a.LastModified)

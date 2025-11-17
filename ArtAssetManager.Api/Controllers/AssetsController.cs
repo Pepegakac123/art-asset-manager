@@ -169,7 +169,7 @@ namespace ArtAssetManager.Api.Controllers
                 var tagsResult = await _tagRepo.GetOrCreateTagsAsync(body.TagNames);
                 if (!tagsResult.IsSuccess)
                 {
-                    return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, tagsResult?.Error ?? "Nieprawidłowe tagi.", HttpContext.Request.Path));
+                    return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, tagsResult.Error ?? "Nieprawidłowe tagi.", HttpContext.Request.Path));
                 }
                 if (tagsResult.Value == null) return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "Brak tagów.", HttpContext.Request.Path));
                 await _assetRepo.BulkUpdateAssetTagsAsync(body.AssetIds, tagsResult.Value);

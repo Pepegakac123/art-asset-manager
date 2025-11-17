@@ -15,36 +15,36 @@ namespace ArtAssetManager.Api.Data.Repositories
         {
             _context = context;
         }
-        public async Task<Asset?> GetAssetByIdAsync(int id)
+        public async Task<Asset?> GetAssetByIdAsync(int id, CancellationToken cancellationToken)
         {
             return await _context.Assets
             .Include(a => a.Tags)
             .Include(a => a.Children)
-            .FirstOrDefaultAsync(a => a.Id == id);
+            .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
         }
-        public async Task<Asset?> GetAssetByPathAsync(string path)
+        public async Task<Asset?> GetAssetByPathAsync(string path, CancellationToken cancellationToken)
         {
-            return await _context.Assets.FirstOrDefaultAsync(x => x.FilePath == path);
+            return await _context.Assets.FirstOrDefaultAsync(x => x.FilePath == path, cancellationToken);
         }
-        public async Task<Asset?> GetAssetByFileHashAsync(string fileHash)
+        public async Task<Asset?> GetAssetByFileHashAsync(string fileHash, CancellationToken cancellationToken)
         {
             return await _context.Assets
-          .FirstOrDefaultAsync(x => x.FileHash == fileHash && x.FileHash != null);
+          .FirstOrDefaultAsync(x => x.FileHash == fileHash && x.FileHash != null, cancellationToken);
         }
-        public async Task<Asset> AddAssetAsync(Asset asset)
+        public async Task<Asset> AddAssetAsync(Asset asset, CancellationToken cancellationToken)
         {
             _context.Add(asset);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
             return asset;
         }
-        public async Task UpdateAssetTagsAsync(int assetId, IEnumerable<Tag> tags)
+        public async Task UpdateAssetTagsAsync(int assetId, IEnumerable<Tag> tags, CancellationToken cancellationToken)
         {
 
             var asset = await _context.Assets
             .Include(a => a.Tags)
-            .FirstOrDefaultAsync(a => a.Id == assetId);
+            .FirstOrDefaultAsync(a => a.Id == assetId, cancellationToken);
             if (asset == null) throw new KeyNotFoundException($"Asset {assetId} not found");
-            await using var transaction = await _context.Database.BeginTransactionAsync();
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
                 asset.Tags.Clear();
@@ -52,22 +52,22 @@ namespace ArtAssetManager.Api.Data.Repositories
                 {
                     asset.Tags.Add(tag);
                 }
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
+                await _context.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
             }
             catch (Exception)
             {
-                await transaction.RollbackAsync();
+                await transaction.RollbackAsync(cancellationToken);
                 throw;
             }
 
 
 
         }
-        public async Task BulkUpdateAssetTagsAsync(List<int> assetIds, IEnumerable<Tag> tags)
+        public async Task BulkUpdateAssetTagsAsync(List<int> assetIds, IEnumerable<Tag> tags, CancellationToken cancellationToken)
         {
 
-            await using var transaction = await _context.Database.BeginTransactionAsync();
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
                 var assets = await _context.Assets
@@ -82,35 +82,35 @@ namespace ArtAssetManager.Api.Data.Repositories
                         asset.Tags.Add(tag);
                     }
                 }
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
+                await _context.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
             }
             catch (Exception)
             {
 
-                await transaction.RollbackAsync();
+                await transaction.RollbackAsync(cancellationToken);
                 throw;
             }
         }
         public async Task<PagedResult<Asset>> GetPagedAssetsAsync(
-            AssetQueryParameters queryParams
+            AssetQueryParameters queryParams, CancellationToken cancellationToken
         )
         {
             IQueryable<Asset> query = _context.Assets;
 
             query = query.ApplyFilteringAndSorting(queryParams);
 
-            var totalItems = await query.CountAsync();
+            var totalItems = await query.CountAsync(cancellationToken);
             return new PagedResult<Asset>
             {
                 Items = await query.Skip((queryParams.PageNumber - 1) * queryParams.PageSize)
-        .Take(queryParams.PageSize).ToListAsync(),
+        .Take(queryParams.PageSize).ToListAsync(cancellationToken),
                 TotalItems = totalItems
             };
         }
-        public async Task<IEnumerable<Asset>> GetAssetVersionAsync(int id)
+        public async Task<IEnumerable<Asset>> GetAssetVersionAsync(int id, CancellationToken cancellationToken)
         {
-            var rootId = await _context.Assets.Where(a => a.Id == id).Select(a => a.ParentAssetId ?? (int?)a.Id).FirstOrDefaultAsync();
+            var rootId = await _context.Assets.Where(a => a.Id == id).Select(a => a.ParentAssetId ?? (int?)a.Id).FirstOrDefaultAsync(cancellationToken);
             if (rootId == null)
             {
                 throw new KeyNotFoundException($"Asset o ID {id} nie został znaleziony.");
@@ -118,15 +118,15 @@ namespace ArtAssetManager.Api.Data.Repositories
             var versions = await _context.Assets
         .Where(a => a.Id == rootId || a.ParentAssetId == rootId)
         .OrderByDescending(a => a.LastModified)
-        .ToListAsync();
+        .ToListAsync(cancellationToken);
 
             return versions;
 
         }
-        public async Task LinkAssetToParentAsync(int childId, int parentId)
+        public async Task LinkAssetToParentAsync(int childId, int parentId, CancellationToken cancellationToken)
         {
             var parentAsset = await _context.Assets
-            .FirstOrDefaultAsync(a => a.Id == parentId);
+            .FirstOrDefaultAsync(a => a.Id == parentId, cancellationToken);
             if (parentAsset == null)
             {
                 throw new KeyNotFoundException($"Asset 'Rodzic'  {parentId} nie istnieje");
@@ -135,7 +135,7 @@ namespace ArtAssetManager.Api.Data.Repositories
             {
                 throw new Exception($"{parentAsset.FileName} jest już dzieckiem");
             }
-            var childAsset = await _context.Assets.FirstOrDefaultAsync(a => a.Id == childId);
+            var childAsset = await _context.Assets.FirstOrDefaultAsync(a => a.Id == childId, cancellationToken);
             if (childAsset == null)
             {
                 throw new KeyNotFoundException($"Asset 'dziecko' {childId} nie istnieje");
@@ -145,49 +145,49 @@ namespace ArtAssetManager.Api.Data.Repositories
                 throw new Exception("Asset jest już połączony, rozłącz go najpierw");
             }
             childAsset.ParentAssetId = parentId;
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
         }
-        public async Task SetAssetRatingAsync(int id, int rating)
+        public async Task SetAssetRatingAsync(int id, int rating, CancellationToken cancellationToken)
         {
-            var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Id == id);
+            var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
             if (asset == null) throw new KeyNotFoundException($"Asset {id} nie istnieje");
             asset.Rating = rating;
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task ToggleAssetFavoriteAsync(int assetId)
+        public async Task ToggleAssetFavoriteAsync(int assetId, CancellationToken cancellationToken)
         {
-            var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Id == assetId);
+            var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Id == assetId, cancellationToken);
             if (asset == null) throw new KeyNotFoundException($"Asset {assetId} nie istnieje");
             asset.IsFavorite = !(asset.IsFavorite ?? false);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         public async Task<PagedResult<Asset>> GetFavoritesAssetsAsync(
-           AssetQueryParameters queryParams
+           AssetQueryParameters queryParams, CancellationToken cancellationToken
        )
         {
             IQueryable<Asset> query = _context.Assets.Where(a => a.IsFavorite == true);
 
             query = query.ApplyFilteringAndSorting(queryParams);
 
-            var totalItems = await query.CountAsync();
+            var totalItems = await query.CountAsync(cancellationToken);
             return new PagedResult<Asset>
             {
                 Items = await query.Skip((queryParams.PageNumber - 1) * queryParams.PageSize)
-        .Take(queryParams.PageSize).ToListAsync(),
+        .Take(queryParams.PageSize).ToListAsync(cancellationToken),
                 TotalItems = totalItems
             };
         }
 
 
-        private async Task<Asset> GetAssetIgnoreFilters(int assetId)
+        private async Task<Asset> GetAssetIgnoreFilters(int assetId, CancellationToken cancellationToken)
         {
 
             var markedAsset = await _context.Assets
                 .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(a => a.Id == assetId);
+                .FirstOrDefaultAsync(a => a.Id == assetId, cancellationToken);
 
             if (markedAsset == null)
             {
@@ -196,13 +196,13 @@ namespace ArtAssetManager.Api.Data.Repositories
             return markedAsset;
         }
 
-        public async Task SoftDeleteAssetAsync(int assetId)
+        public async Task SoftDeleteAssetAsync(int assetId, CancellationToken cancellationToken)
         {
-            var markedAsset = await GetAssetIgnoreFilters(assetId);
+            var markedAsset = await GetAssetIgnoreFilters(assetId, cancellationToken);
             markedAsset.IsDeleted = true;
             await _context.SaveChangesAsync();
         }
-        public async Task BulkSoftDeleteAssetsAsync(List<int> assetIds)
+        public async Task BulkSoftDeleteAssetsAsync(List<int> assetIds, CancellationToken cancellationToken)
         {
             if (assetIds == null || assetIds.Count == 0)
             {
@@ -211,15 +211,15 @@ namespace ArtAssetManager.Api.Data.Repositories
             await _context.Assets
         .IgnoreQueryFilters()
         .Where(a => assetIds.Contains(a.Id))
-        .ExecuteUpdateAsync(s => s.SetProperty(a => a.IsDeleted, true));
+        .ExecuteUpdateAsync(s => s.SetProperty(a => a.IsDeleted, true), cancellationToken);
         }
-        public async Task RestoreAssetAsync(int assetId)
+        public async Task RestoreAssetAsync(int assetId, CancellationToken cancellationToken)
         {
-            var markedAsset = await GetAssetIgnoreFilters(assetId);
+            var markedAsset = await GetAssetIgnoreFilters(assetId, cancellationToken);
             markedAsset.IsDeleted = false;
             await _context.SaveChangesAsync();
         }
-        public async Task BulkRestoreAssetsAsync(List<int> assetIds)
+        public async Task BulkRestoreAssetsAsync(List<int> assetIds, CancellationToken cancellationToken)
         {
             if (assetIds == null || assetIds.Count == 0)
             {
@@ -228,29 +228,29 @@ namespace ArtAssetManager.Api.Data.Repositories
             await _context.Assets
          .IgnoreQueryFilters()
          .Where(a => assetIds.Contains(a.Id))
-         .ExecuteUpdateAsync(s => s.SetProperty(a => a.IsDeleted, false));
+         .ExecuteUpdateAsync(s => s.SetProperty(a => a.IsDeleted, false), cancellationToken);
         }
-        public async Task<PagedResult<Asset>> GetDeletedAssetsAsync(AssetQueryParameters queryParams)
+        public async Task<PagedResult<Asset>> GetDeletedAssetsAsync(AssetQueryParameters queryParams, CancellationToken cancellationToken)
         {
             IQueryable<Asset> query = _context.Assets.IgnoreQueryFilters().Where(a => a.IsDeleted == true);
 
             query = query.ApplyFilteringAndSorting(queryParams);
 
-            var totalItems = await query.CountAsync();
+            var totalItems = await query.CountAsync(cancellationToken);
             return new PagedResult<Asset>
             {
                 Items = await query.Skip((queryParams.PageNumber - 1) * queryParams.PageSize)
-        .Take(queryParams.PageSize).ToListAsync(),
+        .Take(queryParams.PageSize).ToListAsync(cancellationToken),
                 TotalItems = totalItems
             };
         }
-        public async Task PermanentDeleteAssetAsync(int assetId)
+        public async Task PermanentDeleteAssetAsync(int assetId, CancellationToken cancellationToken)
         {
-            var markedAsset = await GetAssetIgnoreFilters(assetId);
+            var markedAsset = await GetAssetIgnoreFilters(assetId, cancellationToken);
             _context.Assets.Remove(markedAsset);
             await _context.SaveChangesAsync();
         }
-        public async Task BulkPermanentDeleteAssetsAsync(List<int> assetIds)
+        public async Task BulkPermanentDeleteAssetsAsync(List<int> assetIds, CancellationToken cancellationToken)
         {
             if (assetIds == null || assetIds.Count == 0)
             {
@@ -259,7 +259,7 @@ namespace ArtAssetManager.Api.Data.Repositories
             await _context.Assets
 .IgnoreQueryFilters()
 .Where(a => assetIds.Contains(a.Id))
-.ExecuteDeleteAsync();
+.ExecuteDeleteAsync(cancellationToken);
         }
     };
 

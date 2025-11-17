@@ -23,14 +23,14 @@ namespace ArtAssetManager.Api.Controllers
         }
 
         [HttpGet("folders/{id}")]
-        public async Task<ActionResult<ScanFolderDto>> GetScanFoldersById([FromRoute] int id)
+        public async Task<ActionResult<ScanFolderDto>> GetScanFoldersById([FromRoute] int id, CancellationToken cancellationToken)
         {
             if (id <= 0)
             {
                 return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "ID musi być większe od 0.", HttpContext.Request.Path));
             }
 
-            var scanFolder = await _settingsRepo.GetScanFolderByIdAsync(id);
+            var scanFolder = await _settingsRepo.GetScanFolderByIdAsync(id, cancellationToken);
 
             if (scanFolder == null)
             {
@@ -42,15 +42,15 @@ namespace ArtAssetManager.Api.Controllers
         }
 
         [HttpGet("folders")]
-        public async Task<ActionResult<IEnumerable<ScanFolderDto>>> GetScanFoldersAsync()
+        public async Task<ActionResult<IEnumerable<ScanFolderDto>>> GetScanFoldersAsync(CancellationToken cancellationToken)
         {
-            var scanFolders = await _settingsRepo.GetScanFoldersAsync();
+            var scanFolders = await _settingsRepo.GetScanFoldersAsync(cancellationToken);
             var scanFoldersDto = _mapper.Map<IEnumerable<ScanFolderDto>>(scanFolders);
             return Ok(scanFoldersDto);
         }
 
         [HttpPost("folders")]
-        public async Task<ActionResult<ScanFolderDto>> AddScanFolderAsync([FromBody] AddScanFolderRequest body)
+        public async Task<ActionResult<ScanFolderDto>> AddScanFolderAsync([FromBody] AddScanFolderRequest body, CancellationToken cancellationToken)
         {
 
             var normalizedPath = Path.GetFullPath(body.FolderPath);
@@ -60,13 +60,13 @@ namespace ArtAssetManager.Api.Controllers
                 return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "Podany folder nie istnieje", HttpContext.Request.Path));
             }
             ScanFolder newScanFolder = ScanFolder.Create(normalizedPath);
-            var scanFolder = await _settingsRepo.AddScanFolderAsync(newScanFolder);
+            var scanFolder = await _settingsRepo.AddScanFolderAsync(newScanFolder, cancellationToken);
             var ScanFolderDto = _mapper.Map<ScanFolderDto>(scanFolder);
             return CreatedAtAction(nameof(GetScanFoldersById), new { id = ScanFolderDto.Id }, ScanFolderDto);
 
         }
         [HttpDelete("folders/{id}")]
-        public async Task<ActionResult> DeleteScanFolder([FromRoute] int id)
+        public async Task<ActionResult> DeleteScanFolder([FromRoute] int id, CancellationToken cancellationToken)
         {
             if (id <= 0)
             {
@@ -75,7 +75,7 @@ namespace ArtAssetManager.Api.Controllers
 
             try
             {
-                await _settingsRepo.DeleteScanFolderAsync(id);
+                await _settingsRepo.DeleteScanFolderAsync(id, cancellationToken);
                 return NoContent();
             }
             catch (KeyNotFoundException)
@@ -84,7 +84,7 @@ namespace ArtAssetManager.Api.Controllers
             }
         }
         [HttpPatch("folders/{id}/toggle")]
-        public async Task<ActionResult<ScanFolderDto>> ToggleScanFolderActive([FromRoute] int id)
+        public async Task<ActionResult<ScanFolderDto>> ToggleScanFolderActive([FromRoute] int id, CancellationToken cancellationToken)
         {
             if (id <= 0)
             {
@@ -92,7 +92,7 @@ namespace ArtAssetManager.Api.Controllers
             }
             try
             {
-                var scanFolder = await _settingsRepo.ToggleScanFolderActiveAsync(id);
+                var scanFolder = await _settingsRepo.ToggleScanFolderActiveAsync(id, cancellationToken);
                 var ScanFolderDto = _mapper.Map<ScanFolderDto>(scanFolder);
                 return Ok(ScanFolderDto);
             }

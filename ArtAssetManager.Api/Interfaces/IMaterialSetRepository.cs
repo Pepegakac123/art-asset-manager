@@ -5,15 +5,15 @@ namespace ArtAssetManager.Api.Interfaces
 {
     public interface IMaterialSetRepository
     {
-        Task<IEnumerable<MaterialSet>> GetAllAsync();
-        Task<MaterialSet> GetByIdAsync(int id);
-        Task<MaterialSet> AddAsync(MaterialSet materialSet);
-        Task<MaterialSet> UpdateAsync(int id, MaterialSet updateData);
-        Task DeleteAsync(int id);
+        Task<IEnumerable<MaterialSet>> GetAllAsync(CancellationToken cancellationToken);
+        Task<MaterialSet> GetByIdAsync(int id, CancellationToken cancellationToken);
+        Task<MaterialSet> AddAsync(MaterialSet materialSet, CancellationToken cancellationToken);
+        Task<MaterialSet> UpdateAsync(int id, MaterialSet updateData, CancellationToken cancellationToken);
+        Task DeleteAsync(int id, CancellationToken cancellationToken);
 
-        Task AddAssetToSetAsync(int assetId, int materialSetId);
-        Task RemoveAssetFromSetAsync(int assetId, int materialSetId);
+        Task AddAssetToSetAsync(int assetId, int materialSetId, CancellationToken cancellationToken);
+        Task RemoveAssetFromSetAsync(int assetId, int materialSetId, CancellationToken cancellationToken);
 
-        Task<PagedResult<Asset>> GetAssetsForSetAsync(int setId, AssetQueryParameters queryParams);
+        Task<PagedResult<Asset>> GetAssetsForSetAsync(int setId, AssetQueryParameters queryParams, CancellationToken cancellationToken);
     }
 }

@@ -46,7 +46,7 @@ namespace ArtAssetManager.Api.Services
                         var assetRepo = scope.ServiceProvider.GetRequiredService<IAssetRepository>();
                         var settingsRepo = scope.ServiceProvider.GetRequiredService<ISettingsRepository>();
 
-                        var scannedFolders = await settingsRepo.GetScanFoldersAsync();
+                        var scannedFolders = await settingsRepo.GetScanFoldersAsync(stoppingToken);
                         _logger.LogInformation("📂 Retrieved {Count} folders", scannedFolders.Count());
 
                         foreach (var folder in scannedFolders)
@@ -69,7 +69,7 @@ namespace ArtAssetManager.Api.Services
                                 {
                                     continue;
                                 }
-                                var existingAssetByPath = await assetRepo.GetAssetByPathAsync(filePath);
+                                var existingAssetByPath = await assetRepo.GetAssetByPathAsync(filePath, stoppingToken);
 
                                 if (existingAssetByPath != null)
                                 {
@@ -82,7 +82,7 @@ namespace ArtAssetManager.Api.Services
                                 Asset newAsset = Asset.Create(folder.Id, filePath, fileSize, DetermineFileType(extension), thumbnailPath, lastModified, fileHash, metadata?.Width, metadata?.Height, metadata?.DominantColor, metadata?.BitDepth, metadata?.HasAlphaChannel);
                                 if (fileHash != null)
                                 {
-                                    var existingAssetByHash = await assetRepo.GetAssetByFileHashAsync(fileHash ?? "");
+                                    var existingAssetByHash = await assetRepo.GetAssetByFileHashAsync(fileHash ?? "", stoppingToken);
                                     if (existingAssetByHash != null)
                                     {
                                         _logger.LogInformation($"⏭️ Found duplicate asset: {newAsset.FileName} on Path: {newAsset.FilePath}.\nAssigning to parent: ){existingAssetByHash.FileName} on Path: {existingAssetByHash.FilePath}");
@@ -90,7 +90,7 @@ namespace ArtAssetManager.Api.Services
                                         newAsset.ParentAssetId = rootId;
                                     }
                                 }
-                                await assetRepo.AddAssetAsync(newAsset);
+                                await assetRepo.AddAssetAsync(newAsset, stoppingToken);
                                 _logger.LogInformation("✅ Added new asset: {FileName}", newAsset.FileName);
                             }
 

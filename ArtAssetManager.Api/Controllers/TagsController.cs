@@ -18,10 +18,9 @@ namespace ArtAssetManager.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TagDto>>> GetTags(
-        )
+        public async Task<ActionResult<IEnumerable<TagDto>>> GetTags(CancellationToken cancellationToken)
         {
-            var tags = await _tagRepo.GetAllTagsAsync();
+            var tags = await _tagRepo.GetAllTagsAsync(cancellationToken);
 
             var tagsDto = _mapper.Map<IEnumerable<TagDto>>(tags);
 

@@ -11,11 +11,11 @@ namespace ArtAssetManager.Api.Data.Repositories
         {
             _context = context;
         }
-        public async Task<IEnumerable<ScanFolder>> GetScanFoldersAsync()
+        public async Task<IEnumerable<ScanFolder>> GetScanFoldersAsync(CancellationToken cancellationToken)
         {
             return await _context.ScanFolders.ToListAsync();
         }
-        public async Task<ScanFolder> AddScanFolderAsync(ScanFolder folder)
+        public async Task<ScanFolder> AddScanFolderAsync(ScanFolder folder, CancellationToken cancellationToken)
         {
             _context.ScanFolders.Add(folder);
             await _context.SaveChangesAsync();
@@ -23,19 +23,19 @@ namespace ArtAssetManager.Api.Data.Repositories
 
 
         }
-        public async Task DeleteScanFolderAsync(int id)
+        public async Task DeleteScanFolderAsync(int id, CancellationToken cancellationToken)
         {
             var folder = await _context.ScanFolders.FindAsync(id);
             if (folder == null) throw new KeyNotFoundException($"Folder {id} not found");
             folder.IsDeleted = true;
             await _context.SaveChangesAsync();
         }
-        public async Task<ScanFolder?> GetScanFolderByIdAsync(int id)
+        public async Task<ScanFolder?> GetScanFolderByIdAsync(int id, CancellationToken cancellationToken)
         {
             return await _context.ScanFolders.FindAsync(id);
         }
 
-        public async Task<ScanFolder> ToggleScanFolderActiveAsync(int id)
+        public async Task<ScanFolder> ToggleScanFolderActiveAsync(int id, CancellationToken cancellationToken)
         {
             var folder = await _context.ScanFolders.FindAsync(id);
             if (folder == null) throw new KeyNotFoundException($"Folder {id} not found");

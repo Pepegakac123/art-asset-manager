@@ -4,12 +4,12 @@ namespace ArtAssetManager.Api.Interfaces
 {
     public interface ISettingsRepository
     {
-        Task<IEnumerable<ScanFolder>> GetScanFoldersAsync();
-        Task<ScanFolder> AddScanFolderAsync(ScanFolder folder);
-        Task DeleteScanFolderAsync(int id);
-        Task<ScanFolder?> GetScanFolderByIdAsync(int id);
+        Task<IEnumerable<ScanFolder>> GetScanFoldersAsync(CancellationToken cancellationToken);
+        Task<ScanFolder> AddScanFolderAsync(ScanFolder folder, CancellationToken cancellationToken);
+        Task DeleteScanFolderAsync(int id, CancellationToken cancellationToken);
+        Task<ScanFolder?> GetScanFolderByIdAsync(int id, CancellationToken cancellationToken);
 
-        Task<ScanFolder> ToggleScanFolderActiveAsync(int id);
+        Task<ScanFolder> ToggleScanFolderActiveAsync(int id, CancellationToken cancellationToken);
 
     }
 }

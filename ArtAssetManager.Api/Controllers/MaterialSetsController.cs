@@ -26,14 +26,14 @@ namespace ArtAssetManager.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<MaterialSetDto>>> GetMaterialSets()
+        public async Task<ActionResult<IEnumerable<MaterialSetDto>>> GetMaterialSets(CancellationToken cancellationToken)
         {
-            var materialSets = await _materialSetRepository.GetAllAsync();
+            var materialSets = await _materialSetRepository.GetAllAsync(cancellationToken);
             var materialSetsDto = _mapper.Map<IEnumerable<MaterialSetDto>>(materialSets);
             return Ok(materialSetsDto);
         }
         [HttpGet("{id}")]
-        public async Task<ActionResult<MaterialSetDetailsDto>> GetMaterialSet([FromRoute] int id)
+        public async Task<ActionResult<MaterialSetDetailsDto>> GetMaterialSet([FromRoute] int id, CancellationToken cancellationToken)
         {
             if (id <= 0)
             {
@@ -41,7 +41,7 @@ namespace ArtAssetManager.Api.Controllers
             }
             try
             {
-                var materialSet = await _materialSetRepository.GetByIdAsync(id);
+                var materialSet = await _materialSetRepository.GetByIdAsync(id, cancellationToken);
                 var materialSetDto = _mapper.Map<MaterialSetDetailsDto>(materialSet);
                 return Ok(materialSetDto);
             }
@@ -52,10 +52,10 @@ namespace ArtAssetManager.Api.Controllers
             }
         }
         [HttpPost]
-        public async Task<ActionResult<MaterialSetDto>> AddMaterialSet([FromBody] CreateMaterialSetRequest body)
+        public async Task<ActionResult<MaterialSetDto>> AddMaterialSet([FromBody] CreateMaterialSetRequest body, CancellationToken cancellationToken)
         {
             var newMaterialSet = _mapper.Map<MaterialSet>(body);
-            var createdMaterialSet = await _materialSetRepository.AddAsync(newMaterialSet);
+            var createdMaterialSet = await _materialSetRepository.AddAsync(newMaterialSet, cancellationToken);
             var materialSetDto = _mapper.Map<MaterialSetDto>(createdMaterialSet);
             return CreatedAtAction(
         nameof(GetMaterialSet),
@@ -64,7 +64,7 @@ namespace ArtAssetManager.Api.Controllers
     );
         }
         [HttpPut("{id}")]
-        public async Task<ActionResult<MaterialSetDto>> UpdateMaterialSet([FromRoute] int id, [FromBody] UpdateMaterialSet body)
+        public async Task<ActionResult<MaterialSetDto>> UpdateMaterialSet([FromRoute] int id, [FromBody] UpdateMaterialSet body, CancellationToken cancellationToken)
         {
             if (id <= 0)
             {
@@ -73,7 +73,7 @@ namespace ArtAssetManager.Api.Controllers
             try
             {
                 var newMaterialSet = _mapper.Map<MaterialSet>(body);
-                var updatedMaterialSet = await _materialSetRepository.UpdateAsync(id, newMaterialSet);
+                var updatedMaterialSet = await _materialSetRepository.UpdateAsync(id, newMaterialSet, cancellationToken);
                 var materialSetDto = _mapper.Map<MaterialSetDto>(updatedMaterialSet);
                 return Ok(materialSetDto);
             }
@@ -85,7 +85,7 @@ namespace ArtAssetManager.Api.Controllers
 
         }
         [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteMaterialSet([FromRoute] int id)
+        public async Task<ActionResult> DeleteMaterialSet([FromRoute] int id, CancellationToken cancellationToken)
         {
             if (id <= 0)
             {
@@ -93,7 +93,7 @@ namespace ArtAssetManager.Api.Controllers
             }
             try
             {
-                await _materialSetRepository.DeleteAsync(id);
+                await _materialSetRepository.DeleteAsync(id, cancellationToken);
                 return NoContent();
             }
             catch (KeyNotFoundException ex)
@@ -105,7 +105,7 @@ namespace ArtAssetManager.Api.Controllers
 
         [HttpGet("{id}/assets")]
         public async Task<ActionResult<PagedResponse<AssetDto>>> GetAssets(
-                    [FromRoute] int setId, [FromQuery] AssetQueryParameters queryParams
+                    [FromRoute] int setId, [FromQuery] AssetQueryParameters queryParams, CancellationToken cancellationToken
                 )
         {
             if (setId <= 0)
@@ -116,7 +116,7 @@ namespace ArtAssetManager.Api.Controllers
             if (queryParams.PageSize <= 0) queryParams.PageSize = AssetQueryParameters.DefaultPageSize;
             if (queryParams.PageSize > AssetQueryParameters.MaxPageSize) queryParams.PageSize = AssetQueryParameters.MaxPageSize;
 
-            var pagedResult = await _materialSetRepository.GetAssetsForSetAsync(setId, queryParams);
+            var pagedResult = await _materialSetRepository.GetAssetsForSetAsync(setId, queryParams, cancellationToken);
 
             var assetsDto = _mapper.Map<IEnumerable<AssetDto>>(pagedResult.Items);
 
@@ -139,7 +139,7 @@ namespace ArtAssetManager.Api.Controllers
         }
 
         [HttpPost("{setId}/assets/{assetId}")]
-        public async Task<ActionResult> AddAssetToMaterialSet([FromRoute] int setId, [FromRoute] int assetId)
+        public async Task<ActionResult> AddAssetToMaterialSet([FromRoute] int setId, [FromRoute] int assetId, CancellationToken cancellationToken)
         {
             if (setId <= 0 || assetId <= 0)
             {
@@ -147,7 +147,7 @@ namespace ArtAssetManager.Api.Controllers
             }
             try
             {
-                await _materialSetRepository.AddAssetToSetAsync(assetId, setId);
+                await _materialSetRepository.AddAssetToSetAsync(assetId, setId, cancellationToken);
                 return NoContent();
             }
             catch (KeyNotFoundException ex)
@@ -162,7 +162,7 @@ namespace ArtAssetManager.Api.Controllers
             }
         }
         [HttpDelete("{setId}/assets/{assetId}")]
-        public async Task<ActionResult> RemoveAssetFromMaterialSet([FromRoute] int setId, [FromRoute] int assetId)
+        public async Task<ActionResult> RemoveAssetFromMaterialSet([FromRoute] int setId, [FromRoute] int assetId, CancellationToken cancellationToken)
         {
             if (setId <= 0 || assetId <= 0)
             {
@@ -170,7 +170,7 @@ namespace ArtAssetManager.Api.Controllers
             }
             try
             {
-                await _materialSetRepository.RemoveAssetFromSetAsync(assetId, setId);
+                await _materialSetRepository.RemoveAssetFromSetAsync(assetId, setId, cancellationToken);
                 return NoContent();
             }
             catch (KeyNotFoundException ex)

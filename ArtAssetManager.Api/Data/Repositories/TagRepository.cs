@@ -13,12 +13,12 @@ namespace ArtAssetManager.Api.Data.Repositories
         {
             _context = context;
         }
-        public async Task<Result<IEnumerable<Tag>>> GetOrCreateTagsAsync(IEnumerable<string> tagNames)
+        public async Task<Result<IEnumerable<Tag>>> GetOrCreateTagsAsync(IEnumerable<string> tagNames, CancellationToken cancellationToken)
         {
             var normalizedTagNames = tagNames.Select(n => n.Trim().ToLower()).Distinct().ToList();
             var existingTags = await _context.Tags
             .Where(t => normalizedTagNames.Contains(t.Name))
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
             var existingNames = existingTags.Select(t => t.Name).ToHashSet();
             var missingNames = normalizedTagNames.Where(n => !existingNames.Contains(n));
@@ -27,13 +27,13 @@ namespace ArtAssetManager.Api.Data.Repositories
             if (newTags.Any())
             {
                 _context.Tags.AddRange(newTags);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
             }
             return Result<IEnumerable<Tag>>.Success(existingTags.Concat(newTags));
         }
-        public async Task<IEnumerable<Tag>> GetAllTagsAsync()
+        public async Task<IEnumerable<Tag>> GetAllTagsAsync(CancellationToken cancellationToken)
         {
-            return await _context.Tags.ToListAsync();
+            return await _context.Tags.ToListAsync(cancellationToken);
         }
     }
 }

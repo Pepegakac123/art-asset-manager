@@ -30,14 +30,14 @@ namespace ArtAssetManager.Api.Controllers
 
         [HttpGet] // GET /api/assets
         public async Task<ActionResult<PagedResponse<AssetDto>>> GetAssets(
-             [FromQuery] AssetQueryParameters queryParams
+             [FromQuery] AssetQueryParameters queryParams, CancellationToken cancellationToken
          )
         {
             if (queryParams.PageNumber <= 0) queryParams.PageNumber = AssetQueryParameters.DefaultPage;
             if (queryParams.PageSize <= 0) queryParams.PageSize = AssetQueryParameters.DefaultPageSize;
             if (queryParams.PageSize > AssetQueryParameters.MaxPageSize) queryParams.PageSize = AssetQueryParameters.MaxPageSize;
 
-            var pagedResult = await _assetRepo.GetPagedAssetsAsync(queryParams);
+            var pagedResult = await _assetRepo.GetPagedAssetsAsync(queryParams, cancellationToken);
 
             var assetsDto = _mapper.Map<IEnumerable<AssetDto>>(pagedResult.Items);
 
@@ -60,7 +60,7 @@ namespace ArtAssetManager.Api.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<AssetDetailsDto>> GetAssetById([FromRoute] int id) //
+        public async Task<ActionResult<AssetDetailsDto>> GetAssetById([FromRoute] int id, CancellationToken cancellationToken) //
         {
 
             if (id <= 0)
@@ -68,7 +68,7 @@ namespace ArtAssetManager.Api.Controllers
                 return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "ID musi być większe od 0.", HttpContext.Request.Path));
             }
 
-            var asset = await _assetRepo.GetAssetByIdAsync(id);
+            var asset = await _assetRepo.GetAssetByIdAsync(id, cancellationToken);
             if (asset == null)
             {
 
@@ -79,7 +79,7 @@ namespace ArtAssetManager.Api.Controllers
         }
 
         [HttpGet("{id}/versions")]
-        public async Task<ActionResult<IEnumerable<AssetDto>>> GetAssetVersions([FromRoute] int id)
+        public async Task<ActionResult<IEnumerable<AssetDto>>> GetAssetVersions([FromRoute] int id, CancellationToken cancellationToken)
         {
             if (id <= 0)
             {
@@ -87,7 +87,7 @@ namespace ArtAssetManager.Api.Controllers
             }
             try
             {
-                var versions = await _assetRepo.GetAssetVersionAsync(id);
+                var versions = await _assetRepo.GetAssetVersionAsync(id, cancellationToken);
 
                 var versionsDto = _mapper.Map<IEnumerable<AssetDto>>(versions);
                 return Ok(versionsDto);
@@ -103,7 +103,7 @@ namespace ArtAssetManager.Api.Controllers
         [HttpPost("{childId}/link-to/{parentId}")]
         public async Task<ActionResult> LinkAssetToParentAsync(
             [FromRoute] int childId,
-            [FromRoute] int parentId
+            [FromRoute] int parentId, CancellationToken cancellationToken
         )
         {
             if (childId <= 0 || parentId <= 0)
@@ -116,7 +116,7 @@ namespace ArtAssetManager.Api.Controllers
             }
             try
             {
-                await _assetRepo.LinkAssetToParentAsync(childId, parentId);
+                await _assetRepo.LinkAssetToParentAsync(childId, parentId, cancellationToken);
                 return NoContent();
             }
             catch (KeyNotFoundException ex)
@@ -134,7 +134,7 @@ namespace ArtAssetManager.Api.Controllers
         [HttpPost("{id}/tags")]
         public async Task<ActionResult> UpdateAssetTagsAsync(
             [FromRoute] int id,
-            [FromBody] UpdateTagsRequest body
+            [FromBody] UpdateTagsRequest body, CancellationToken cancellationToken
         )
         {
             if (id <= 0)
@@ -143,13 +143,13 @@ namespace ArtAssetManager.Api.Controllers
             }
             try
             {
-                var tagsResult = await _tagRepo.GetOrCreateTagsAsync(body.TagsNames);
+                var tagsResult = await _tagRepo.GetOrCreateTagsAsync(body.TagsNames, cancellationToken);
                 if (!tagsResult.IsSuccess)
                 {
                     return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, tagsResult?.Error ?? "Nieprawidłowe tagi.", HttpContext.Request.Path));
                 }
 
-                await _assetRepo.UpdateAssetTagsAsync(id, tagsResult.Value!);
+                await _assetRepo.UpdateAssetTagsAsync(id, tagsResult.Value!, cancellationToken);
                 return NoContent();
             }
             catch (KeyNotFoundException ex)
@@ -161,18 +161,18 @@ namespace ArtAssetManager.Api.Controllers
         }
         [HttpPost("bulk/tags")]
         public async Task<ActionResult> BulkUpdateAssetTagsAsync(
-           [FromBody] BulkUpdateAssetTagsRequest body
+           [FromBody] BulkUpdateAssetTagsRequest body, CancellationToken cancellationToken
        )
         {
             try
             {
-                var tagsResult = await _tagRepo.GetOrCreateTagsAsync(body.TagNames);
+                var tagsResult = await _tagRepo.GetOrCreateTagsAsync(body.TagNames, cancellationToken);
                 if (!tagsResult.IsSuccess)
                 {
                     return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, tagsResult.Error ?? "Nieprawidłowe tagi.", HttpContext.Request.Path));
                 }
                 if (tagsResult.Value == null) return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "Brak tagów.", HttpContext.Request.Path));
-                await _assetRepo.BulkUpdateAssetTagsAsync(body.AssetIds, tagsResult.Value);
+                await _assetRepo.BulkUpdateAssetTagsAsync(body.AssetIds, tagsResult.Value, cancellationToken);
                 return NoContent();
             }
             catch (KeyNotFoundException ex)
@@ -186,7 +186,7 @@ namespace ArtAssetManager.Api.Controllers
         [HttpPatch("{id}/rating")]
         public async Task<ActionResult> SetAssetRatingAsync(
             [FromRoute] int id,
-            [FromBody] int rating
+            [FromBody] int rating, CancellationToken cancellationToken
         )
         {
             if (id <= 0)
@@ -199,7 +199,7 @@ namespace ArtAssetManager.Api.Controllers
             }
             try
             {
-                await _assetRepo.SetAssetRatingAsync(id, rating);
+                await _assetRepo.SetAssetRatingAsync(id, rating, cancellationToken);
                 return NoContent();
             }
             catch (KeyNotFoundException ex)
@@ -210,7 +210,7 @@ namespace ArtAssetManager.Api.Controllers
 
         }
         [HttpPatch("{id}/toggle-favorite")]
-        public async Task<ActionResult> ToggleAssetFavoriteAsync([FromRoute] int id)
+        public async Task<ActionResult> ToggleAssetFavoriteAsync([FromRoute] int id, CancellationToken cancellationToken)
         {
             if (id <= 0)
             {
@@ -218,7 +218,7 @@ namespace ArtAssetManager.Api.Controllers
             }
             try
             {
-                await _assetRepo.ToggleAssetFavoriteAsync(id);
+                await _assetRepo.ToggleAssetFavoriteAsync(id, cancellationToken);
                 return NoContent();
             }
             catch (KeyNotFoundException ex)
@@ -228,13 +228,13 @@ namespace ArtAssetManager.Api.Controllers
             }
         }
         [HttpGet("favorites")]
-        public async Task<ActionResult<PagedResponse<AssetDto>>> GetFavoriteAssets([FromQuery] AssetQueryParameters queryParams)
+        public async Task<ActionResult<PagedResponse<AssetDto>>> GetFavoriteAssets([FromQuery] AssetQueryParameters queryParams, CancellationToken cancellationToken)
         {
             if (queryParams.PageNumber <= 0) queryParams.PageNumber = AssetQueryParameters.DefaultPage;
             if (queryParams.PageSize <= 0) queryParams.PageSize = AssetQueryParameters.DefaultPageSize;
             if (queryParams.PageSize > AssetQueryParameters.MaxPageSize) queryParams.PageSize = AssetQueryParameters.MaxPageSize;
 
-            var pagedResult = await _assetRepo.GetFavoritesAssetsAsync(queryParams);
+            var pagedResult = await _assetRepo.GetFavoritesAssetsAsync(queryParams, cancellationToken);
 
             var assetsDto = _mapper.Map<IEnumerable<AssetDto>>(pagedResult.Items);
 
@@ -256,7 +256,7 @@ namespace ArtAssetManager.Api.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<ActionResult> SoftlyDeleteAsset([FromRoute] int id)
+        public async Task<ActionResult> SoftlyDeleteAsset([FromRoute] int id, CancellationToken cancellationToken)
         {
             if (id <= 0)
             {
@@ -264,7 +264,7 @@ namespace ArtAssetManager.Api.Controllers
             }
             try
             {
-                await _assetRepo.SoftDeleteAssetAsync(id);
+                await _assetRepo.SoftDeleteAssetAsync(id, cancellationToken);
                 return NoContent();
             }
             catch (KeyNotFoundException ex)
@@ -274,13 +274,13 @@ namespace ArtAssetManager.Api.Controllers
             }
         }
         [HttpGet("deleted")]
-        public async Task<ActionResult<PagedResponse<AssetDto>>> GetDeletedAssets([FromQuery] AssetQueryParameters queryParams)
+        public async Task<ActionResult<PagedResponse<AssetDto>>> GetDeletedAssets([FromQuery] AssetQueryParameters queryParams, CancellationToken cancellationToken)
         {
             if (queryParams.PageNumber <= 0) queryParams.PageNumber = AssetQueryParameters.DefaultPage;
             if (queryParams.PageSize <= 0) queryParams.PageSize = AssetQueryParameters.DefaultPageSize;
             if (queryParams.PageSize > AssetQueryParameters.MaxPageSize) queryParams.PageSize = AssetQueryParameters.MaxPageSize;
 
-            var pagedResult = await _assetRepo.GetDeletedAssetsAsync(queryParams);
+            var pagedResult = await _assetRepo.GetDeletedAssetsAsync(queryParams, cancellationToken);
 
             var assetsDto = _mapper.Map<IEnumerable<AssetDto>>(pagedResult.Items);
 
@@ -301,7 +301,7 @@ namespace ArtAssetManager.Api.Controllers
             return Ok(response);
         }
         [HttpPost("{id}/restore")]
-        public async Task<ActionResult> RestoreAsset([FromRoute] int id)
+        public async Task<ActionResult> RestoreAsset([FromRoute] int id, CancellationToken cancellationToken)
         {
             if (id <= 0)
             {
@@ -309,7 +309,7 @@ namespace ArtAssetManager.Api.Controllers
             }
             try
             {
-                await _assetRepo.RestoreAssetAsync(id);
+                await _assetRepo.RestoreAssetAsync(id, cancellationToken);
                 return NoContent();
             }
             catch (KeyNotFoundException ex)
@@ -319,7 +319,7 @@ namespace ArtAssetManager.Api.Controllers
             }
         }
         [HttpDelete("{id}/permanent")]
-        public async Task<ActionResult> PermanentlyDeleteAsset([FromRoute] int id)
+        public async Task<ActionResult> PermanentlyDeleteAsset([FromRoute] int id, CancellationToken cancellationToken)
         {
             if (id <= 0)
             {
@@ -327,7 +327,7 @@ namespace ArtAssetManager.Api.Controllers
             }
             try
             {
-                await _assetRepo.PermanentDeleteAssetAsync(id);
+                await _assetRepo.PermanentDeleteAssetAsync(id, cancellationToken);
                 return NoContent();
             }
             catch (KeyNotFoundException ex)
@@ -339,7 +339,7 @@ namespace ArtAssetManager.Api.Controllers
         // --- BULK OPERACJE DLA KOSZA ---
 
         [HttpPost("bulk/delete")]
-        public async Task<ActionResult> BulkSoftlyDeleteAssets([FromBody] List<int> assetIds)
+        public async Task<ActionResult> BulkSoftlyDeleteAssets([FromBody] List<int> assetIds, CancellationToken cancellationToken)
         {
             if (assetIds == null || assetIds.Count == 0)
             {
@@ -347,7 +347,7 @@ namespace ArtAssetManager.Api.Controllers
             }
             try
             {
-                await _assetRepo.BulkSoftDeleteAssetsAsync(assetIds);
+                await _assetRepo.BulkSoftDeleteAssetsAsync(assetIds, cancellationToken);
                 return NoContent();
             }
             catch (ArgumentException ex)
@@ -357,7 +357,7 @@ namespace ArtAssetManager.Api.Controllers
         }
 
         [HttpPost("bulk/restore")]
-        public async Task<ActionResult> BulkRestoreAssets([FromBody] List<int> assetIds)
+        public async Task<ActionResult> BulkRestoreAssets([FromBody] List<int> assetIds, CancellationToken cancellationToken)
         {
             if (assetIds == null || assetIds.Count == 0)
             {
@@ -365,7 +365,7 @@ namespace ArtAssetManager.Api.Controllers
             }
             try
             {
-                await _assetRepo.BulkRestoreAssetsAsync(assetIds);
+                await _assetRepo.BulkRestoreAssetsAsync(assetIds, cancellationToken);
                 return NoContent();
             }
             catch (ArgumentException ex)
@@ -375,7 +375,7 @@ namespace ArtAssetManager.Api.Controllers
         }
 
         [HttpPost("bulk/permanent-delete")]
-        public async Task<ActionResult> BulkPermanentlyDeleteAssets([FromBody] List<int> assetIds)
+        public async Task<ActionResult> BulkPermanentlyDeleteAssets([FromBody] List<int> assetIds, CancellationToken cancellationToken)
         {
             if (assetIds == null || assetIds.Count == 0)
             {
@@ -383,7 +383,7 @@ namespace ArtAssetManager.Api.Controllers
             }
             try
             {
-                await _assetRepo.BulkPermanentDeleteAssetsAsync(assetIds);
+                await _assetRepo.BulkPermanentDeleteAssetsAsync(assetIds, cancellationToken);
                 return NoContent();
             }
             catch (ArgumentException ex)

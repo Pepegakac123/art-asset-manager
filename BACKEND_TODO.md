@@ -42,13 +42,21 @@ Frontend ma sekcję "Saved Searches". Backend nie ma gdzie tego trzymać.
   - Pola: `Id`, `Name`, `FilterJson` (zserializowane `AssetQueryParameters`).
 - [ ] **Repozytorium & Kontroler:** CRUD dla `SavedSearch`.
 
+### 5. Edycja Metadanych (Flexible Asset Update)
+
+Obecnie możemy edytować tylko tagi i ulubione. Potrzebujemy ogólnego endpointu `PATCH`, aby użytkownik mógł ręcznie poprawić pomyłki skanera (np. zmienić typ pliku z "image" na "texture" lub zmienić nazwę).
+
+- [ ] **DTO:** Stwórz `PatchAssetRequest` (Nullable: `FileName`, `FileType`, `Description`).
+- [ ] **Repository:** Rozszerz `AssetRepository` o metodę `UpdateAssetDetailsAsync`, która aktualizuje tylko przesłane pola (nie null).
+- [ ] **Endpoint:** `PATCH /api/assets/{id}` – obsługuje logikę aktualizacji metadanych (z pominięciem systemu plików na razie).
+
 ---
 
 ## 🟠 Priorytet 2: UX Polish (Wysoka wartość użytkowa)
 
 _Te funkcje sprawiają, że aplikacja nie czuje się "tania"._
 
-### 5. Otwieranie w Systemie (Integration)
+### 6. Otwieranie w Systemie (Integration)
 
 Przycisk "Show in Explorer" w Prawym Panelu.
 
@@ -56,7 +64,7 @@ Przycisk "Show in Explorer" w Prawym Panelu.
   - Input: `{ "path": "..." }`
   - Logic: `Process.Start("explorer.exe", "/select,\"" + path + "\"")` (Windows specific).
 
-### 6. Dashboard Stats
+### 7. Dashboard Stats
 
 Pusty stan prawego panelu ma wyświetlać statystyki ("Library Size: 120GB").
 
@@ -64,23 +72,22 @@ Pusty stan prawego panelu ma wyświetlać statystyki ("Library Size: 120GB").
   - Logic: Agregacja SQL (`Sum(FileSize)`, `Count()`).
   - Output: `{ "totalCount": 1240, "totalSize": 4500000000, "lastScan": "..." }`.
 
-### 7. Color Palette Endpoint (Opcjonalne)
+### 8. Color Palette Endpoint (Opcjonalne)
 
 Dla filtrowania po kolorach.
 
-### 7.5. System Logowania do Pliku (Serilog)
+- [ ] **Endpoint:** `GET /api/assets/colors` – Zwraca listę unikalnych `DominantColor` z bazy (zgrupowaną), aby Frontend wiedział, jakie kropki wyświetlić w filtrze.
+
+### 9. System Logowania do Pliku (Serilog)
 
 Backend wykonuje ciężkie operacje w tle. Musimy mieć historię błędów zapisaną na dysku, a nie tylko w konsoli.
 
 - [ ] **Instalacja:** Dodaj pakiety `Serilog.AspNetCore` i `Serilog.Sinks.File`.
 - [ ] **Konfiguracja:** W `Program.cs` podmień domyślny logger na Serilog (`host.UseSerilog`).
 - [ ] **Appsettings:** Skonfiguruj sekcję `Serilog` -> `WriteTo` -> `File`.
-
   - Ścieżka: `logs/log-.txt` (z datą w nazwie).
   - RollingInterval: `Day` (codziennie nowy plik).
   - Retention: Np. trzymaj logi z ostatnich 7 dni.
-
-- [ ] **Endpoint:** `GET /api/assets/colors` – Zwraca listę unikalnych `DominantColor` z bazy (zgrupowaną), aby Frontend wiedział, jakie kropki wyświetlić w filtrze.
 
 ---
 
@@ -88,20 +95,20 @@ Backend wykonuje ciężkie operacje w tle. Musimy mieć historię błędów zapi
 
 _To robimy, jak już podstawy będą śmigać._
 
-### 8. Dynamiczne Rozszerzenia (Settings)
+### 10. Dynamiczne Rozszerzenia (Settings)
 
 Obecnie rozszerzenia są w `appsettings.json` (Read-Only). Frontend Settings ma mieć edycję checkboxami.
 
 - [ ] **Migracja Bazy:** Przenieś `AllowedExtensions` do nowej tabeli `SystemSettings` lub kolumny w bazie.
 - [ ] **Logika Skanera:** Skaner musi pobierać listę rozszerzeń z Bazy (Repo), a nie z `IOptions<ScannerSettings>`.
 
-### 9. File System Watcher
+### 11. File System Watcher
 
 Automatyczne wykrywanie zmian.
 
 - [ ] **Implementacja:** `FileSystemWatcher` w `ScannerService`.
 - [ ] **Debouncing:** Logika opóźniająca skanowanie o X sekund po wykryciu zmiany, aby nie zabić bazy.
 
-### 10. Duplicate Management
+### 12. Duplicate Management
 
 - [ ] **Endpoint:** `GET /api/assets/duplicates` – Znajduje assety z tym samym `FileHash`.

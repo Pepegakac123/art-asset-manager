@@ -12,7 +12,7 @@ export const InspectorPanel = () => {
 	// --- RENDER: EMPTY STATE ---
 	if (selectedAssetId === null) {
 		return (
-			<div className="h-full w-full flex flex-col items-center justify-center gap-4 text-default-400 p-8 text-center border-t border-default-200">
+			<div className="h-full w-full flex flex-col items-center justify-center gap-4 text-default-400 p-8 text-center">
 				<div className="flex h-24 w-24 items-center justify-center rounded-full bg-default-100/50">
 					<MousePointerClick size={48} strokeWidth={1} />
 				</div>
@@ -28,9 +28,9 @@ export const InspectorPanel = () => {
 
 	// --- RENDER: ACTIVE STATE (SZKIELET) ---
 	return (
-		<div className="flex h-full flex-col border-t border-default-200">
+		<div className="flex h-full flex-col">
 			{/* NAGŁÓWEK TYMCZASOWY */}
-			<div className="flex items-center justify-between border-b border-default-200 p-4">
+			<div className="flex h-16 shrink-0 items-center justify-between border-b border-default-200 px-4">
 				<div>
 					<p className="text-xs font-bold uppercase text-default-500">
 						Selected Asset

@@ -31,7 +31,7 @@ export const MainLayout = () => {
 			</main>
 
 			{/* OBSZAR 4: INSPECTOR (Prawy panel - też row-span-2) */}
-			<aside className="row-span-2 col-start-3 col-end-4 ">
+			<aside className="row-span-2 col-start-3 col-end-4 border-t border-default-200 mt-[-1px]  ">
 				<InspectorPanel />
 			</aside>
 		</div>

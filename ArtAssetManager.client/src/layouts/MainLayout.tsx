@@ -1,4 +1,5 @@
 import { Outlet } from "react-router-dom";
+import { Sidebar } from "./Sidebar";
 
 export const MainLayout = () => {
 	return (
@@ -10,9 +11,9 @@ export const MainLayout = () => {
                     grid-cols-[260px_1fr_320px] grid-rows-[64px_1fr]"
 		>
 			{/* OBSZAR 1: LEWY SIDEBAR (Rozciągnięty na wysokość - row-span-2) */}
-			<aside className="row-span-2 h-full border-r border-default-200 bg-content1/50 p-4 border-dashed border-2 border-red-500/50 flex items-center justify-center text-red-500">
-				PLACEHOLDER: Sidebar (260px)
-			</aside>
+			<div className="row-span-2 h-full">
+				<Sidebar />
+			</div>
 
 			{/* OBSZAR 2: TOP BAR (Tylko górny rząd) */}
 			<header className="col-start-2 col-end-3 h-full border-b border-default-200 bg-background/50 p-4 border-dashed border-2 border-blue-500/50 flex items-center justify-center text-blue-500">

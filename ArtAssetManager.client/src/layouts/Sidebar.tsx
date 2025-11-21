@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
-// 1. KOMPONENT POMOCNICZY
 interface SidebarItemProps {
 	icon: LucideIcon;
 	label: string;
@@ -47,14 +46,10 @@ export const Sidebar = () => {
 			{/* LOGO AREA */}
 			<div className="flex h-16 flex-shrink-0 items-center px-6 border-b border-default-100/50">
 				<div className="flex items-center gap-3 text-xl font-bold tracking-tight">
-					{/* Ikona w kwadracie - tło pomarańczowe (primary/10), ikona pomarańczowa */}
 					<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
 						<Layers size={20} />
 					</div>
 
-					{/* NAPRAWA LOGO: */}
-					{/* ArtAsset = text-foreground (Biały/Szary) */}
-					{/* Mngr = text-primary (Pomarańczowy) */}
 					<span className="text-foreground">
 						ArtAsset<span className="text-primary">Mngr</span>
 					</span>

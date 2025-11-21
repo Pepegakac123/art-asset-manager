@@ -1,84 +1,96 @@
-// src/components/layout/Sidebar.tsx
-import {Button, ButtonGroup} from "@heroui/button";
-import {ScrollShadow} from "@heroui/scroll-shadow";
-import { Home, FolderOpen, Tag, Settings, Layers, Heart } from "lucide-react";
+import { Button, ButtonGroup } from "@heroui/button";
+import { ScrollShadow } from "@heroui/scroll-shadow";
+import {
+	Home,
+	FolderOpen,
+	Tag,
+	Settings,
+	Layers,
+	Heart,
+	type LucideIcon,
+} from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
-export const Sidebar = () => {
-	const location = useLocation();
+// 1. KOMPONENT POMOCNICZY
+interface SidebarItemProps {
+	icon: LucideIcon;
+	label: string;
+	to: string;
+}
 
-	// Pomocnicza funkcja do sprawdzania aktywnego linku (później to rozbudujemy)
-	const isActive = (path: string) => location.pathname === path;
+const SidebarItem = ({ icon: Icon, label, to }: SidebarItemProps) => {
+	const location = useLocation();
+	const isActive =
+		to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
 
 	return (
+		<Button
+			as={Link}
+			to={to}
+			disableRipple={false}
+			radius="md"
+			className={`w-full justify-start h-10 gap-4 px-4 transition-colors ${
+				isActive
+					? "bg-primary/15 text-primary font-semibold" // Aktywny: Pomarańcz
+					: "bg-transparent text-default-500 hover:bg-default-100 hover:text-foreground"
+			}`}
+		>
+			<Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+			<span className="truncate">{label}</span>
+		</Button>
+	);
+};
+
+export const Sidebar = () => {
+	return (
 		<aside className="h-full w-full flex flex-col border-r border-default-200 bg-content1">
-			{/* 1. LOGO AREA */}
-			<div className="flex h-16 flex-shrink-0 items-center px-6">
-				<div className="flex items-center gap-2 text-xl font-bold tracking-tighter">
-					<Layers className="h-6 w-6 text-primary" />
-					<span>
+			{/* LOGO AREA */}
+			<div className="flex h-16 flex-shrink-0 items-center px-6 border-b border-default-100/50">
+				<div className="flex items-center gap-3 text-xl font-bold tracking-tight">
+					{/* Ikona w kwadracie - tło pomarańczowe (primary/10), ikona pomarańczowa */}
+					<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+						<Layers size={20} />
+					</div>
+
+					{/* NAPRAWA LOGO: */}
+					{/* ArtAsset = text-foreground (Biały/Szary) */}
+					{/* Mngr = text-primary (Pomarańczowy) */}
+					<span className="text-foreground">
 						ArtAsset<span className="text-primary">Mngr</span>
 					</span>
 				</div>
 			</div>
 
-			{/* 2. NAVIGATION (SCROLLABLE) */}
-			<ScrollShadow className="flex-1 px-4 py-2" hideScrollBar>
-				<div className="flex flex-col gap-1">
-					{/* Sekcja: Library */}
-					<p className="px-2 mb-2 text-xs font-medium uppercase text-default-500 mt-2">
+			{/* NAVIGATION LIST */}
+			<ScrollShadow className="flex-1 p-3 space-y-6" hideScrollBar>
+				{/* LIBRARY */}
+				<div>
+					<p className="px-4 mb-2 text-xs font-bold uppercase tracking-wider text-default-400/80">
 						Library
 					</p>
+					<div className="flex flex-col gap-1">
+						<SidebarItem icon={Home} label="All Assets" to="/" />
+						<SidebarItem icon={Heart} label="Favorites" to="/favorites" />
+					</div>
+				</div>
 
-					<Button
-						as={Link}
-						to="/"
-						variant={isActive("/") ? "flat" : "light"}
-						color={isActive("/") ? "primary" : "default"}
-						className="justify-start"
-						startContent={<Home size={20} />}
-					>
-						All Assets
-					</Button>
-
-					<Button
-						as={Link}
-						to="/favorites" // Placeholder link
-						variant="light"
-						className="justify-start"
-						startContent={<Heart size={20} />}
-					>
-						Favorites
-					</Button>
-
-					{/* Sekcja: Organization */}
-					<p className="px-2 mb-2 text-xs font-medium uppercase text-default-500 mt-6">
+				{/* ORGANIZATION */}
+				<div>
+					<p className="px-4 mb-2 text-xs font-bold uppercase tracking-wider text-default-400/80">
 						Organization
 					</p>
-
-					<Button
-						variant="light"
-						className="justify-start"
-						startContent={<FolderOpen size={20} />}
-					>
-						Folders
-					</Button>
-
-					<Button
-						variant="light"
-						className="justify-start"
-						startContent={<Tag size={20} />}
-					>
-						Tags
-					</Button>
+					<div className="flex flex-col gap-1">
+						<SidebarItem icon={FolderOpen} label="Folders" to="/folders" />
+						<SidebarItem icon={Tag} label="Tags" to="/tags" />
+					</div>
 				</div>
 			</ScrollShadow>
 
-			{/* 3. FOOTER / SETTINGS */}
-			<div className="flex-shrink-0 border-t border-default-200 p-4">
+			{/* FOOTER */}
+			<div className="flex-shrink-0 border-t border-default-200 p-3">
 				<Button
 					variant="light"
-					className="w-full justify-start text-default-500 hover:text-foreground"
+					className="w-full justify-start gap-4 px-4 text-default-500 hover:text-foreground"
 					startContent={<Settings size={20} />}
 				>
 					Settings

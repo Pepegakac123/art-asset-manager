@@ -117,7 +117,7 @@ export const AssetCard = ({
 								size="md" // Większy rozmiar checkboxa
 								aria-label="Select asset"
 								classNames={{
-									wrapper: "m-0 p-0", // Reset marginów HeroUI
+									wrapper: "m-0 p-0 mr-[-1px]", // Reset marginów HeroUI
 									// Ukrywamy domyślne tło checkboxa, bo wrapper robi robotę,
 									// chyba że jest zaznaczony - wtedy chcemy pomarańczowe wypełnienie
 									base: "p-0 m-0 gap-0",

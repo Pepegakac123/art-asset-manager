@@ -16,14 +16,13 @@ export const SidebarSection = ({
 		<Accordion
 			isCompact
 			showDivider={false}
-			// Jeśli ma być domyślnie otwarty, podajemy klucz "1" do defaultExpandedKeys
 			defaultExpandedKeys={defaultOpen ? ["1"] : []}
 			itemClasses={{
 				base: "px-0 w-full",
-				trigger: "px-2 py-1 data-[hover=true]:bg-default-100 rounded-md", // Hover effect na nagłówek
+				trigger: "px-2 py-1 data-[hover=true]:bg-default-100 rounded-md",
 				title: "text-xs font-bold uppercase tracking-wider text-default-400",
 				indicator: "text-default-300",
-				content: "pt-1 pb-2 pl-2", // Wcięcie dla dzieci
+				content: "pt-1 pb-2 pl-2",
 			}}
 		>
 			<AccordionItem key="1" aria-label={title} title={title}>

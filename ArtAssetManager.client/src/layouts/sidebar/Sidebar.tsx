@@ -45,13 +45,11 @@ export const Sidebar = () => {
 						to="/uncategorized"
 						count={128}
 					/>
-					{/* 👇 NOWOŚĆ: TRASH */}
 					<SidebarItem icon={Trash2} label="Trash" to="/trash" count={12} />
 				</SidebarSection>
 
 				{/* COLLECTIONS */}
 				<SidebarSection title="Collections">
-					{/* 👇 SCROLLOWALNA LISTA KOLEKCJI */}
 					{/* max-h-48 (ok 192px) sprawi, że jak będzie ich dużo, pojawi się scroll wewnątrz sekcji */}
 					<ScrollShadow
 						className="max-h-48 custom-scrollbar"
@@ -79,7 +77,6 @@ export const Sidebar = () => {
 								to="/c/work"
 							/>
 							<SidebarItem icon={Shapes} label="Old References" to="/c/refs" />
-							{/* Więcej fejków, żeby przetestować scroll */}
 							<SidebarItem icon={Shapes} label="Environment Kit" to="/c/env" />
 							<SidebarItem icon={Shapes} label="Weapon Parts" to="/c/weap" />
 						</div>

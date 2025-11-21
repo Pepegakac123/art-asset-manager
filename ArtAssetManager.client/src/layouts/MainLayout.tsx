@@ -10,7 +10,7 @@ export const MainLayout = () => {
 		// rows-[64px_1fr] -> Góra (sztywna), Dół (rozciągliwy)
 		<div
 			className="grid h-screen w-screen overflow-hidden bg-background text-foreground 
-                    grid-cols-[260px_1fr_320px] grid-rows-[64px_1fr]"
+                    grid-cols-[300px_1fr_320px] grid-rows-[64px_1fr]"
 		>
 			{/* OBSZAR 1: LEWY SIDEBAR (Rozciągnięty na wysokość - row-span-2) */}
 			<div className="row-span-2 h-full">

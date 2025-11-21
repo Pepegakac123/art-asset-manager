@@ -13,6 +13,19 @@ import { SidebarSection } from "./SidebarSection";
 import { SidebarItem } from "./SidebarItem";
 import { TagFilter } from "./TagFilter";
 
+/*
+TODO: [API] Dynamic Statistics
+- "All Assets count", "Trash count": Pobierać te liczby z API (np. endpoint GET /api/stats/sidebar).
+- Uncategorized count: To ważna metryka dla workflow "Inbox Zero".
+
+TODO: [FEATURE] Smart Collections & Drag-Drop
+- UI Guidelines (Sekcja 6.2): Dodać sekcję "Smart Collections" (zapisane filtry z bazy).
+- UI Guidelines (Sekcja 6.2): Obsłużyć Drag & Drop - przeciąganie assetu z Gridu na nazwę Kolekcji w Sidebarze powinno go do niej dodać.
+
+TODO: [ROUTING] Active Link Logic
+- Upewnić się, że kliknięcie w "Trash" faktycznie zmienia filtr w Store (`isDeleted: true`) i odświeża Grid.
+*/
+
 export const Sidebar = () => {
 	return (
 		<aside className="h-full w-full flex flex-col border-r border-default-200 bg-content1/50 backdrop-blur-xl">

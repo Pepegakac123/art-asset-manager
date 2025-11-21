@@ -9,6 +9,28 @@ export const InspectorPanel = () => {
 		(state) => state.setSelectedAssetId,
 	);
 
+	/*
+TODO: [FEATURE] Multi-Select Inspector (Carousel Mode)
+- Logic Switch:
+  - IF selectedAssetIds.length === 1 -> Show Single Asset Details (Current view).
+  - IF selectedAssetIds.length > 1 -> Show Multi-Edit Mode.
+- Multi-Edit UI:
+  - Header: "X items selected".
+  - Navigation: Carousel/Pager to cycle through selected items (Prev/Next buttons).
+  - Bulk Edit Form: Fields common to all assets (e.g. adding a Tag to all of them).
+  - "Apply to All" button for changes.
+*/
+
+	/*
+TODO: [FEATURE] Full Implementation (Guidelines Sec 8)
+- Tab System: Zaimplementować zakładki: "Info", "File", "Versions".
+- Data Fetching: Po zmianie `selectedAssetId`, pobrać pełne detale (GET /api/assets/{id}/details).
+- Editable Fields: Pola "Rating", "Notes", "Tags" muszą być edycyjne (Auto-save on blur).
+
+TODO: [PREVIEW] 3D Model Viewer
+- Plan (Parking Lot / Future): Zostawić miejsce w DOM na integrację <Canvas> z Three.js dla plików .glb/.gltf.
+*/
+
 	// --- RENDER: EMPTY STATE ---
 	if (selectedAssetId === null) {
 		return (

@@ -18,6 +18,15 @@ const availableTags = [
 	{ label: "Sci-Fi", value: "Sci-Fi" },
 ];
 
+/*
+TODO: [API] Fetch Real Tags
+- Zastąpić `generateTags()` hookiem `useQuery` pobierającym dane z GET /api/tags.
+- Backend powinien zwracać tagi posortowane wg popularności (count), żeby "Popular Tags" miały sens.
+
+TODO: [UX] Debounce Search
+- Jeśli tagów będzie > 5000, warto dodać debounce (opóźnienie) do inputa wyszukiwania, choć wirtualizacja na razie radzi sobie świetnie.
+*/
+
 const popularTags = ["Cyberpunk", "Nature", "Weapon", "Texture", "Sci-Fi"];
 
 export const TagFilter = () => {

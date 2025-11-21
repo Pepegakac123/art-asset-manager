@@ -1,57 +1,65 @@
-import { Card, CardFooter } from "@heroui/card";
-import { Image } from "@heroui/image";
-import { useShallow } from "zustand/react/shallow";
 import { useGalleryStore } from "../stores/useGalleryStore";
+import { AssetCard } from "./AssetCard"; // Import nowej karty
+
+// --- LEPSZY GENERATOR DANYCH ---
+const generateItems = (count: number) => {
+	return Array.from({ length: count }, (_, i) => ({
+		id: i,
+		title: `SciFi_Prop_v${i}.blend`,
+		type: i % 4 === 0 ? "BLEND" : i % 3 === 0 ? "FBX" : "PNG",
+		img: `https://picsum.photos/seed/${i + 120}/400/400`, // Random images
+		isFavorite: i % 7 === 0, // Co 7 element jest ulubiony
+	}));
+};
+
+/*
+TODO: [API] Integration with React Query
+- Zastąpić `generateItems` hookiem `useInfiniteQuery` z biblioteki @tanstack/react-query.
+- Endpoint: GET /api/assets (z parametrami: page, pageSize, tags, filters).
+
+TODO: [UX] Infinite Scroll / Load More
+- UI Guidelines (Sekcja 7.4): Zaimplementować mechanizm "Load More" lub Infinite Scroll.
+- Obecnie renderujemy wszystko naraz - przy 10k assetów przeglądarka wybuchnie bez wirtualizacji siatki (np. @tanstack/react-virtual) LUB paginacji.
+
+TODO: [LAYOUT] Masonry Layout Support
+- UI Guidelines (Sekcja 7.2): Dodać obsługę trybu `viewMode === 'masonry'`.
+- Obecnie Grid jest sztywny (`aspect-square`). W Masonry kafelki mają różną wysokość.
+
+TODO: [UX] Bulk Actions Bar (Floating)
+- UI Guidelines (Sekcja 7.5): Dodać warunkowe renderowanie komponentu <FloatingActionBar /> na dole ekranu, gdy `selectedAssetIds.length > 0`.
+*/
+
+/*
+TODO: [UX] Floating Bulk Actions Dock
+- Requirements:
+  - Show ONLY when selectedAssetIds.length > 1.
+  - Fixed position: bottom-8, centered (z-index: 50).
+  - Visuals: Glassmorphism, dark background, rounded-full.
+  - Actions: "Select All", "Clear Selection", "Add to Collection", "Delete", "Tag Selected".
+  - Animation: Slide-up entry animation (Framer Motion or Tailwind animate-in).
+*/
 
 export const GalleryGrid = () => {
 	const zoomLevel = useGalleryStore((state) => state.zoomLevel);
-	// const selectedAssetId = useGalleryStore((state) => state.selectedAssetId);
-	const setSelectedAssetId = useGalleryStore(
-		(state) => state.setSelectedAssetId,
-	);
-	// Fejkowe dane
-	const items = Array.from({ length: 50 }, (_, i) => ({
-		id: i,
-		title: `Asset_Final_v${i}.blend`,
-		type: i % 3 === 0 ? "MODEL" : "IMG",
-	}));
+
+	// Generujemy 50 elementów
+	const items = generateItems(50);
 
 	return (
 		<div className="h-full w-full">
-			{/* MAGIA CSS GRID 🪄
-          1. Definiujemy zmienną CSS inline: --col-width
-          2. W Tailwindzie używamy tej zmiennej wewnątrz arbitrary value: []
-          
-          repeat(auto-fill, ...) -> Wypchaj wiersz tyloma kolumnami, ile wejdzie.
-          minmax(var(...), 1fr) -> Każda kolumna ma MINIMUM naszą szerokość, 
-                                   ale jak jest luz, to rozciągnij się (1fr) równo.
-      */}
 			<div
-				style={
-					{
-						"--col-width": `${zoomLevel}px`,
-					} as React.CSSProperties
-				}
-				className="grid grid-cols-[repeat(auto-fill,minmax(var(--col-width),1fr))] gap-4 pb-20"
+				style={{ "--col-width": `${zoomLevel}px` } as React.CSSProperties}
+				className="grid grid-cols-[repeat(auto-fill,minmax(var(--col-width),1fr))] gap-4 pb-20 p-4"
 			>
 				{items.map((item) => (
-					<Card
+					<AssetCard
 						key={item.id}
-						shadow="sm"
-						isPressable
-						onPress={() => setSelectedAssetId(item.id)}
-						className="aspect-square border-none bg-content2 hover:scale-[1.02] transition-transform"
-					>
-						{/* Placeholder obrazka */}
-						<div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-default-100 to-default-200 text-default-500">
-							<span className="text-4xl font-bold opacity-20">{item.type}</span>
-						</div>
-
-						{/* Stopka pojawia się po najechaniu (group-hover to ficzer HeroUI/Tailwind, ale tu upraszczamy) */}
-						<CardFooter className="absolute bottom-0 z-10 justify-between border-t-1 border-zinc-100/50 bg-black/40 text-tiny text-white shadow-small opacity-0 hover:opacity-100 transition-opacity">
-							<p className="truncate">{item.title}</p>
-						</CardFooter>
-					</Card>
+						id={item.id}
+						title={item.title}
+						type={item.type}
+						thumbnailUrl={item.img}
+						isFavorite={item.isFavorite}
+					/>
 				))}
 			</div>
 		</div>

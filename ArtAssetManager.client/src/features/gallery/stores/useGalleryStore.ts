@@ -3,6 +3,19 @@ import { create } from "zustand";
 type viewModeType = "grid" | "masonry" | "list";
 
 interface GalleryState {
+	/*
+TODO: [STATE] Refactor Selection for Multi-Select
+- Zmienić `selectedAssetId: number | null` na `selectedAssetIds: Set<number>` (lub array).
+- UI Guidelines (Sekcja 7.5): Potrzebujemy tego do "Floating Action Bar" (Taguj X assetów, Usuń X assetów).
+- Dodać akcje: `toggleSelection(id)`, `clearSelection()`, `selectAll()`.
+
+TODO: [FILTER] Add Technical Filters State
+- UI Guidelines (Sekcja 6.4): Dodać stan dla filtrów technicznych:
+  - ratingRange: [min, max]
+  - fileTypes: string[] (np. ['model', 'image'])
+  - dateRange: DateRange
+*/
+
 	// --- UI STATE ---
 	zoomLevel: number;
 	viewMode: viewModeType;
@@ -29,7 +42,7 @@ export const useGalleryStore = create<GalleryState>((set) => ({
 	sortOption: "newest",
 	selectedAssetId: null,
 	selectedTags: [],
-	isStrictMode: false,
+	isStrictMode: true,
 
 	setZoomLevel: (level) => set({ zoomLevel: level }),
 	setViewMode: (mode) => set({ viewMode: mode }),

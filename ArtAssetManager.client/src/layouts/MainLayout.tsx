@@ -25,7 +25,7 @@ export const MainLayout = () => {
 			{/* OBSZAR 3: MAIN CONTENT (Środek - tutaj ląduje Outlet) */}
 			<main className="relative col-start-2 col-end-3 overflow-hidden bg-background">
 				{/* ScrollArea: To jest jedyne miejsce, które ma się scrollować! */}
-				<div className="h-full w-full overflow-y-auto p-6">
+				<div className="h-full w-full overflow-y-auto p-6 custom-scrollbar">
 					<Outlet />
 				</div>
 			</main>

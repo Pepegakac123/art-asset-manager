@@ -14,6 +14,8 @@ import {
 	Search,
 	ChevronDown,
 	ArrowUpDown,
+	Minus,
+	Plus,
 } from "lucide-react";
 import { useGalleryStore } from "../stores/useGalleryStore";
 import { useShallow } from "zustand/react/shallow";
@@ -69,7 +71,7 @@ export const TopToolbar = () => {
 			{/* SEKCJA C: KONTROLA */}
 			<div className="flex items-center gap-4">
 				{/* ZOOM SLIDER */}
-				<div className="w-32 flex items-center gap-2">
+				<div className="w-64 flex items-center gap-2">
 					<Slider
 						size="sm"
 						step={10} //co 10px
@@ -77,12 +79,32 @@ export const TopToolbar = () => {
 						maxValue={350} // Max wielkość kafelka
 						minValue={100} // Min wielkość kafelka
 						aria-label="Thumbnail Size"
-						className="max-w-md"
 						value={zoomLevel}
 						onChange={(v) => {
 							const val = Array.isArray(v) ? v[0] : v;
 							setZoomLevel(val);
 						}}
+						startContent={
+							<button
+								type="button"
+								className="text-default-400 hover:text-primary hover:cursor-pointer transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full p-1"
+								onClick={() => setZoomLevel(Math.max(100, zoomLevel - 10))}
+								aria-label="Zoom Out"
+							>
+								<Minus size={16} />
+							</button>
+						}
+						// PRAWY PRZYCISK (PLUS) ➕
+						endContent={
+							<button
+								type="button"
+								className="text-default-400 hover:text-primary hover:cursor-pointer transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full p-1"
+								onClick={() => setZoomLevel(Math.min(350, zoomLevel + 10))}
+								aria-label="Zoom In"
+							>
+								<Plus size={16} />
+							</button>
+						}
 					/>
 				</div>
 

@@ -50,7 +50,7 @@ export const Sidebar = () => {
 						<Layers size={20} />
 					</div>
 
-					<span className="text-foreground">
+					<span className="text-foreground ">
 						ArtAsset<span className="text-primary">Mngr</span>
 					</span>
 				</div>

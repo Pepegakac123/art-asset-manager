@@ -15,11 +15,31 @@ import {
 	ChevronDown,
 	ArrowUpDown,
 } from "lucide-react";
+import { useGalleryStore } from "../stores/useGalleryStore";
+import { useShallow } from "zustand/react/shallow";
 
 export const TopToolbar = () => {
+	const {
+		zoomLevel,
+		setZoomLevel,
+		viewMode,
+		setViewMode,
+		sortOption,
+		setSortOption,
+	} = useGalleryStore(
+		useShallow((state) => ({
+			zoomLevel: state.zoomLevel,
+			setZoomLevel: state.setZoomLevel,
+			viewMode: state.viewMode,
+			setViewMode: state.setViewMode,
+			sortOption: state.sortOption,
+			setSortOption: state.setSortOption,
+		})),
+	);
+
 	return (
 		<div className="sticky top-0 z-50 flex h-16 w-full items-center justify-between border-b border-default-200 bg-background/80 px-6 backdrop-blur-md">
-			{/* SEKCJA A: KONTEKST (LEWA) */}
+			{/* SEKCJA A: KONTEKST */}
 			<div className="flex items-center gap-4">
 				<h1 className="text-lg font-bold tracking-tight text-foreground">
 					All Assets
@@ -29,7 +49,7 @@ export const TopToolbar = () => {
 				</span>
 			</div>
 
-			{/* SEKCJA B: WYSZUKIWANIE (ŚRODEK) */}
+			{/* SEKCJA B: WYSZUKIWANIE */}
 			<div className="flex-1 max-w-xl px-6">
 				<Input
 					classNames={{
@@ -39,26 +59,30 @@ export const TopToolbar = () => {
 						inputWrapper:
 							"h-full font-normal text-default-500 bg-default-400/20 dark:bg-default-500/20",
 					}}
-					placeholder="Search assets by name, tag or type..."
+					placeholder="Search assets..."
 					size="sm"
 					startContent={<Search size={18} />}
 					type="search"
 				/>
 			</div>
 
-			{/* SEKCJA C: KONTROLA (PRAWA) */}
+			{/* SEKCJA C: KONTROLA */}
 			<div className="flex items-center gap-4">
 				{/* ZOOM SLIDER */}
 				<div className="w-32 flex items-center gap-2">
 					<Slider
 						size="sm"
-						step={1}
+						step={10} //co 10px
 						color="foreground"
-						maxValue={300}
-						minValue={100}
-						defaultValue={150}
+						maxValue={350} // Max wielkość kafelka
+						minValue={100} // Min wielkość kafelka
 						aria-label="Thumbnail Size"
 						className="max-w-md"
+						value={zoomLevel}
+						onChange={(v) => {
+							const val = Array.isArray(v) ? v[0] : v;
+							setZoomLevel(val);
+						}}
 					/>
 				</div>
 
@@ -72,12 +96,22 @@ export const TopToolbar = () => {
 							size="sm"
 							startContent={<ArrowUpDown size={16} />}
 							endContent={<ChevronDown size={16} />}
-							className="text-default-600"
+							className="text-default-600 capitalize"
 						>
-							Newest
+							{/* Wyświetlamy aktualnie wybrany sort (np. "newest") */}
+							{sortOption.replace("_", " ")}
 						</Button>
 					</DropdownTrigger>
-					<DropdownMenu aria-label="Sort options">
+					<DropdownMenu
+						aria-label="Sort options"
+						disallowEmptySelection
+						selectionMode="single"
+						selectedKeys={new Set([sortOption])}
+						onSelectionChange={(keys) => {
+							const selected = Array.from(keys)[0] as string;
+							setSortOption(selected);
+						}}
+					>
 						<DropdownItem key="newest">Date Added (Newest)</DropdownItem>
 						<DropdownItem key="oldest">Date Added (Oldest)</DropdownItem>
 						<DropdownItem key="name">Name (A-Z)</DropdownItem>
@@ -87,13 +121,32 @@ export const TopToolbar = () => {
 
 				{/* VIEW TOGGLE */}
 				<ButtonGroup variant="flat" size="sm">
-					<Button isIconOnly aria-label="Grid View">
+					<Button
+						isIconOnly
+						// Aktywny przycisk dostaje inny styl
+						className={
+							viewMode === "grid" ? "bg-default-300 text-foreground" : ""
+						}
+						onPress={() => setViewMode("grid")}
+					>
 						<Grid3X3 size={18} />
 					</Button>
-					<Button isIconOnly aria-label="Masonry View">
+					<Button
+						isIconOnly
+						className={
+							viewMode === "masonry" ? "bg-default-300 text-foreground" : ""
+						}
+						onPress={() => setViewMode("masonry")}
+					>
 						<LayoutList size={18} />
 					</Button>
-					<Button isIconOnly aria-label="List View">
+					<Button
+						isIconOnly
+						className={
+							viewMode === "list" ? "bg-default-300 text-foreground" : ""
+						}
+						onPress={() => setViewMode("list")}
+					>
 						<Rows size={18} />
 					</Button>
 				</ButtonGroup>

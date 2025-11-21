@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { TopToolbar } from "@/features/gallery/components/TopToolbar";
+import { InspectorPanel } from "@/features/inspector/components/InspectorPanel";
 
 export const MainLayout = () => {
 	return (
@@ -17,7 +18,7 @@ export const MainLayout = () => {
 			</div>
 
 			{/* OBSZAR 2: TOP BAR (Tylko górny rząd) */}
-			<header className="col-start-2 col-end-3 h-full border-b border-default-200 bg-background/50 p-4 border-dashed border-2 border-blue-500/50 flex items-center justify-center text-blue-500">
+			<header className="col-start-2 col-end-3">
 				<TopToolbar />
 			</header>
 
@@ -30,8 +31,8 @@ export const MainLayout = () => {
 			</main>
 
 			{/* OBSZAR 4: INSPECTOR (Prawy panel - też row-span-2) */}
-			<aside className="row-span-2 col-start-3 col-end-4 h-full border-l border-default-200 bg-content1/50 p-4 border-dashed border-2 border-green-500/50 flex items-center justify-center text-green-500">
-				PLACEHOLDER: Inspector (320px)
+			<aside className="row-span-2 col-start-3 col-end-4 ">
+				<InspectorPanel />
 			</aside>
 		</div>
 	);

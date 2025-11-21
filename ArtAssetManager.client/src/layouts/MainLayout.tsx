@@ -1,7 +1,7 @@
 import { Outlet } from "react-router-dom";
-import { Sidebar } from "./Sidebar";
 import { TopToolbar } from "@/features/gallery/components/TopToolbar";
 import { InspectorPanel } from "@/features/inspector/components/InspectorPanel";
+import { Sidebar } from "./sidebar/Sidebar";
 
 export const MainLayout = () => {
 	return (

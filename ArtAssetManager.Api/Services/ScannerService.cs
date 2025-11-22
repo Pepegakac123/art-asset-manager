@@ -98,6 +98,7 @@ namespace ArtAssetManager.Api.Services
                 var assetRepo = scope.ServiceProvider.GetRequiredService<IAssetRepository>();
                 var settingsRepo = scope.ServiceProvider.GetRequiredService<ISettingsRepository>();
 
+                var allowedExtensions = await settingsRepo.GetAllowedExtensionsAsync(stoppingToken);
                 var scannedFolders = await settingsRepo.GetScanFoldersAsync(stoppingToken);
                 _logger.LogInformation("📂 Retrieved {Count} folders", scannedFolders.Count());
                 var totalFilesToScan = 0;
@@ -133,7 +134,7 @@ namespace ArtAssetManager.Api.Services
                         {
 
                             var extension = Path.GetExtension(filePath).ToLower();
-                            if (!_scannerSettings.AllowedExtensions.Contains(extension))
+                            if (!allowedExtensions.Contains(extension))
                             {
                                 continue;
                             }

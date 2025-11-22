@@ -102,6 +102,18 @@ namespace ArtAssetManager.Api.Controllers
             }
         }
 
+        [HttpGet("extensions")]
+        public async Task<ActionResult<List<string>>> GetAllowedExtensionsAsync(CancellationToken cancellationToken)
+        {
+            var extensions = await _settingsRepo.GetAllowedExtensionsAsync(cancellationToken);
+            return Ok(extensions);
+        }
+        [HttpPost("extensions")]
+        public async Task<ActionResult> SetAllowedExtensionsAsync([FromBody] List<string> extensions, CancellationToken cancellationToken)
+        {
+            await _settingsRepo.SetAllowedExtensionsAsync(extensions, cancellationToken);
+            return NoContent();
+        }
 
     }
 }

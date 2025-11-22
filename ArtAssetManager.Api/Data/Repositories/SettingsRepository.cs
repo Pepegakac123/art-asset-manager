@@ -43,6 +43,44 @@ namespace ArtAssetManager.Api.Data.Repositories
             await _context.SaveChangesAsync();
             return folder;
         }
+        public async Task<string?> GetValueAsync(string key, CancellationToken ct = default)
+        {
+            var setting = await _context.SystemSettings.FirstOrDefaultAsync(s => s.Key == key, ct);
+            return setting?.Value;
+        }
+        public async Task SetValueAsync(string key, string value, CancellationToken ct = default)
+        {
+            var existing = await _context.SystemSettings.FindAsync(new object[] { key }, ct);
+
+            if (existing != null)
+            {
+                existing.Value = value;
+            }
+            else
+            {
+                _context.SystemSettings.Add(new SystemSetting { Key = key, Value = value });
+            }
+
+            await _context.SaveChangesAsync(ct);
+        }
+
+        List<string> DefaultAllowedExtensions = new() { ".jpg", ".jpeg", ".gif", ".png", ".webp", ".blend", ".fbx", ".obj", ".ztl", ".zpr" };
+        public async Task<List<string>> GetAllowedExtensionsAsync(CancellationToken ct = default)
+        {
+            var extensions = await GetValueAsync("Scanner_AllowedExtensions");
+            if (string.IsNullOrEmpty(extensions))
+            {
+                await SetAllowedExtensionsAsync(DefaultAllowedExtensions, ct);
+                return DefaultAllowedExtensions;
+            }
+            return extensions.Split(';').ToList();
+        }
+        public async Task SetAllowedExtensionsAsync(List<string> extensions, CancellationToken ct = default)
+        {
+            if (extensions.Count == 0) extensions = DefaultAllowedExtensions;
+            await SetValueAsync("Scanner_AllowedExtensions", string.Join(";", extensions), ct);
+        }
+
 
 
     }

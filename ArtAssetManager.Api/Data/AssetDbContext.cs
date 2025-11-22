@@ -13,6 +13,7 @@ namespace ArtAssetManager.Api.Data
         public DbSet<ScanFolder> ScanFolders { get; set; }
         public DbSet<MaterialSet> MaterialSets { get; set; }
         public DbSet<SavedSearch> SavedSearches { get; set; }
+        public DbSet<SystemSetting> SystemSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

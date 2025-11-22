@@ -1,4 +1,5 @@
 using ArtAssetManager.Api.Data.Helpers;
+using ArtAssetManager.Api.DTOs;
 using ArtAssetManager.Api.Entities;
 
 namespace ArtAssetManager.Api.Interfaces
@@ -10,6 +11,7 @@ namespace ArtAssetManager.Api.Interfaces
     Task<Asset?> GetAssetByPathAsync(string path, CancellationToken cancellationToken);
     Task<Asset?> GetAssetByFileHashAsync(string fileHash, CancellationToken cancellationToken);
     Task<Asset> AddAssetAsync(Asset asset, CancellationToken cancellationToken);
+    Task<Asset?> UpdateAssetMetadataAsync(int id, PatchAssetRequest request, CancellationToken cancellationToken);
     Task UpdateAssetTagsAsync(int assetId, IEnumerable<Tag> tags, CancellationToken cancellationToken);
     Task BulkUpdateAssetTagsAsync(List<int> assetIds, IEnumerable<Tag> tags, CancellationToken cancellationToken);
     Task<PagedResult<Asset>> GetPagedAssetsAsync(

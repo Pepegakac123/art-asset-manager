@@ -6,5 +6,6 @@ namespace ArtAssetManager.Api.DTOs
         public string FileName { get; set; } = string.Empty;
 
         public string ThumbnailUrl { get; set; } = string.Empty;
+        public bool IsFavorite { get; set; }
     }
 }

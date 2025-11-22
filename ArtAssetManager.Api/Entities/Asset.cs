@@ -14,6 +14,7 @@ namespace ArtAssetManager.Api.Entities
         public long FileSize { get; set; } = 0;
         public string ThumbnailPath { get; set; } = string.Empty;
         public int Rating { get; set; }
+        public string? Description { get; set; }
         public bool? IsFavorite { get; set; }
         public int? ImageWidth { get; set; }
         public int? ImageHeight { get; set; }

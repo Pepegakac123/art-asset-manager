@@ -182,6 +182,16 @@ namespace ArtAssetManager.Api.Controllers
             }
         }
 
+        [HttpPatch("{id}")]
+        public async Task<ActionResult<AssetDto>> PatchAsset(int id, [FromBody] PatchAssetRequest request, CancellationToken cancellationToken)
+        {
+            var updatedAsset = await _assetRepo.UpdateAssetMetadataAsync(id, request, cancellationToken);
+
+            if (updatedAsset == null)
+                return NotFound(new ApiErrorResponse(HttpStatusCode.NotFound, "Brak Assetu", HttpContext.Request.Path));
+
+            return Ok(_mapper.Map<AssetDto>(updatedAsset));
+        }
 
         [HttpPatch("{id}/rating")]
         public async Task<ActionResult> SetAssetRatingAsync(

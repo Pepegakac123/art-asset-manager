@@ -37,6 +37,19 @@ namespace ArtAssetManager.Api.Data.Repositories
             await _context.SaveChangesAsync(cancellationToken);
             return asset;
         }
+        public async Task<Asset?> UpdateAssetMetadataAsync(int id, PatchAssetRequest request, CancellationToken cancellationToken)
+        {
+            var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
+            if (asset == null) return null;
+
+            if (request.FileName != null) asset.FileName = request.FileName;
+            if (request.FileType != null) asset.FileType = request.FileType;
+            if (request.Rating.HasValue) asset.Rating = request.Rating.Value;
+            if (request.IsFavorite.HasValue) asset.IsFavorite = request.IsFavorite.Value;
+            if (request.Description != null) asset.Description = request.Description;
+            await _context.SaveChangesAsync(cancellationToken);
+            return asset;
+        }
         public async Task UpdateAssetTagsAsync(int assetId, IEnumerable<Tag> tags, CancellationToken cancellationToken)
         {
 
@@ -60,8 +73,6 @@ namespace ArtAssetManager.Api.Data.Repositories
                 await transaction.RollbackAsync(cancellationToken);
                 throw;
             }
-
-
 
         }
         public async Task BulkUpdateAssetTagsAsync(List<int> assetIds, IEnumerable<Tag> tags, CancellationToken cancellationToken)

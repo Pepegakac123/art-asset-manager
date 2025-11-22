@@ -12,6 +12,7 @@ namespace ArtAssetManager.Api.DTOs
         public string FileHash { get; set; } = string.Empty;
         public string ThumbnailPath { get; set; } = string.Empty;
         public int Rating { get; set; }
+        public string? Description { get; set; }
         public bool? IsFavorite { get; set; }
         public int? ImageWidth { get; set; }
         public int? ImageHeight { get; set; }

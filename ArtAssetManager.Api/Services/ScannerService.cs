@@ -3,8 +3,12 @@ using System.Text.Json;
 using ArtAssetManager.Api.Config;
 using ArtAssetManager.Api.Data;
 using ArtAssetManager.Api.Entities;
+using ArtAssetManager.Api.Enums;
+using ArtAssetManager.Api.Hubs;
 using ArtAssetManager.Api.Interfaces;
 using ArtAssetManager.Api.Services.Helpers;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
@@ -26,99 +30,156 @@ namespace ArtAssetManager.Api.Services
         private readonly ILogger<ScannerService> _logger;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ScannerSettings _scannerSettings;
-        public ScannerService(ILogger<ScannerService> logger, IServiceScopeFactory scopeFactory, IOptions<ScannerSettings> scannerSettings)
+        private readonly IHubContext<ScanHub, IScanClient> _hubContext;
+        private readonly IScannerTrigger _trigger;
+        public ScannerService(ILogger<ScannerService> logger, IServiceScopeFactory scopeFactory, IOptions<ScannerSettings> scannerSettings, IHubContext<ScanHub, IScanClient> hubContext, IScannerTrigger trigger)
         {
             _logger = logger;
             _scopeFactory = scopeFactory;
             _scannerSettings = scannerSettings.Value;
+            _hubContext = hubContext;
+            _trigger = trigger;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("🚀 Scanner Service started!");
-            try
+            //  Uruchom to w tle i nie czekaj aż skończy. Gdyby było await to kod by sie zamroził w tym miejscu
+            _ = StartSchedulerAsync(stoppingToken); // Scheduler działą w tle
+
+            await foreach (var mode in _trigger.WaitForTriggersAsync(stoppingToken))
             {
-                while (!stoppingToken.IsCancellationRequested)
+                _logger.LogInformation("Trigger received: {Mode}", mode);
+                try
                 {
-                    _logger.LogInformation("🔍 Scanner iteration at {Time}", DateTime.UtcNow);
-                    using (var scope = _scopeFactory.CreateScope())
-                    {
-                        var assetRepo = scope.ServiceProvider.GetRequiredService<IAssetRepository>();
-                        var settingsRepo = scope.ServiceProvider.GetRequiredService<ISettingsRepository>();
+                    _trigger.SetScanningStatus(true);
+                    await PerformFullScanAsync(stoppingToken);
+                    await _hubContext.Clients.All.ReceiveProgress("Scanner iteration finished", 100, 100);
+                }
+                catch (OperationCanceledException)
+                {
 
-                        var scannedFolders = await settingsRepo.GetScanFoldersAsync(stoppingToken);
-                        _logger.LogInformation("📂 Retrieved {Count} folders", scannedFolders.Count());
-
-                        foreach (var folder in scannedFolders)
-                        {
-                            if (!folder.IsActive) continue;
-                            if (!Directory.Exists(folder.Path))
-                            {
-                                _logger.LogWarning("⚠️ Folder not found: {Path}", folder.Path);
-                                continue;
-                            }
-                            var files = Directory.EnumerateFiles(
-                                path: folder.Path,
-                                searchPattern: "*.*",
-                                searchOption: SearchOption.AllDirectories
-                            );
-                            foreach (var filePath in files)
-                            {
-                                try
-                                {
-                                    var extension = Path.GetExtension(filePath).ToLower();
-                                    if (!_scannerSettings.AllowedExtensions.Contains(extension))
-                                    {
-                                        continue;
-                                    }
-                                    var existingAssetByPath = await assetRepo.GetAssetByPathAsync(filePath, stoppingToken);
-
-                                    if (existingAssetByPath != null)
-                                    {
-                                        continue;
-                                    }
-
-                                    var (thumbnailPath, metadata) = await GenerateThumbnailAsync(filePath, extension);
-                                    var (fileSize, lastModified) = GetFileSizeAndLastModifiedDate(filePath);
-                                    var fileHash = await ComputeFileHashAsync(filePath, fileSize, stoppingToken);
-                                    Asset newAsset = Asset.Create(folder.Id, filePath, fileSize, DetermineFileType(extension), thumbnailPath, lastModified, fileHash, metadata?.Width, metadata?.Height, metadata?.DominantColor, metadata?.BitDepth, metadata?.HasAlphaChannel);
-                                    if (fileHash != null)
-                                    {
-                                        var existingAssetByHash = await assetRepo.GetAssetByFileHashAsync(fileHash ?? "", stoppingToken);
-                                        if (existingAssetByHash != null)
-                                        {
-                                            _logger.LogInformation($"⏭️ Found duplicate asset: {newAsset.FileName} on Path: {newAsset.FilePath}.\nAssigning to parent: ){existingAssetByHash.FileName} on Path: {existingAssetByHash.FilePath}");
-                                            var rootId = existingAssetByHash.ParentAssetId ?? existingAssetByHash.Id;
-                                            newAsset.ParentAssetId = rootId;
-                                        }
-                                    }
-                                    await assetRepo.AddAssetAsync(newAsset, stoppingToken);
-                                    _logger.LogInformation("✅ Added new asset: {FileName}", newAsset.FileName);
-                                }
-                                catch (OperationCanceledException)
-                                {
-                                    _logger.LogInformation("Scanner loop was cancelled.");
-                                    break;
-                                }
-                                catch (Exception ex)
-                                {
-                                    _logger.LogWarning(ex, "Failed to process file {FilePath}. Skipping.", filePath);
-                                }
-
-                            }
-
-                        }
-                    }
-                    await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+                    _logger.LogInformation("Scanner iteration cancelled - shutting down.");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error during scanning");
+                }
+                finally
+                {
+                    _trigger.SetScanningStatus(false);
                 }
             }
-            catch (OperationCanceledException)
-            {
-
-                _logger.LogInformation("Scanner iteration cancelled - shutting down.");
-            }
-
             _logger.LogInformation("⛔ Scanner Service stopped.");
+        }
+
+        //Trigerrujemy taska
+        private async Task StartSchedulerAsync(CancellationToken stoppingToken)
+        {
+            _logger.LogInformation("Scheduler started.");
+            _logger.LogInformation("Starting Initial Scan.");
+            await _trigger.TriggerScanAsync(ScanMode.Initial);
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+
+                _logger.LogDebug(" Scheduler: Sending Scanning Request at {Time}", DateTime.UtcNow);
+
+                await _trigger.TriggerScanAsync(ScanMode.Scheduled);
+            }
+        }
+
+        private async Task PerformFullScanAsync(CancellationToken stoppingToken)
+        {
+
+            _logger.LogInformation("🔍 Scanner iteration at {Time}", DateTime.UtcNow);
+            using (var scope = _scopeFactory.CreateScope())
+            {
+                var assetRepo = scope.ServiceProvider.GetRequiredService<IAssetRepository>();
+                var settingsRepo = scope.ServiceProvider.GetRequiredService<ISettingsRepository>();
+
+                var scannedFolders = await settingsRepo.GetScanFoldersAsync(stoppingToken);
+                _logger.LogInformation("📂 Retrieved {Count} folders", scannedFolders.Count());
+                var totalFilesToScan = 0;
+                foreach (var folder in scannedFolders)
+                {
+                    if (!folder.IsActive) continue;
+                    if (!Directory.Exists(folder.Path))
+                    {
+                        _logger.LogWarning("⚠️ Folder not found: {Path}", folder.Path);
+                        continue;
+                    }
+                    totalFilesToScan += Directory.GetFiles(folder.Path).Length;
+                }
+                _logger.LogInformation($"Znaleziono łącznie {totalFilesToScan} plików do przetworzenia");
+                int globalProcessedCount = 0;
+                foreach (var folder in scannedFolders)
+                {
+                    if (!folder.IsActive) continue;
+                    if (!Directory.Exists(folder.Path))
+                    {
+                        _logger.LogWarning("⚠️ Folder not found: {Path}", folder.Path);
+                        continue;
+                    }
+                    var files = Directory.EnumerateFiles(
+                        path: folder.Path,
+                        searchPattern: "*.*",
+                        searchOption: SearchOption.AllDirectories
+                    );
+                    foreach (var filePath in files)
+                    {
+
+                        try
+                        {
+
+                            var extension = Path.GetExtension(filePath).ToLower();
+                            if (!_scannerSettings.AllowedExtensions.Contains(extension))
+                            {
+                                continue;
+                            }
+                            var existingAssetByPath = await assetRepo.GetAssetByPathAsync(filePath, stoppingToken);
+
+                            if (existingAssetByPath != null)
+                            {
+                                continue;
+                            }
+
+                            var (thumbnailPath, metadata) = await GenerateThumbnailAsync(filePath, extension);
+                            var (fileSize, lastModified) = GetFileSizeAndLastModifiedDate(filePath);
+                            var fileHash = await ComputeFileHashAsync(filePath, fileSize, stoppingToken);
+                            Asset newAsset = Asset.Create(folder.Id, filePath, fileSize, DetermineFileType(extension), thumbnailPath, lastModified, fileHash, metadata?.Width, metadata?.Height, metadata?.DominantColor, metadata?.BitDepth, metadata?.HasAlphaChannel);
+                            if (fileHash != null)
+                            {
+                                var existingAssetByHash = await assetRepo.GetAssetByFileHashAsync(fileHash ?? "", stoppingToken);
+                                if (existingAssetByHash != null)
+                                {
+                                    _logger.LogInformation($"⏭️ Found duplicate asset: {newAsset.FileName} on Path: {newAsset.FilePath}.\nAssigning to parent: ){existingAssetByHash.FileName} on Path: {existingAssetByHash.FilePath}");
+                                    var rootId = existingAssetByHash.ParentAssetId ?? existingAssetByHash.Id;
+                                    newAsset.ParentAssetId = rootId;
+                                }
+                            }
+                            await assetRepo.AddAssetAsync(newAsset, stoppingToken);
+                            _logger.LogInformation("✅ Added new asset: {FileName}", newAsset.FileName);
+                            globalProcessedCount++;
+                            if (globalProcessedCount % 50 == 0)
+                            {
+                                await _hubContext.Clients.All.ReceiveProgress($"Scanning folder 📂{folder.Path}: Total files scanned ({globalProcessedCount}/{totalFilesToScan})", totalFilesToScan, globalProcessedCount);
+                            }
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            _logger.LogInformation("Scanner loop was cancelled.");
+                            break;
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Failed to process file {FilePath}. Skipping.", filePath);
+                        }
+
+                    }
+
+                }
+            }
         }
 
         private string DetermineFileType(string extension)

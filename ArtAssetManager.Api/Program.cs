@@ -4,6 +4,8 @@ using ArtAssetManager.Api.Data;
 using ArtAssetManager.Api.DTOs;
 using ArtAssetManager.Api.Errors;
 using ArtAssetManager.Api.Extensions;
+using ArtAssetManager.Api.Hubs;
+using ArtAssetManager.Api.Services;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +25,8 @@ builder.Services.ErrorResponseConfig();
 
 builder.Services.Configure<ScannerSettings>(builder.Configuration.GetSection("ScannerSettings"));
 builder.Services.AddHostedServices();
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<IScannerTrigger, ScannerTriggerService>();
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
@@ -81,5 +85,7 @@ app.Map("/error", (HttpContext context) =>
 
     return Results.Json(new ApiErrorResponse(System.Net.HttpStatusCode.InternalServerError, "An error occurred", context.Request.Path), statusCode: (int)System.Net.HttpStatusCode.InternalServerError);
 });
+
+app.MapHub<ScanHub>("/hubs/scan");
 
 app.Run();

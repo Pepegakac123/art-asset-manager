@@ -21,9 +21,8 @@ namespace ArtAssetManager.Api.Controllers
             return NoContent();
         }
         [HttpGet("status")]
-        public async Task<ActionResult> GetScanStatus()
+        public IActionResult GetScanStatus()
         {
-
             var response = new { isScanning = _trigger.IsScanning };
             return Ok(response);
         }

@@ -31,14 +31,17 @@ namespace ArtAssetManager.Api.Services
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ScannerSettings _scannerSettings;
         private readonly IHubContext<ScanHub, IScanClient> _hubContext;
+        private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly IScannerTrigger _trigger;
-        public ScannerService(ILogger<ScannerService> logger, IServiceScopeFactory scopeFactory, IOptions<ScannerSettings> scannerSettings, IHubContext<ScanHub, IScanClient> hubContext, IScannerTrigger trigger)
+        public ScannerService(ILogger<ScannerService> logger, IServiceScopeFactory scopeFactory, IOptions<ScannerSettings> scannerSettings, IHubContext<ScanHub, IScanClient> hubContext, IScannerTrigger trigger, IWebHostEnvironment webHostEnvironment)
         {
             _logger = logger;
             _scopeFactory = scopeFactory;
             _scannerSettings = scannerSettings.Value;
             _hubContext = hubContext;
             _trigger = trigger;
+            _webHostEnvironment = webHostEnvironment;
+
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -97,7 +100,6 @@ namespace ArtAssetManager.Api.Services
             {
                 var assetRepo = scope.ServiceProvider.GetRequiredService<IAssetRepository>();
                 var settingsRepo = scope.ServiceProvider.GetRequiredService<ISettingsRepository>();
-
                 var allowedExtensions = await settingsRepo.GetAllowedExtensionsAsync(stoppingToken);
                 var scannedFolders = await settingsRepo.GetScanFoldersAsync(stoppingToken);
                 _logger.LogInformation("📂 Retrieved {Count} folders", scannedFolders.Count());
@@ -201,37 +203,48 @@ namespace ArtAssetManager.Api.Services
 
         private async Task<(string ThumbnailPath, AssetMetadata? Metadata)> GenerateThumbnailAsync(string filePath, string extension)
         {
-            if (extension is ".jpg" or ".jpeg" or ".png" or ".webp")
-            {
+            var ext = extension.ToLowerInvariant();
 
+            if (ext is ".jpg" or ".jpeg" or ".png" or ".webp" or ".bmp" or ".tga")
+            {
                 try
                 {
-                    await using var stream = File.OpenRead(filePath);
+                    await using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true);
+
                     using (var image = await Image.LoadAsync(stream))
                     {
-                        bool hasAlphaChannel = image.PixelType.AlphaRepresentation.HasValue;
+                        // Metadata extraction
+                        bool hasAlpha = image.PixelType.AlphaRepresentation.HasValue;
                         int bitDepth = image.PixelType.BitsPerPixel;
+                        var dominantColor = GetDominantColor(image);
+
                         AssetMetadata metadata = new(
                             image.Width,
-                           image.Height,
-                          GetDominantColor(image),
+                            image.Height,
+                            dominantColor,
                             bitDepth,
-                            hasAlphaChannel
+                            hasAlpha
                         );
+
                         image.Mutate(x => x.Resize(400, 0));
+
                         var uniqueFileName = $"{Guid.NewGuid()}.webp";
-                        var fullSavePath = Path.Combine(Directory.GetCurrentDirectory(), _scannerSettings.ThumbnailsFolder, uniqueFileName);
-                        var relativeDir = Path.GetDirectoryName(_scannerSettings.PlaceholderThumbnail).Replace("\\", "/");
-                        var relativePath = $"{relativeDir}/{uniqueFileName}";
+                        var thumbsFolder = Path.Combine(_webHostEnvironment.WebRootPath, _scannerSettings.ThumbnailsFolder);
+                        Directory.CreateDirectory(thumbsFolder);
+
+                        var fullSavePath = Path.Combine(thumbsFolder, uniqueFileName);
+
                         await image.SaveAsWebpAsync(fullSavePath);
-                        return (relativePath, metadata);
+
+                        // Zwracamy ścieżkę relatywną dla frontendu (np. "/thumbnails/abc.webp")
+                        var webPath = Path.Combine("/", _scannerSettings.ThumbnailsFolder, uniqueFileName).Replace("\\", "/");
+
+                        return (webPath, metadata);
                     }
                 }
                 catch (Exception ex)
                 {
-
-                    _logger.LogInformation("The image was not loaded: {Message}", ex.Message);
-                    return (_scannerSettings.PlaceholderThumbnail, null);
+                    _logger.LogWarning("Failed to generate thumbnail for image {Path}: {Message}", filePath, ex.Message);
                 }
             }
 

@@ -34,7 +34,7 @@ namespace ArtAssetManager.Api.Controllers
             {
                 return Ok(new { isValid = false, message = "unauthorized to access this path" });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "There was an error.", request.Path));
             }

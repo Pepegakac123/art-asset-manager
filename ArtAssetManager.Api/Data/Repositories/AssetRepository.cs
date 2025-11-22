@@ -272,6 +272,33 @@ namespace ArtAssetManager.Api.Data.Repositories
 .Where(a => assetIds.Contains(a.Id))
 .ExecuteDeleteAsync(cancellationToken);
         }
+
+        public async Task<LibraryStatsDto> GetStatsAsync(CancellationToken cancellationToken)
+        {
+            var totalAssets = await _context.Assets.CountAsync(cancellationToken);
+
+            if (totalAssets == 0)
+            {
+                return new LibraryStatsDto
+                {
+                    TotalAssets = 0,
+                    TotalSize = 0,
+                    LastScan = null
+                };
+            }
+            var totalSize = await _context.Assets.SumAsync(a => a.FileSize, cancellationToken);
+
+            var lastScan = await _context.Assets.MaxAsync(a => a.LastModified, cancellationToken);
+
+            return new LibraryStatsDto
+            {
+                TotalAssets = totalAssets,
+                TotalSize = totalSize,
+                LastScan = lastScan
+            };
+        }
     };
+
+
 
 }

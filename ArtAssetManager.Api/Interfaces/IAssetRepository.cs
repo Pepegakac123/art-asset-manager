@@ -30,6 +30,8 @@ namespace ArtAssetManager.Api.Interfaces
     Task PermanentDeleteAssetAsync(int assetId, CancellationToken cancellationToken);
     Task BulkPermanentDeleteAssetsAsync(List<int> assetIds, CancellationToken cancellationToken);
 
+    Task<LibraryStatsDto> GetStatsAsync(CancellationToken cancellationToken);
+
 
 
   }

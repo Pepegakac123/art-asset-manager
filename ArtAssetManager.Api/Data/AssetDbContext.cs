@@ -12,6 +12,7 @@ namespace ArtAssetManager.Api.Data
         public DbSet<Tag> Tags { get; set; }
         public DbSet<ScanFolder> ScanFolders { get; set; }
         public DbSet<MaterialSet> MaterialSets { get; set; }
+        public DbSet<SavedSearch> SavedSearches { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -23,6 +24,8 @@ namespace ArtAssetManager.Api.Data
                 .HasIndex(s => s.Path)
                 .IsUnique();
             modelBuilder.Entity<ScanFolder>().HasQueryFilter(a => a.IsDeleted == false);
+
+            modelBuilder.Entity<SavedSearch>().HasIndex(s => s.Name).IsUnique();
 
             modelBuilder.Entity<Asset>()
                 .HasIndex(a => a.FilePath)
@@ -56,6 +59,8 @@ namespace ArtAssetManager.Api.Data
           .WithMany()
           .HasForeignKey(m => m.CoverAssetId)
           .OnDelete(DeleteBehavior.SetNull);
+
+
 
 
         }

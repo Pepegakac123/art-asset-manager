@@ -17,6 +17,7 @@ namespace ArtAssetManager.Api.Extensions
             services.AddScoped<ITagRepository, TagRepository>();
             services.AddScoped<IMaterialSetRepository, MaterialSetRepository>();
             services.AddScoped<ISettingsRepository, SettingsRepository>();
+            services.AddScoped<ISavedSearchRepository, SavedSearchRepository>();
             return services;
         }
         public static IServiceCollection AddFluentValidation(this IServiceCollection services)

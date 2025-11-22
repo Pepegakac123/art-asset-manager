@@ -1,5 +1,6 @@
 using AutoMapper;
 using ArtAssetManager.Api.Entities;
+using System.Text.Json;
 
 namespace ArtAssetManager.Api.DTOs
 {
@@ -31,6 +32,20 @@ namespace ArtAssetManager.Api.DTOs
                 src.CustomCoverUrl
             ));
             CreateMap<UpdateMaterialSet, MaterialSet>();
+            CreateMap<SavedSearch, SavedSearchDto>()
+            .ForMember(dest => dest.Filter, opt => opt.MapFrom(src =>
+                JsonSerializer.Deserialize<object>(src.FilterJson, (JsonSerializerOptions?)null)
+            ));
+            CreateMap<CreateSavedSearchRequest, SavedSearch>()
+            .ConstructUsing(src => SavedSearch.Create(
+                src.Name,
+                JsonSerializer.Serialize(src.Filter, (JsonSerializerOptions?)null)
+            ));
+            CreateMap<UpdateSavedSearchRequest, SavedSearch>()
+            .ConstructUsing(src => SavedSearch.Create(
+                src.Name,
+                JsonSerializer.Serialize(src.Filter, (JsonSerializerOptions?)null)
+            ));
 
 
         }

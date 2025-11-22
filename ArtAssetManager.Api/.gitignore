@@ -1,5 +1,4 @@
 *.db
 *.db*
-/wwwroot
 *.Identifier
 /logs

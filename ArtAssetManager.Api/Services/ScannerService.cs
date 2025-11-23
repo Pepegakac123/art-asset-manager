@@ -205,6 +205,7 @@ namespace ArtAssetManager.Api.Services
         {
             var ext = extension.ToLowerInvariant();
 
+            // GENEROWANIE DLA OBRAZKÓW
             if (ext is ".jpg" or ".jpeg" or ".png" or ".webp" or ".bmp" or ".tga")
             {
                 try
@@ -230,13 +231,15 @@ namespace ArtAssetManager.Api.Services
 
                         var uniqueFileName = $"{Guid.NewGuid()}.webp";
                         var thumbsFolder = Path.Combine(_webHostEnvironment.WebRootPath, _scannerSettings.ThumbnailsFolder);
-                        Directory.CreateDirectory(thumbsFolder);
+
+                        if (!Directory.Exists(thumbsFolder))
+                        {
+                            Directory.CreateDirectory(thumbsFolder);
+                        }
 
                         var fullSavePath = Path.Combine(thumbsFolder, uniqueFileName);
-
                         await image.SaveAsWebpAsync(fullSavePath);
 
-                        // Zwracamy ścieżkę relatywną dla frontendu (np. "/thumbnails/abc.webp")
                         var webPath = Path.Combine("/", _scannerSettings.ThumbnailsFolder, uniqueFileName).Replace("\\", "/");
 
                         return (webPath, metadata);
@@ -245,16 +248,57 @@ namespace ArtAssetManager.Api.Services
                 catch (Exception ex)
                 {
                     _logger.LogWarning("Failed to generate thumbnail for image {Path}: {Message}", filePath, ex.Message);
+                    // Jeśli failnie generowanie obrazka, spadnie niżej do switcha i zwróci generic placeholder. 
                 }
             }
 
-            if (extension is ".blend")
-            {
-                // TODO: Wywołaj Blender w trybie headless
-                return (_scannerSettings.PlaceholderThumbnail, null);
-            }
+            // LOGIKA PLACEHOLDERÓW (Switch Expression)
 
-            return (_scannerSettings.PlaceholderThumbnail, null);
+            const string placeholderDir = "placeholders";
+
+            string placeholderFile = ext switch
+            {
+                // Adobe Illustrator
+                ".ai" or ".eps" => "ai_placeholder.webp",
+
+                // Blender
+                ".blend" or ".blend1" => "blend_placeholder.webp",
+
+                // Houdini
+                ".hip" or ".hipnc" or ".hiplc" => "hip_placeholder.webp",
+
+                // 3ds Max
+                ".max" => "max_placeholder.webp",
+
+                // Maya (ASCII & Binary)
+                ".ma" or ".mb" => "ma_placeholder.webp",
+
+                // Photoshop
+                ".psd" or ".psb" => "psd_placeholder.webp",
+
+                // Substance Designer
+                ".sbs" or ".sbsar" => "sbs_placeholder.webp",
+
+                // Substance Painter
+                ".spp" => "spp_placeholder.webp",
+
+                // Unreal Engine
+                ".uasset" or ".umap" => "uasset_placeholder.webp",
+
+                // Unity
+                ".unity" or ".prefab" or ".mat" or ".asset" => "unity_placeholder.webp",
+
+                // ZBrush
+                ".ztl" or ".zpr" or ".zbr" => "ztl_placeholder.webp",
+
+                // Fallback dla wszystkiego innego
+                _ => "generic_placeholder.webp"
+            };
+
+            var finalPath = Path.Combine("/", _scannerSettings.ThumbnailsFolder, placeholderDir, placeholderFile)
+                    .Replace("\\", "/");
+
+            return (finalPath, null);
         }
 
         private async Task<string?> ComputeFileHashAsync(string filePath, long fileSizeBytes, CancellationToken cancellationToken)

@@ -7,5 +7,6 @@ namespace ArtAssetManager.Api.Config
         public string PlaceholderThumbnail { get; set; } = "/thumbnails/placeholder.png";
         public bool EnableHashing { get; set; } = false;
         public int MaxHashFileSizeMB { get; set; } = 10;
+        public Dictionary<string, string> PlaceholderMappings { get; set; } = new();
     }
 }

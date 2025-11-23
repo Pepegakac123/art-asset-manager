@@ -253,50 +253,17 @@ namespace ArtAssetManager.Api.Services
             }
 
             // LOGIKA PLACEHOLDERÓW (Switch Expression)
-
             const string placeholderDir = "placeholders";
+            const string defaultPlaceholder = "generic_placeholder.webp";
 
-            string placeholderFile = ext switch
+            if (!_scannerSettings.PlaceholderMappings.TryGetValue(ext, out var placeholderFile))
             {
-                // Adobe Illustrator
-                ".ai" or ".eps" => "ai_placeholder.webp",
-
-                // Blender
-                ".blend" or ".blend1" => "blend_placeholder.webp",
-
-                // Houdini
-                ".hip" or ".hipnc" or ".hiplc" => "hip_placeholder.webp",
-
-                // 3ds Max
-                ".max" => "max_placeholder.webp",
-
-                // Maya (ASCII & Binary)
-                ".ma" or ".mb" => "ma_placeholder.webp",
-
-                // Photoshop
-                ".psd" or ".psb" => "psd_placeholder.webp",
-
-                // Substance Designer
-                ".sbs" or ".sbsar" => "sbs_placeholder.webp",
-
-                // Substance Painter
-                ".spp" => "spp_placeholder.webp",
-
-                // Unreal Engine
-                ".uasset" or ".umap" => "uasset_placeholder.webp",
-
-                // Unity
-                ".unity" or ".prefab" or ".mat" or ".asset" => "unity_placeholder.webp",
-
-                // ZBrush
-                ".ztl" or ".zpr" or ".zbr" => "ztl_placeholder.webp",
-
-                // Fallback dla wszystkiego innego
-                _ => "generic_placeholder.webp"
-            };
+                // Jak nie znajdziemy klucza (np. .c4d), bierzemy default
+                placeholderFile = defaultPlaceholder;
+            }
 
             var finalPath = Path.Combine("/", _scannerSettings.ThumbnailsFolder, placeholderDir, placeholderFile)
-                    .Replace("\\", "/");
+                                .Replace("\\", "/");
 
             return (finalPath, null);
         }

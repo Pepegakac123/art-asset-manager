@@ -32,6 +32,8 @@ namespace ArtAssetManager.Api.Interfaces
 
     Task<LibraryStatsDto> GetStatsAsync(CancellationToken cancellationToken);
 
+    Task<List<string>> GetColorsListAsync(CancellationToken cancellationToken);
+
 
 
   }

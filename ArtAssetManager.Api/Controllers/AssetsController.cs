@@ -401,6 +401,13 @@ namespace ArtAssetManager.Api.Controllers
                 return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, ex.Message, HttpContext.Request.Path));
             }
         }
+
+        [HttpGet("/colors")]
+        public async Task<ActionResult> GetColorsList(CancellationToken cancellationToken)
+        {
+            var colorList = await _assetRepo.GetColorsListAsync(cancellationToken);
+            return Ok(colorList);
+        }
     }
 
 }

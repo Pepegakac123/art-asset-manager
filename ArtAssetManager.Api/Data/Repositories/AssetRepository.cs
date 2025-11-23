@@ -1,3 +1,4 @@
+using System.Drawing;
 using ArtAssetManager.Api.Data.Helpers;
 using ArtAssetManager.Api.DTOs;
 using ArtAssetManager.Api.Entities;
@@ -297,7 +298,14 @@ namespace ArtAssetManager.Api.Data.Repositories
                 LastScan = lastScan
             };
         }
+        public async Task<List<string>> GetColorsListAsync(CancellationToken cancellationToken)
+        {
+            var colorList = await _context.Assets.Select(a => a.DominantColor).Where(color => color != null).Select(c => c!.ToLower()).Distinct().ToListAsync(cancellationToken);
+            return colorList!;
+        }
     };
+
+
 
 
 

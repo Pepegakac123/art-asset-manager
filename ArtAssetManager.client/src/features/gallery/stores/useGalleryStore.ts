@@ -1,3 +1,4 @@
+import { TOPBAR_SETTINGS } from "@/Enums";
 import { create } from "zustand";
 
 type viewModeType = "grid" | "masonry" | "list";
@@ -37,7 +38,7 @@ TODO: [FILTER] Add Technical Filters State
 }
 
 export const useGalleryStore = create<GalleryState>((set) => ({
-	zoomLevel: 150,
+	zoomLevel: TOPBAR_SETTINGS.DEFAULT_ZOOM_LEVEL,
 	viewMode: "grid",
 	sortOption: "newest",
 	selectedAssetId: null,

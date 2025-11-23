@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useGalleryStore } from "../stores/useGalleryStore";
 import { useShallow } from "zustand/react/shallow";
+import { TOPBAR_SETTINGS } from "@/Enums";
 
 export const TopToolbar = () => {
 	const {
@@ -77,7 +78,7 @@ export const TopToolbar = () => {
 						step={10} //co 10px
 						color="foreground"
 						maxValue={350} // Max wielkość kafelka
-						minValue={100} // Min wielkość kafelka
+						minValue={TOPBAR_SETTINGS.DEFAULT_ZOOM_LEVEL} // Min wielkość kafelka
 						aria-label="Thumbnail Size"
 						value={zoomLevel}
 						onChange={(v) => {

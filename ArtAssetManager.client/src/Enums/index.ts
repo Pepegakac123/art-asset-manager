@@ -1,3 +1,0 @@
-export enum TOPBAR_SETTINGS {
-	DEFAULT_ZOOM_LEVEL = 220,
-}

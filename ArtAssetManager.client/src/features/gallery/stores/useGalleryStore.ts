@@ -1,5 +1,6 @@
-import { TOPBAR_SETTINGS } from "@/Enums";
+import { UI_CONFIG } from "@/config/constants";
 import { create } from "zustand";
+import {persist} from "zustand/middleware"
 
 type viewModeType = "grid" | "masonry" | "list";
 
@@ -37,8 +38,10 @@ TODO: [FILTER] Add Technical Filters State
 	setStrictMode: (isActive: boolean) => void;
 }
 
-export const useGalleryStore = create<GalleryState>((set) => ({
-	zoomLevel: TOPBAR_SETTINGS.DEFAULT_ZOOM_LEVEL,
+export const useGalleryStore = create<GalleryState>()(
+  persist(
+    (set) => ({
+      	zoomLevel: UI_CONFIG.GALLERY.DEFAULT_ZOOM,
 	viewMode: "grid",
 	sortOption: "newest",
 	selectedAssetId: null,
@@ -66,4 +69,10 @@ export const useGalleryStore = create<GalleryState>((set) => ({
 		})),
 
 	setStrictMode: (isActive) => set({ isStrictMode: isActive }),
-}));
+    }),
+    {
+      name: "gallery-storage",
+      partialize: (state) => ({ zoomLevel: state.zoomLevel, sortOption: state.sortOption, isStrictMode: state.isStrictMode, viewMode: state.viewMode }),
+    }
+  )
+);

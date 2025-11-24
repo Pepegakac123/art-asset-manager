@@ -1,3 +1,4 @@
+import { useParams } from "react-router-dom";
 import { useGalleryStore } from "../stores/useGalleryStore";
 import { AssetCard } from "./AssetCard"; // Import nowej karty
 
@@ -39,7 +40,19 @@ TODO: [UX] Floating Bulk Actions Dock
   - Animation: Slide-up entry animation (Framer Motion or Tailwind animate-in).
 */
 
-export const GalleryGrid = () => {
+type DisplayContentMode =
+	| "default"
+	| "favorites"
+	| "uncategorized"
+	| "trash"
+	| "collection";
+interface GalleryGridProps {
+	mode: DisplayContentMode;
+}
+
+export const GalleryGrid = ({ mode }: GalleryGridProps) => {
+	const params = useParams();
+
 	const zoomLevel = useGalleryStore((state) => state.zoomLevel);
 
 	// Generujemy 50 elementów

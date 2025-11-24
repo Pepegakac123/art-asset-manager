@@ -137,3 +137,11 @@ export interface UpdateAssetRequest {
 export interface CreateScanFolderRequest {
 	path: string;
 }
+
+export interface ValidatePathRequest {
+	path: string;
+}
+
+export interface AddScanFolderRequest {
+	path: string;
+}

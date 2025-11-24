@@ -12,6 +12,7 @@ import {
 import { SidebarSection } from "./SidebarSection";
 import { SidebarItem } from "./SidebarItem";
 import { TagFilter } from "./TagFilter";
+import { useNavigate } from "react-router-dom";
 
 /*
 TODO: [API] Dynamic Statistics
@@ -27,6 +28,7 @@ TODO: [ROUTING] Active Link Logic
 */
 
 export const Sidebar = () => {
+	const navigate = useNavigate();
 	return (
 		<aside className="h-full w-full flex flex-col border-r border-default-200 bg-content1/50 backdrop-blur-xl">
 			{/* LOGO */}
@@ -117,6 +119,7 @@ export const Sidebar = () => {
 					variant="light"
 					className="w-full justify-start gap-3 px-3 text-default-500 hover:text-foreground"
 					startContent={<Settings size={18} />}
+					onPress={() => navigate("/settings")}
 				>
 					Settings
 				</Button>

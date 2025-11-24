@@ -9,6 +9,8 @@ namespace ArtAssetManager.Api.Controllers
     [Route("api/system")]
     public class SystemController : ControllerBase
     {
+        [HttpGet("status")]
+        public IActionResult GetStatus() => Ok(new { msg = "OK" });
         [HttpPost("validate-path")]
         public IActionResult ValidatePath([FromBody] ValidatePathRequest request)
         {

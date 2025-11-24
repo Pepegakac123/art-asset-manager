@@ -10,10 +10,12 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
-
+using Serilog.Events;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .MinimumLevel.Override("System", LogEventLevel.Warning)
     .WriteTo.Console()
     .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
     .CreateLogger();
@@ -57,9 +59,8 @@ try
     });
 
     var app = builder.Build();
+    app.UseSerilogRequestLogging();
     app.UseExceptionHandler("/error");
-
-
 
     if (app.Environment.IsDevelopment())
     {

@@ -13,12 +13,12 @@ namespace ArtAssetManager.Api.Data.Repositories
         }
         public async Task<IEnumerable<ScanFolder>> GetScanFoldersAsync(CancellationToken cancellationToken)
         {
-            return await _context.ScanFolders.ToListAsync();
+            return await _context.ScanFolders.ToListAsync(cancellationToken);
         }
         public async Task<ScanFolder> AddScanFolderAsync(ScanFolder folder, CancellationToken cancellationToken)
         {
             _context.ScanFolders.Add(folder);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
             return folder;
 
 
@@ -28,19 +28,19 @@ namespace ArtAssetManager.Api.Data.Repositories
             var folder = await _context.ScanFolders.FindAsync(id);
             if (folder == null) throw new KeyNotFoundException($"Folder {id} not found");
             folder.IsDeleted = true;
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
         public async Task<ScanFolder?> GetScanFolderByIdAsync(int id, CancellationToken cancellationToken)
         {
             return await _context.ScanFolders.FindAsync(id);
         }
 
-        public async Task<ScanFolder> ToggleScanFolderActiveAsync(int id, CancellationToken cancellationToken)
+        public async Task<ScanFolder> UpdateScanFolderStatusAsync(int id, bool isActive, CancellationToken cancellationToken)
         {
-            var folder = await _context.ScanFolders.FindAsync(id);
+            var folder = await _context.ScanFolders.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
             if (folder == null) throw new KeyNotFoundException($"Folder {id} not found");
-            folder.IsActive = !folder.IsActive;
-            await _context.SaveChangesAsync();
+            folder.IsActive = isActive;
+            await _context.SaveChangesAsync(cancellationToken);
             return folder;
         }
         public async Task<string?> GetValueAsync(string key, CancellationToken ct = default)

@@ -9,7 +9,7 @@ namespace ArtAssetManager.Api.Interfaces
         Task DeleteScanFolderAsync(int id, CancellationToken cancellationToken);
         Task<ScanFolder?> GetScanFolderByIdAsync(int id, CancellationToken cancellationToken);
 
-        Task<ScanFolder> ToggleScanFolderActiveAsync(int id, CancellationToken cancellationToken);
+        Task<ScanFolder> UpdateScanFolderStatusAsync(int id, bool isActive, CancellationToken cancellationToken);
 
         // Generyczny dostęp (dla dowolnego klucza, np. "Theme", "Language")
         Task<string?> GetValueAsync(string key, CancellationToken ct = default);

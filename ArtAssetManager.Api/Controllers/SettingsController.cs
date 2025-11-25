@@ -83,8 +83,8 @@ namespace ArtAssetManager.Api.Controllers
                 return NotFound(new ApiErrorResponse(HttpStatusCode.NotFound, $"Folder skanowania o ID {id} nie został znaleziony.", HttpContext.Request.Path));
             }
         }
-        [HttpPatch("folders/{id}/toggle")]
-        public async Task<ActionResult<ScanFolderDto>> ToggleScanFolderActive([FromRoute] int id, CancellationToken cancellationToken)
+        [HttpPatch("folders/{id}")]
+        public async Task<ActionResult<ScanFolderDto>> ToggleScanFolderActive([FromRoute] int id, [FromBody] UpdateFolderStatusRequest body, CancellationToken cancellationToken)
         {
             if (id <= 0)
             {
@@ -92,7 +92,7 @@ namespace ArtAssetManager.Api.Controllers
             }
             try
             {
-                var scanFolder = await _settingsRepo.ToggleScanFolderActiveAsync(id, cancellationToken);
+                var scanFolder = await _settingsRepo.UpdateScanFolderStatusAsync(id, body.IsActive, cancellationToken);
                 var ScanFolderDto = _mapper.Map<ScanFolderDto>(scanFolder);
                 return Ok(ScanFolderDto);
             }

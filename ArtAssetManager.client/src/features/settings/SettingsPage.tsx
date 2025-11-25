@@ -6,7 +6,8 @@ import { Spacer } from "@heroui/spacer";
 import { Divider } from "@heroui/divider";
 import { Chip } from "@heroui/chip";
 import { Snippet } from "@heroui/snippet";
-import { Progress } from "@heroui/progress";
+import { CircularProgress, Progress } from "@heroui/progress";
+import { Spinner } from "@heroui/spinner";
 import {
 	FolderPlus,
 	Trash2,
@@ -17,19 +18,75 @@ import {
 	CheckCircle2,
 	Search,
 } from "lucide-react";
-// Tutaj później zaimportujesz swój hook: import { useScanFolders } from "./hooks/useScanFolders";
+import { useScanFolders } from "./hooks/useScanFolders";
+import { AxiosError } from "axios";
+import { useScanProgress } from "./hooks/useScanProgress";
 
 export default function SettingsPage() {
-	// --- MIEJSCE NA TWOJĄ LOGIKĘ (Brain) ---
-	// const { folders, addFolder, ... } = useScanFolders();
+	const {
+		folders,
+		isLoading,
+		addFolder,
+		deleteFolder,
+		validatePath,
+		isValidating,
+		updateFolderStatus,
+		startScan,
+		isStartingScan,
+	} = useScanFolders();
 	const [pathInput, setPathInput] = useState("");
+	const [validationState, setValidationState] = useState<
+		"valid" | "invalid" | "idle"
+	>("idle");
+	const [backendError, setBackendError] = useState<string>("");
+	const { isScanning, progress } = useScanProgress();
+	const handleValidate = async () => {
+		if (!pathInput.trim()) {
+			setValidationState("idle");
+			return;
+		}
 
-	// Mockowe dane (usuniesz je, gdy podepniesz hooka)
-	const isScanning = false;
-	const foldersMock = [
-		{ id: 1, path: "D:\\3D_Assets\\Models", isActive: true },
-		{ id: 2, path: "E:\\Textures\\Megascans", isActive: false },
-	];
+		try {
+			const result = await validatePath(pathInput);
+			setValidationState(result.isValid ? "valid" : "invalid");
+		} catch (error) {
+			setValidationState("invalid");
+		}
+	};
+
+	const handleAddFolder = async () => {
+		if (validationState === "valid") {
+			setBackendError("");
+			try {
+				await addFolder(pathInput);
+				setPathInput("");
+				setValidationState("idle");
+			} catch (error: any) {
+				console.error("Błąd dodawania:", error);
+				const serverMessage =
+					error.response?.data?.message ||
+					error.response?.data?.errors?.[0] ||
+					"Failed to add folder. Check logs.";
+
+				setBackendError(serverMessage);
+				setValidationState("invalid");
+			}
+		}
+	};
+
+	const getInputColor = () => {
+		if (validationState === "valid") return "success";
+		if (validationState === "invalid") return "danger";
+		return "default"; // Szary dla stanu "idle"
+	};
+	const getEndContent = () => {
+		if (isValidating) return <Spinner size="sm" />;
+		if (validationState === "valid")
+			return <CheckCircle2 className="text-success" />;
+		if (validationState === "invalid")
+			return <AlertCircle className="text-danger" />;
+		return null;
+	};
 
 	return (
 		<div className="w-full mx-auto p-6 space-y-8">
@@ -44,27 +101,52 @@ export default function SettingsPage() {
 					</p>
 				</div>
 
-				{/* Tu będzie przycisk START/STOP */}
 				<Card className="w-full md:w-auto border-none bg-content2">
 					<CardBody className="flex flex-row items-center gap-4 p-3">
 						<div className="flex flex-col">
 							<span className="text-xs font-semibold uppercase text-default-500">
 								Scanner Status
 							</span>
-							<span
-								className={`text-sm font-bold ${isScanning ? "text-success" : "text-warning"}`}
-							>
-								{isScanning ? "RUNNING" : "IDLE"}
-							</span>
+							<div className="flex items-center gap-2">
+								{/* STATUS TEXT */}
+								<span
+									className={`text-sm font-bold ${isScanning ? "text-success" : "text-default-400"}`}
+								>
+									{isScanning ? "RUNNING" : "IDLE"}
+								</span>
+
+								{/* KOŁOWY PROGRESS (Tylko gdy skanuje) */}
+								{isScanning && (
+									<CircularProgress
+										size="sm"
+										value={progress}
+										color="success"
+										showValueLabel={true}
+										strokeWidth={4}
+										classNames={{
+											svg: "w-8 h-8",
+											value: "text-[10px]",
+										}}
+										aria-label="Scanning progress"
+									/>
+								)}
+							</div>
 						</div>
+
 						<Divider orientation="vertical" className="h-8" />
+
 						<Button
 							color={isScanning ? "danger" : "primary"}
+							variant="shadow"
+							isLoading={isStartingScan}
+							isDisabled={isScanning}
 							startContent={
-								isScanning ? <StopCircle size={18} /> : <Play size={18} />
+								!isStartingScan &&
+								(isScanning ? <StopCircle size={18} /> : <Play size={18} />)
 							}
+							onPress={() => startScan()}
 						>
-							{isScanning ? "Stop Scan" : "Scan Now"}
+							{isScanning ? "Scanning..." : "Scan Now"}
 						</Button>
 					</CardBody>
 				</Card>
@@ -87,18 +169,29 @@ export default function SettingsPage() {
 							startContent={
 								<FolderPlus className="text-default-400" size={20} />
 							}
-							// Tutaj wejdzie logika walidacji (color="success" | "danger")
+							errorMessage={
+								validationState === "invalid"
+									? backendError || "Path validation failed locally."
+									: ""
+							}
+							isInvalid={validationState === "invalid"}
+							color={getInputColor()}
 							description="Backend will validate if path exists on blur."
 							className="flex-1"
 							size="lg"
 							variant="bordered"
-							// endContent={... spinner albo checkmark ...}
+							endContent={getEndContent()}
+							onBlur={handleValidate}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") handleValidate();
+							}}
 						/>
 						<Button
 							size="lg"
 							color="primary"
-							isDisabled={!pathInput} // Tu dodasz warunek walidacji
+							isDisabled={validationState !== "valid" || isValidating}
 							variant="solid"
+							onPress={handleAddFolder}
 						>
 							Add Library
 						</Button>
@@ -107,70 +200,85 @@ export default function SettingsPage() {
 			</Card>
 
 			{/* SEKCJA 3: FOLDER LIST */}
-			<div>
-				<div className="flex justify-between items-center mb-4">
-					<h3 className="text-xl font-semibold flex items-center gap-2">
-						<Folder size={20} /> Linked Folders
-						<Chip size="sm" variant="flat">
-							{foldersMock.length}
-						</Chip>
-					</h3>
+			{isLoading ? (
+				<div className="flex items-center justify-center py-12">
+					<Spinner size="lg" color="primary" label="Loading folders..." />
 				</div>
+			) : (
+				<div>
+					<div className="flex justify-between items-center mb-4">
+						<h3 className="text-xl font-semibold flex items-center gap-2">
+							<Folder size={20} /> Linked Folders
+							<Chip size="sm" variant="flat">
+								{folders?.length}
+							</Chip>
+						</h3>
+					</div>
 
-				<div className="grid grid-cols-1 gap-4">
-					{/* Tu zrobisz .map() po prawdziwych folderach */}
-					{foldersMock.map((folder) => (
-						<Card
-							key={folder.id}
-							isPressable
-							className="hover:bg-content2 transition-colors"
-						>
-							<CardBody className="flex flex-row items-center justify-between p-4 gap-4">
-								{/* IKONA + ŚCIEŻKA */}
-								<div className="flex items-center gap-4 overflow-hidden flex-1">
-									<div
-										className={`p-3 rounded-xl ${folder.isActive ? "bg-primary/10 text-primary" : "bg-default-100 text-default-400"}`}
-									>
-										<Folder size={24} />
-									</div>
-									<div className="flex flex-col overflow-hidden">
-										<Snippet
-											symbol=""
-											className="bg-transparent p-0 text-medium font-medium truncate w-full"
-											codeString={folder.path}
+					<div className="grid grid-cols-1 gap-4">
+						{/* Tu zrobisz .map() po prawdziwych folderach */}
+						{folders?.map((folder) => (
+							<Card
+								key={folder.id}
+								className="hover:bg-content2 transition-colors"
+							>
+								<CardBody className="flex flex-row items-center justify-between p-4 gap-4">
+									<div className="flex items-center gap-4 overflow-hidden flex-1">
+										<div
+											className={`p-3 rounded-xl ${folder.isActive ? "bg-primary/10 text-primary" : "bg-default-100 text-default-400"}`}
 										>
-											{folder.path}
-										</Snippet>
-										<span className="text-tiny text-default-400">
-											{folder.isActive
-												? "Monitoring active"
-												: "Monitoring paused"}
-										</span>
+											<Folder size={24} />
+										</div>
+										<div className="flex flex-col overflow-hidden">
+											<Snippet
+												symbol=""
+												className="bg-transparent p-0 text-medium font-medium truncate w-full"
+												codeString={folder.path}
+											>
+												{folder.path}
+											</Snippet>
+											<span className="text-tiny text-default-400">
+												{folder.isActive
+													? "Monitoring active"
+													: "Monitoring paused"}
+											</span>
+										</div>
 									</div>
-								</div>
 
-								{/* AKCJE */}
-								<div className="flex items-center gap-2">
-									{/* Tutaj wejdzie Switch albo Checkbox do "isActive" */}
-									<Button
-										isIconOnly
-										variant="light"
-										color={folder.isActive ? "success" : "default"}
-									>
-										{folder.isActive ? <CheckCircle2 /> : <AlertCircle />}
-									</Button>
+									{/* AKCJE */}
+									<div className="flex items-center gap-2">
+										{/* Tutaj wejdzie Switch albo Checkbox do "isActive" */}
+										<Button
+											isIconOnly
+											variant="light"
+											color={folder.isActive ? "success" : "default"}
+											onPress={() =>
+												updateFolderStatus({
+													id: folder.id,
+													isActive: !folder.isActive,
+												})
+											}
+										>
+											{folder.isActive ? <CheckCircle2 /> : <AlertCircle />}
+										</Button>
 
-									<Divider orientation="vertical" className="h-6" />
+										<Divider orientation="vertical" className="h-6" />
 
-									<Button isIconOnly color="danger" variant="light">
-										<Trash2 size={20} />
-									</Button>
-								</div>
-							</CardBody>
-						</Card>
-					))}
+										<Button
+											isIconOnly
+											color="danger"
+											variant="light"
+											onPress={() => deleteFolder(folder.id)}
+										>
+											<Trash2 size={20} />
+										</Button>
+									</div>
+								</CardBody>
+							</Card>
+						))}
+					</div>
 				</div>
-			</div>
+			)}
 		</div>
 	);
 }

@@ -13,7 +13,8 @@ import { SidebarSection } from "./SidebarSection";
 import { SidebarItem } from "./SidebarItem";
 import { TagFilter } from "./TagFilter";
 import { useNavigate } from "react-router-dom";
-
+import { CircularProgress } from "@heroui/progress";
+import { useScanProgress } from "@/features/settings/hooks/useScanProgress";
 /*
 TODO: [API] Dynamic Statistics
 - "All Assets count", "Trash count": Pobierać te liczby z API (np. endpoint GET /api/stats/sidebar).
@@ -29,6 +30,7 @@ TODO: [ROUTING] Active Link Logic
 
 export const Sidebar = () => {
 	const navigate = useNavigate();
+	const { isScanning, progress } = useScanProgress();
 	return (
 		<aside className="h-full w-full flex flex-col border-r border-default-200 bg-content1/50 backdrop-blur-xl">
 			{/* LOGO */}
@@ -114,15 +116,35 @@ export const Sidebar = () => {
 			</ScrollShadow>
 
 			{/* FOOTER */}
-			<div className="flex-shrink-0 border-t border-default-200 p-3 bg-content1">
+			<div className="flex-shrink-0 border-t border-default-200 p-3 bg-content1 flex items-center gap-2">
 				<Button
 					variant="light"
-					className="w-full justify-start gap-3 px-3 text-default-500 hover:text-foreground"
+					// Zmieniamy w-full na flex-1, żeby przycisk zajął dostępne miejsce, ale zostawił trochę dla kółka
+					className="flex-1 justify-start gap-3 px-3 text-default-500 hover:text-foreground"
 					startContent={<Settings size={18} />}
 					onPress={() => navigate("/settings")}
 				>
 					Settings
 				</Button>
+
+				{/* Renderujemy Kółko tylko gdy skanuje */}
+				{isScanning && (
+					<div className="flex flex-col items-center justify-center pr-1">
+						<CircularProgress
+							aria-label="Scanning..."
+							size="sm" // Małe kółko
+							value={progress}
+							color="primary"
+							showValueLabel={true} // Pokaże % w środku kółka
+							classNames={{
+								svg: "w-8 h-8 drop-shadow-md",
+								indicator: "stroke-primary",
+								track: "stroke-default-300/20",
+								value: "text-[10px] font-semibold text-default-500",
+							}}
+						/>
+					</div>
+				)}
 			</div>
 		</aside>
 	);

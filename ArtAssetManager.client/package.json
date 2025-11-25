@@ -36,6 +36,7 @@
     "@heroui/theme": "2.4.23",
     "@heroui/toast": "^2.0.17",
     "@heroui/use-theme": "2.1.10",
+    "@microsoft/signalr": "^10.0.0",
     "@react-aria/visually-hidden": "3.8.28",
     "@react-types/shared": "3.32.1",
     "@tailwindcss/postcss": "4.1.11",

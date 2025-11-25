@@ -21,10 +21,9 @@ namespace ArtAssetManager.Api.Controllers
             return NoContent();
         }
         [HttpGet("status")]
-        public IActionResult GetScanStatus()
+        public IActionResult GetStatus()
         {
-            var response = new { isScanning = _trigger.IsScanning };
-            return Ok(response);
+            return Ok(new { isScanning = _trigger.IsScanning });
         }
     }
 

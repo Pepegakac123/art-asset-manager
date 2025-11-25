@@ -49,13 +49,12 @@ try
 
     builder.Services.AddCors(options =>
     {
-        options.AddPolicy("AllowDevClient",
-            policy =>
-            {
-                policy.WithOrigins("http://localhost:5173")
-                      .AllowAnyHeader()
-                      .AllowAnyMethod();
-            });
+        options.AddPolicy("AllowReactApp",
+         policy => policy
+             .WithOrigins("http://localhost:5173")
+             .AllowAnyMethod()
+             .AllowAnyHeader()
+             .AllowCredentials());
     });
 
     var app = builder.Build();
@@ -68,11 +67,11 @@ try
         app.UseSwaggerUI();
     }
 
-    app.UseHttpsRedirection();
+    // app.UseHttpsRedirection(); Błedy z signalR na localhost
     app.UseStaticFiles();
     if (app.Environment.IsDevelopment())
     {
-        app.UseCors("AllowDevClient");
+        app.UseCors("AllowReactApp");
     }
     app.MapControllers();
 

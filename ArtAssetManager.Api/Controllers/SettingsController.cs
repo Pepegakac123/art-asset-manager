@@ -52,7 +52,7 @@ namespace ArtAssetManager.Api.Controllers
         [HttpPost("folders")]
         public async Task<ActionResult<ScanFolderDto>> AddScanFolderAsync([FromBody] AddScanFolderRequest body, CancellationToken cancellationToken)
         {
-
+            Console.WriteLine(body.FolderPath);
             var normalizedPath = Path.GetFullPath(body.FolderPath);
 
             if (!Directory.Exists(normalizedPath))

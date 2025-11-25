@@ -33,6 +33,7 @@ namespace ArtAssetManager.Api.Services
         private readonly IHubContext<ScanHub, IScanClient> _hubContext;
         private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly IScannerTrigger _trigger;
+
         public ScannerService(ILogger<ScannerService> logger, IServiceScopeFactory scopeFactory, IOptions<ScannerSettings> scannerSettings, IHubContext<ScanHub, IScanClient> hubContext, IScannerTrigger trigger, IWebHostEnvironment webHostEnvironment)
         {
             _logger = logger;
@@ -84,7 +85,7 @@ namespace ArtAssetManager.Api.Services
             await _trigger.TriggerScanAsync(ScanMode.Initial);
             while (!stoppingToken.IsCancellationRequested)
             {
-                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+                await Task.Delay(TimeSpan.FromMinutes(25), stoppingToken);
 
                 _logger.LogDebug(" Scheduler: Sending Scanning Request at {Time}", DateTime.UtcNow);
 
@@ -94,95 +95,136 @@ namespace ArtAssetManager.Api.Services
 
         private async Task PerformFullScanAsync(CancellationToken stoppingToken)
         {
-
             _logger.LogInformation("🔍 Scanner iteration at {Time}", DateTime.UtcNow);
+
             using (var scope = _scopeFactory.CreateScope())
             {
                 var assetRepo = scope.ServiceProvider.GetRequiredService<IAssetRepository>();
                 var settingsRepo = scope.ServiceProvider.GetRequiredService<ISettingsRepository>();
+
+
                 var allowedExtensions = await settingsRepo.GetAllowedExtensionsAsync(stoppingToken);
                 var scannedFolders = await settingsRepo.GetScanFoldersAsync(stoppingToken);
-                _logger.LogInformation("📂 Retrieved {Count} folders", scannedFolders.Count());
-                var totalFilesToScan = 0;
-                foreach (var folder in scannedFolders)
+
+                var activeFolders = scannedFolders
+                    .Where(f => f.IsActive && Directory.Exists(f.Path))
+                    .ToList();
+
+                _logger.LogInformation("📂 Active folders to scan: {Count}", activeFolders.Count);
+
+                var allFilePaths = new List<string>();
+
+                await _hubContext.Clients.All.ReceiveProgress("Indexing files...", 0, 0);
+
+                foreach (var folder in activeFolders)
                 {
-                    if (!folder.IsActive) continue;
-                    if (!Directory.Exists(folder.Path))
+                    try
                     {
-                        _logger.LogWarning("⚠️ Folder not found: {Path}", folder.Path);
-                        continue;
+                        // SearchOption.AllDirectories = Skanuje podfoldery!
+                        var filesInFolder = Directory.GetFiles(folder.Path, "*.*", SearchOption.AllDirectories);
+                        allFilePaths.AddRange(filesInFolder);
                     }
-                    totalFilesToScan += Directory.GetFiles(folder.Path).Length;
+                    catch (UnauthorizedAccessException)
+                    {
+                        _logger.LogWarning("⛔ Brak dostępu do folderu: {Path}", folder.Path);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Błąd podczas indeksowania folderu: {Path}", folder.Path);
+                    }
                 }
-                _logger.LogInformation($"Znaleziono łącznie {totalFilesToScan} plików do przetworzenia");
+
+                int totalFilesToScan = allFilePaths.Count;
+                _logger.LogInformation($"📦 Znaleziono łącznie {totalFilesToScan} plików do przetworzenia (Flattened List)");
+
+                // ==============================================================================
+                // KROK 2: PROCESS PHASE (Jedna pętla po wszystkich plikach)
+                // ==============================================================================
+
                 int globalProcessedCount = 0;
-                foreach (var folder in scannedFolders)
+
+                // Sygnał startowy dla UI (0%)
+                await _hubContext.Clients.All.ReceiveProgress("Starting analysis...", totalFilesToScan, 0);
+
+                foreach (var filePath in allFilePaths)
                 {
-                    if (!folder.IsActive) continue;
-                    if (!Directory.Exists(folder.Path))
+                    if (stoppingToken.IsCancellationRequested) break;
+
+                    globalProcessedCount++; // Inkrementujemy ZAWSZE, nawet jak pominiemy plik (żeby progress szedł do przodu)
+
+                    try
                     {
-                        _logger.LogWarning("⚠️ Folder not found: {Path}", folder.Path);
-                        continue;
+                        var extension = Path.GetExtension(filePath).ToLower();
+
+                        if (!allowedExtensions.Contains(extension))
+                        {
+                            if (globalProcessedCount % 50 == 0) await SendProgress(filePath, totalFilesToScan, globalProcessedCount);
+                            continue;
+                        }
+
+                        // Sprawdzenie czy istnieje w bazie
+                        var existingAssetByPath = await assetRepo.GetAssetByPathAsync(filePath, stoppingToken);
+                        if (existingAssetByPath != null)
+                        {
+                            // Tutaj można dodać logikę "Re-scan" dla zmian daty modyfikacji
+                            if (globalProcessedCount % 50 == 0) await SendProgress(filePath, totalFilesToScan, globalProcessedCount);
+                            continue;
+                        }
+
+                        var (thumbnailPath, metadata) = await GenerateThumbnailAsync(filePath, extension);
+                        var (fileSize, lastModified) = GetFileSizeAndLastModifiedDate(filePath);
+                        var fileHash = await ComputeFileHashAsync(filePath, fileSize, stoppingToken);
+
+                        var sourceFolder = activeFolders
+                            .OrderByDescending(f => f.Path.Length) // Najdłuższa ścieżka wygrywa (w razie zagnieżdżonych bibliotek)
+                            .FirstOrDefault(f => filePath.StartsWith(f.Path));
+
+                        if (sourceFolder == null) continue; // Should not happen
+
+                        Asset newAsset = Asset.Create(sourceFolder.Id, filePath, fileSize, DetermineFileType(extension), thumbnailPath, lastModified, fileHash, metadata?.Width, metadata?.Height, metadata?.DominantColor, metadata?.BitDepth, metadata?.HasAlphaChannel);
+
+                        if (fileHash != null)
+                        {
+                            var existingAssetByHash = await assetRepo.GetAssetByFileHashAsync(fileHash, stoppingToken);
+                            if (existingAssetByHash != null)
+                            {
+                                var rootId = existingAssetByHash.ParentAssetId ?? existingAssetByHash.Id;
+                                newAsset.ParentAssetId = rootId;
+                            }
+                        }
+
+                        await assetRepo.AddAssetAsync(newAsset, stoppingToken);
+                        _logger.LogInformation("✅ Added: {FileName}", newAsset.FileName);
+                        await Task.Delay(TimeSpan.FromSeconds(2));
+                        // --- PROGRESS REPORTING (Smart Update) ---
+                        // Raportuj: 
+                        // 1. Pierwszy plik
+                        // 2. Co 10 plików (dla płynności)
+                        // 3. Ostatni plik
+                        if (globalProcessedCount == 1 || globalProcessedCount % 10 == 0 || globalProcessedCount == totalFilesToScan)
+                        {
+                            await SendProgress(filePath, totalFilesToScan, globalProcessedCount);
+                        }
                     }
-                    var files = Directory.EnumerateFiles(
-                        path: folder.Path,
-                        searchPattern: "*.*",
-                        searchOption: SearchOption.AllDirectories
-                    );
-                    foreach (var filePath in files)
+                    catch (Exception ex)
                     {
-
-                        try
-                        {
-
-                            var extension = Path.GetExtension(filePath).ToLower();
-                            if (!allowedExtensions.Contains(extension))
-                            {
-                                continue;
-                            }
-                            var existingAssetByPath = await assetRepo.GetAssetByPathAsync(filePath, stoppingToken);
-
-                            if (existingAssetByPath != null)
-                            {
-                                continue;
-                            }
-
-                            var (thumbnailPath, metadata) = await GenerateThumbnailAsync(filePath, extension);
-                            var (fileSize, lastModified) = GetFileSizeAndLastModifiedDate(filePath);
-                            var fileHash = await ComputeFileHashAsync(filePath, fileSize, stoppingToken);
-                            Asset newAsset = Asset.Create(folder.Id, filePath, fileSize, DetermineFileType(extension), thumbnailPath, lastModified, fileHash, metadata?.Width, metadata?.Height, metadata?.DominantColor, metadata?.BitDepth, metadata?.HasAlphaChannel);
-                            if (fileHash != null)
-                            {
-                                var existingAssetByHash = await assetRepo.GetAssetByFileHashAsync(fileHash ?? "", stoppingToken);
-                                if (existingAssetByHash != null)
-                                {
-                                    _logger.LogInformation($"⏭️ Found duplicate asset: {newAsset.FileName} on Path: {newAsset.FilePath}.\nAssigning to parent: ){existingAssetByHash.FileName} on Path: {existingAssetByHash.FilePath}");
-                                    var rootId = existingAssetByHash.ParentAssetId ?? existingAssetByHash.Id;
-                                    newAsset.ParentAssetId = rootId;
-                                }
-                            }
-                            await assetRepo.AddAssetAsync(newAsset, stoppingToken);
-                            _logger.LogInformation("✅ Added new asset: {FileName}", newAsset.FileName);
-                            globalProcessedCount++;
-                            if (globalProcessedCount % 50 == 0)
-                            {
-                                await _hubContext.Clients.All.ReceiveProgress($"Scanning folder 📂{folder.Path}: Total files scanned ({globalProcessedCount}/{totalFilesToScan})", totalFilesToScan, globalProcessedCount);
-                            }
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            _logger.LogInformation("Scanner loop was cancelled.");
-                            break;
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogWarning(ex, "Failed to process file {FilePath}. Skipping.", filePath);
-                        }
-
+                        _logger.LogWarning(ex, "Failed file: {FilePath}", filePath);
                     }
-
                 }
+
+                // ZAWSZE raportuj 100% na koniec
+                _logger.LogInformation("Scan Finished.");
+                await _hubContext.Clients.All.ReceiveProgress("Scan Finished", totalFilesToScan, totalFilesToScan);
             }
+        }
+
+        private async Task SendProgress(string filePath, int total, int current)
+        {
+            await _hubContext.Clients.All.ReceiveProgress(
+                $"Scanning: {Path.GetFileName(filePath)} ({current}/{total})",
+                total,
+                current
+            );
         }
 
         private string DetermineFileType(string extension)

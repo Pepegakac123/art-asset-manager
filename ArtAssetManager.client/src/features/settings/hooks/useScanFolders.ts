@@ -116,6 +116,28 @@ export const useScanFolders = () => {
 	const validateMutation = useMutation({
 		mutationFn: scannerService.validatePath,
 	});
+	const startScanMutation = useMutation({
+		mutationFn: scannerService.startScan,
+		onSuccess: () => {
+			addToast({
+				title: "Scanner Started",
+				description: "The background process has begun.",
+				color: "success",
+				severity: "success",
+				variant: "flat",
+			});
+			// Opcjonalnie: Invalidate, żeby odświeżyć status 'Runnning' jeśli go pobieramy z API
+		},
+		onError: (error) => {
+			addToast({
+				title: "Scan Failed to Start",
+				description: error.message || "Is the scanner already running?",
+				color: "danger",
+				severity: "danger",
+				variant: "flat",
+			});
+		},
+	});
 	return {
 		folders: foldersQuery.data,
 		isLoading: foldersQuery.isLoading,
@@ -123,6 +145,8 @@ export const useScanFolders = () => {
 		deleteFolder: deleteFolderMutation.mutateAsync,
 		validatePath: validateMutation.mutateAsync,
 		isValidating: validateMutation.isPending,
-		updateFolderStatus: updateStatusMutation.mutate,
+		updateFolderStatus: updateStatusMutation.mutateAsync,
+		startScan: startScanMutation.mutateAsync,
+		isStartingScan: startScanMutation.isPending,
 	};
 };

@@ -6,5 +6,6 @@ namespace ArtAssetManager.Api.DTOs
         public int Id { get; set; }
 
         public string Path { get; set; } = string.Empty;
+        public bool IsActive { get; set; }
     }
 }

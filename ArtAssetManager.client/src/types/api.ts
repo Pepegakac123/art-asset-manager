@@ -1,41 +1,43 @@
 // ---------------------------------------------------------------------------
-// CORE ENTITIES (Odzwierciedlenie DTO z Backendu)
+// CORE ENTITIES (Mapowanie 1:1 z Backend DTOs)
+// Pamiętaj: C# PascalCase -> JSON camelCase
 // ---------------------------------------------------------------------------
 
 export interface Tag {
 	id: number;
 	name: string;
 	count?: number;
-	dateCreated?: string;
+	// Opcjonalne, jeśli backend zwraca kolor w DTO
+	color?: string;
 }
 
 export interface ScanFolder {
 	id: number;
-	path: string;
-	isActive: boolean;
-	dateAdded: string;
+	path: string; // W DTO: Path
+	isActive: boolean; // W DTO: IsActive
+	lastScanned?: string;
 	isDeleted: boolean;
 }
 
 export interface Asset {
 	id: number;
 	fileName: string;
-	fileExtension: string; // .blend, .fbx
+	fileExtension: string;
 	filePath: string;
 	fileType: string; // 'model', 'image', 'texture'
 	fileSize: number;
 	fileHash?: string | null;
 
 	// Wizualne
-	thumbnailPath?: string | null; // Relatywna ścieżka, np. "thumbnails/xyz.jpg"
-	dominantColor?: string | null;
+	thumbnailPath?: string | null;
 	imageWidth?: number | null;
 	imageHeight?: number | null;
+	dominantColor?: string | null;
 
 	// Metadane
-	dateAdded: string; // ISO Date
-	lastModified: string; // ISO Date
-	lastScanned: string; // ISO Date
+	dateAdded: string; // DateTime w C# to string w JSON
+	lastModified: string;
+	lastScanned?: string;
 
 	// User Data
 	isFavorite: boolean;
@@ -46,8 +48,8 @@ export interface Asset {
 	scanFolderId?: number | null;
 	tags: Tag[];
 
-	// Parent/Child (dla wersji)
-	parentAssetId?: number | null;
+	// Parent/Child (Wersjonowanie)
+	parentId?: number | null;
 
 	// Flagi systemowe
 	isDeleted: boolean;
@@ -58,24 +60,26 @@ export interface MaterialSet {
 	name: string;
 	description?: string | null;
 	coverAssetId?: number | null;
-	customCoverUrl?: string | null; // Jeśli user ustawił własną okładkę
+	customCoverUrl?: string | null;
 	dateAdded: string;
 	lastModified: string;
-	assets?: Asset[]; // Opcjonalnie, jeśli pobieramy szczegóły kolekcji
+	// Jeśli pobierasz szczegóły, backend może zwrócić listę assetów
+	assets?: Asset[];
 }
 
 export interface SavedSearch {
 	id: number;
 	name: string;
-	filterJson: string; // JSON string z zapisanymi filtrami
+	filterJson: string;
 	dateAdded: string;
+	lastUsed?: string;
 }
 
 export interface LibraryStats {
 	totalAssets: number;
-	totalSize: number; // w bajtach
+	totalSize: number;
 	totalTags: number;
-	lastScanDate?: string;
+	lastScanDate?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -92,59 +96,71 @@ export interface PagedResponse<T> {
 }
 
 // ---------------------------------------------------------------------------
-// API REQUESTS (Query Params & Payloads)
+// API REQUESTS (Payloads & Query Params)
+// WAŻNE: Tu były błędy. Teraz jest zgodnie z Twoimi plikami .cs
 // ---------------------------------------------------------------------------
 
-// Parametry wyszukiwania (GET /api/assets)
+// GET /api/assets
 export interface AssetQueryParams {
 	pageNumber?: number;
 	pageSize?: number;
-
-	// Wyszukiwanie tekstowe
 	searchTerm?: string;
 
-	// Filtrowanie
-	fileTypes?: string[]; // np. ['model', 'image']
-	tags?: string[]; // lista nazw tagów lub ID
+	// Filtry
+	fileTypes?: string[];
+	tags?: string[];
 	scanFolderIds?: number[];
 
-	// Filtry logiczne
+	// Logiczne
 	isFavorite?: boolean;
-	isDeleted?: boolean; // Dla kosza
-	withoutTags?: boolean; // Dla "Uncategorized"
+	isDeleted?: boolean;
+	withoutTags?: boolean;
 
-	// Zakresy (dla filtrów technicznych)
+	// Zakresy
 	minRating?: number;
 	maxRating?: number;
 	dateFrom?: string;
 	dateTo?: string;
 
-	// Sortowanie
-	orderBy?: string; // np. 'DateAdded_Desc', 'Name_Asc'
-
-	// Kontekst Kolekcji
-	materialSetId?: number; // Jeśli przeglądamy konkretną kolekcję
+	orderBy?: string;
+	materialSetId?: number;
 }
 
-// Payload do aktualizacji assetu (PATCH /api/assets/{id})
+// PATCH /api/assets/{id} -> DTOs/PatchAssetRequest.cs
 export interface UpdateAssetRequest {
 	rating?: number;
 	isFavorite?: boolean;
 	description?: string;
 }
 
-// Payload do tworzenia folderu skanowania
-export interface CreateScanFolderRequest {
-	path: string;
+// POST /api/assets/bulk-tag -> DTOs/BulkUpdateAssetTagsRequest.cs
+export interface BulkUpdateAssetTagsRequest {
+	assetIds: number[];
+	tagsToAdd?: string[];
+	tagsToRemove?: string[];
 }
 
+// POST /api/settings/folders -> DTOs/AddScanFolderRequest.cs
+// 🔥 TUTAJ BYŁ BŁĄD 400. Backend ma public string FolderPath { get; set; }
+export interface AddScanFolderRequest {
+	folderPath: string;
+}
+
+// PATCH /api/settings/folders/{id} -> DTOs/UpdateFolderStatusRequest.cs
+// Backend ma public bool IsActive { get; set; }
+export interface UpdateScanFolderStatusRequest {
+	isActive: boolean;
+}
+
+// POST /api/system/validate-path -> DTOs/ValidatePathRequest.cs
+// Zakładam, że tam jest public string Path { get; set; }
 export interface ValidatePathRequest {
 	path: string;
 }
 
-export interface AddScanFolderRequest {
-	path: string;
-}
-export interface UpdateScanFolderStatusRequest {
-	isActive: boolean;
+// POST /api/material-sets -> DTOs/CreateMaterialSets.cs
+export interface CreateMaterialSetRequest {
+	name: string;
+	description?: string;
+	initialAssetIds?: number[];
 }

@@ -8,7 +8,7 @@ namespace ArtAssetManager.Api.Validation
     {
         public AddScanFolderRequestValidator()
         {
-            RuleFor(x => x.FolderPath).NotEmpty().WithMessage("Ścieżka do folderu nie może być pusta");
+            RuleFor(x => x.FolderPath).NotEmpty().WithMessage("Ścieżka do folderu nie może być pusta ");
             RuleFor(x => x.FolderPath).Must(IsValidPath).WithMessage("Ścieżka do folderu jest niedozwolona lub jest zbyt długa");
         }
 

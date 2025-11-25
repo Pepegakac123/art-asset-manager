@@ -2,3 +2,8 @@
 *.db*
 *.Identifier
 /logs
+wwwroot/thumbnails/*
+!/wwwroot/thumbnails/
+!/wwwroot/thumbnails/placeholder.png
+!/wwwroot/thumbnails/placeholders/
+!/wwwroot/thumbnails/placeholders/*

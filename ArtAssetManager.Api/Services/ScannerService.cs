@@ -195,7 +195,7 @@ namespace ArtAssetManager.Api.Services
 
                         await assetRepo.AddAssetAsync(newAsset, stoppingToken);
                         _logger.LogInformation("✅ Added: {FileName}", newAsset.FileName);
-                        await Task.Delay(TimeSpan.FromSeconds(2));
+                        // await Task.Delay(TimeSpan.FromSeconds(2)); do testu
                         // --- PROGRESS REPORTING (Smart Update) ---
                         // Raportuj: 
                         // 1. Pierwszy plik

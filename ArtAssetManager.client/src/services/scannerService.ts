@@ -1,5 +1,9 @@
 import apiReq from "@/lib/axios";
-import { AddScanFolderRequest, ScanFolder } from "@/types/api";
+import {
+	AddScanFolderRequest,
+	ScanFolder,
+	UpdateScanFolderStatusRequest,
+} from "@/types/api";
 
 export const scannerService = {
 	getFolders: async () => {
@@ -11,6 +15,11 @@ export const scannerService = {
 	},
 	deleteFolder: async (id: number) => {
 		return apiReq.delete(`/scanner/folders/${id}`);
+	},
+	updateFolderStatus: async (id: number, isActive: boolean) => {
+		return apiReq.patch<ScanFolder>(`/scanner/folders/${id}`, {
+			isActive,
+		} as UpdateScanFolderStatusRequest);
 	},
 	validatePath: async (path: string) => {
 		const { data } = await apiReq.post<{ isValid: boolean }>(

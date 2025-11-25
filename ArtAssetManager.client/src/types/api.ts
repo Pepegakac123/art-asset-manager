@@ -145,3 +145,6 @@ export interface ValidatePathRequest {
 export interface AddScanFolderRequest {
 	path: string;
 }
+export interface UpdateScanFolderStatusRequest {
+	isActive: boolean;
+}

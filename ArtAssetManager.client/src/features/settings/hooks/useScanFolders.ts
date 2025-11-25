@@ -1,4 +1,5 @@
 import { scannerService } from "@/services/scannerService";
+import { ScanFolder } from "@/types/api";
 import { addToast } from "@heroui/toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, XCircle, FolderPlus, Trash2 } from "lucide-react";
@@ -58,6 +59,60 @@ export const useScanFolders = () => {
 			});
 		},
 	});
+	const updateStatusMutation = useMutation({
+		mutationFn: ({ id, isActive }: { id: number; isActive: boolean }) =>
+			scannerService.updateFolderStatus(id, isActive),
+
+		// Dzieje się ZANIM request pójdzie do API
+		onMutate: async ({ id, isActive }) => {
+			// A. Anulujemy wszelkie odświeżanie w tle, żeby nie nadpisało nam UI
+			await queryClient.cancelQueries({ queryKey: ["scan-folders"] });
+
+			// B. Robimy "snapshot" obecnego stanu (na wypadek błędu trzeba cofnąć)
+			const previousFolders = queryClient.getQueryData<ScanFolder[]>([
+				"scan-folders",
+			]);
+
+			// C. Ręcznie modyfikujemy cache. UI odświeży się NATYCHMIAST.
+			queryClient.setQueryData<ScanFolder[]>(["scan-folders"], (old) => {
+				if (!old) return [];
+				return old.map((folder) =>
+					folder.id === id ? { ...folder, isActive: isActive } : folder,
+				);
+			});
+
+			// Zwracamy kontekst do użycia w razie błędu
+			return { previousFolders };
+		},
+		onError: (err, newVars, context) => {
+			// Przywracamy stan sprzed kliknięcia (Rollback)
+			if (context?.previousFolders) {
+				queryClient.setQueryData(["scan-folders"], context.previousFolders);
+			}
+			addToast({
+				title: "Action Failed",
+				description: "Could not update folder status. Changes reverted.",
+				color: "danger",
+				severity: "danger",
+				variant: "flat",
+			});
+		},
+
+		onSettled: () => {
+			queryClient.invalidateQueries({ queryKey: ["scan-folders"] });
+		},
+
+		onSuccess: (_, { isActive }) => {
+			const action = isActive ? "Activated" : "Deactivated";
+			addToast({
+				title: `Folder ${action}`,
+				description: `Scanning is now ${isActive ? "enabled" : "disabled"} for this path.`,
+				color: isActive ? "success" : "warning",
+				severity: isActive ? "success" : "warning",
+				timeout: 2000,
+			});
+		},
+	});
 	const validateMutation = useMutation({
 		mutationFn: scannerService.validatePath,
 	});
@@ -68,5 +123,6 @@ export const useScanFolders = () => {
 		deleteFolder: deleteFolderMutation.mutateAsync,
 		validatePath: validateMutation.mutateAsync,
 		isValidating: validateMutation.isPending,
+		updateFolderStatus: updateStatusMutation.mutate,
 	};
 };

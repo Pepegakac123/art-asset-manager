@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom";
 import { MainLayout } from "./layouts/MainLayout";
 import { GalleryGrid } from "./features/gallery/components/GalleryGrid";
 import { UI_CONFIG } from "./config/constants";
+import SettingsPage from "./features/settings/SettingsPage";
 
 function App() {
 	return (
@@ -47,7 +48,7 @@ function App() {
 						/>
 					}
 				/>
-				<Route path="/settings" element={<div>Settings</div>} />
+				<Route path="/settings" element={<SettingsPage />} />
 			</Route>
 		</Routes>
 	);

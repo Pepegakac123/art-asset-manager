@@ -29,6 +29,7 @@
     "@heroui/scroll-shadow": "^2.3.18",
     "@heroui/slider": "^2.4.24",
     "@heroui/snippet": "2.2.28",
+    "@heroui/spacer": "^2.2.21",
     "@heroui/switch": "2.2.24",
     "@heroui/system": "2.4.23",
     "@heroui/tabs": "^2.2.24",

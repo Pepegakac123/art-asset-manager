@@ -52,17 +52,24 @@ namespace ArtAssetManager.Api.Controllers
         [HttpPost("folders")]
         public async Task<ActionResult<ScanFolderDto>> AddScanFolderAsync([FromBody] AddScanFolderRequest body, CancellationToken cancellationToken)
         {
-            Console.WriteLine(body.FolderPath);
             var normalizedPath = Path.GetFullPath(body.FolderPath);
 
             if (!Directory.Exists(normalizedPath))
             {
                 return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "Podany folder nie istnieje", HttpContext.Request.Path));
             }
-            ScanFolder newScanFolder = ScanFolder.Create(normalizedPath);
-            var scanFolder = await _settingsRepo.AddScanFolderAsync(newScanFolder, cancellationToken);
-            var ScanFolderDto = _mapper.Map<ScanFolderDto>(scanFolder);
-            return CreatedAtAction(nameof(GetScanFoldersById), new { id = ScanFolderDto.Id }, ScanFolderDto);
+            try
+            {
+                ScanFolder newScanFolder = ScanFolder.Create(normalizedPath);
+                var scanFolder = await _settingsRepo.AddScanFolderAsync(newScanFolder, cancellationToken);
+                var ScanFolderDto = _mapper.Map<ScanFolderDto>(scanFolder);
+                return CreatedAtAction(nameof(GetScanFoldersById), new { id = ScanFolderDto.Id }, ScanFolderDto);
+            }
+            catch (InvalidOperationException)
+            {
+                return Conflict(new ApiErrorResponse(HttpStatusCode.Conflict, "Folder already exists in the scan list.", HttpContext.Request.Path));
+            }
+
 
         }
         [HttpDelete("folders/{id}")]
@@ -111,8 +118,25 @@ namespace ArtAssetManager.Api.Controllers
         [HttpPost("extensions")]
         public async Task<ActionResult> SetAllowedExtensionsAsync([FromBody] List<string> extensions, CancellationToken cancellationToken)
         {
-            await _settingsRepo.SetAllowedExtensionsAsync(extensions, cancellationToken);
-            return NoContent();
+            try
+            {
+                Console.WriteLine("Received extensions: " + string.Join(", ", extensions));
+                await _settingsRepo.SetAllowedExtensionsAsync(extensions, cancellationToken);
+                return NoContent();
+            }
+            catch (ArgumentException ex)
+            {
+
+                return BadRequest(new ApiErrorResponse(
+                    HttpStatusCode.BadRequest,
+                    ex.Message,
+                    HttpContext.Request.Path
+                ));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiErrorResponse(HttpStatusCode.InternalServerError, "Error saving settings", HttpContext.Request.Path));
+            }
         }
 
     }

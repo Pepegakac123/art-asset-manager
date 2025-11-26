@@ -17,10 +17,12 @@ import {
 	AlertCircle,
 	CheckCircle2,
 	Search,
+	FolderOpen,
 } from "lucide-react";
 import { useScanFolders } from "./hooks/useScanFolders";
 import { AxiosError } from "axios";
 import { useScanProgress } from "./hooks/useScanProgress";
+import { addToast } from "@heroui/toast";
 
 export default function SettingsPage() {
 	const {
@@ -33,8 +35,12 @@ export default function SettingsPage() {
 		updateFolderStatus,
 		startScan,
 		isStartingScan,
+		extensions,
+		updateExtensions,
+		openInExplorer,
 	} = useScanFolders();
 	const [pathInput, setPathInput] = useState("");
+	const [extInput, setExtInput] = useState("");
 	const [validationState, setValidationState] = useState<
 		"valid" | "invalid" | "idle"
 	>("idle");
@@ -70,6 +76,7 @@ export default function SettingsPage() {
 
 				setBackendError(serverMessage);
 				setValidationState("invalid");
+				setPathInput("");
 			}
 		}
 	};
@@ -86,6 +93,31 @@ export default function SettingsPage() {
 		if (validationState === "invalid")
 			return <AlertCircle className="text-danger" />;
 		return null;
+	};
+	const handleAddExtension = async (e: React.KeyboardEvent) => {
+		if (e.key === "Enter" && extInput.trim()) {
+			let newExt = extInput.trim().toLowerCase();
+			// Auto-fix: dodaj kropkę jeśli user zapomniał
+			if (!newExt.startsWith(".")) newExt = "." + newExt;
+
+			if (!extensions.includes(newExt)) {
+				const newStats = [...extensions, newExt];
+				await updateExtensions(newStats);
+				setExtInput("");
+			} else {
+				addToast({
+					title: "Duplicate Extension",
+					description: `This extension (${newExt}) is already in the list.`,
+					color: "warning",
+				});
+				setExtInput("");
+				return;
+			}
+		}
+	};
+	const handleRemoveExtension = async (extToRemove: string) => {
+		const newStats = extensions.filter((e) => e !== extToRemove);
+		await updateExtensions(newStats);
 	};
 
 	return (
@@ -251,6 +283,14 @@ export default function SettingsPage() {
 										<Button
 											isIconOnly
 											variant="light"
+											onPress={() => openInExplorer(folder.path)}
+											title="Open in Explorer"
+										>
+											<FolderOpen size={20} className="text-default-500" />
+										</Button>
+										<Button
+											isIconOnly
+											variant="light"
 											color={folder.isActive ? "success" : "default"}
 											onPress={() =>
 												updateFolderStatus({
@@ -279,6 +319,45 @@ export default function SettingsPage() {
 					</div>
 				</div>
 			)}
+			<div className="space-y-4">
+				<h2 className="text-2xl font-bold">File Types</h2>
+				<Card className="bg-content1">
+					<CardBody className="p-6 space-y-4">
+						<div className="flex gap-4 items-end">
+							<Input
+								label="Add Extension"
+								placeholder=".blend, .obj, .png"
+								value={extInput}
+								onValueChange={setExtInput}
+								onKeyDown={handleAddExtension}
+								description="Press Enter to add."
+								className="max-w-xs"
+							/>
+						</div>
+
+						<Divider />
+
+						<div className="flex flex-wrap gap-2">
+							{extensions.map((ext) => (
+								<Chip
+									key={ext}
+									onClose={() => handleRemoveExtension(ext)}
+									variant="flat"
+									color="secondary" // Ładny kolor dla tagów
+								>
+									{ext}
+								</Chip>
+							))}
+							{extensions.length === 0 && (
+								<p className="text-default-400 text-sm italic">
+									No extensions defined. Scanner will allow everything
+									(dangerous!) or nothing depending on logic.
+								</p>
+							)}
+						</div>
+					</CardBody>
+				</Card>
+			</div>
 		</div>
 	);
 }

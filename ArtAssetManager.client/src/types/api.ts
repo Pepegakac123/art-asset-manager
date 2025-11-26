@@ -165,6 +165,10 @@ export interface CreateMaterialSetRequest {
 	initialAssetIds?: number[];
 }
 
-export interface ScanStatus{
+export interface GetOrSetAllowedExtensions {
+	extensions: string[];
+}
+
+export interface ScanStatus {
 	status: "scanning" | "idle";
 }

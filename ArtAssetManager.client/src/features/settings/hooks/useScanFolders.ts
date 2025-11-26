@@ -25,8 +25,8 @@ export const useScanFolders = () => {
 				timeout: 3000,
 			});
 		},
-		onError: (error) => {
-			const msg = error.message || "Unknown error";
+		onError: (error: any) => {
+			const msg = error.response?.data?.message || "Unknown error";
 			addToast({
 				title: "Action Failed",
 				description: msg,
@@ -49,10 +49,11 @@ export const useScanFolders = () => {
 				variant: "flat",
 			});
 		},
-		onError: (error) => {
+		onError: (error: any) => {
 			addToast({
 				title: "Could not delete folder",
-				description: error.message,
+				description:
+					error.response?.data?.message || "Could not remove the folder.",
 				color: "danger",
 				severity: "danger",
 				variant: "flat",
@@ -128,13 +129,50 @@ export const useScanFolders = () => {
 			});
 			// Opcjonalnie: Invalidate, żeby odświeżyć status 'Runnning' jeśli go pobieramy z API
 		},
-		onError: (error) => {
+		onError: (error: any) => {
 			addToast({
 				title: "Scan Failed to Start",
-				description: error.message || "Is the scanner already running?",
+				description:
+					error.response?.data?.message || "Is the scanner already running?",
 				color: "danger",
 				severity: "danger",
 				variant: "flat",
+			});
+		},
+	});
+	const extensionsQuery = useQuery({
+		queryKey: ["allowed-extensions"],
+		queryFn: scannerService.getAllowedExtensions,
+	});
+
+	const updateExtensionsMutation = useMutation({
+		mutationFn: scannerService.updateAllowedExtensions,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["allowed-extensions"] });
+			addToast({
+				title: "Settings Saved",
+				description: "File type filters updated.",
+				color: "success",
+			});
+		},
+		onError: (error: any) => {
+			addToast({
+				title: "Error",
+				description:
+					error.response?.data?.message || "Failed to update extensions.",
+				color: "danger",
+			});
+		},
+	});
+
+	const openExplorerMutation = useMutation({
+		mutationFn: scannerService.openInExplorer,
+		onError: (error: any) => {
+			addToast({
+				title: "System Error",
+				description:
+					error.response?.data?.message || "Could not open explorer.",
+				color: "danger",
 			});
 		},
 	});
@@ -148,5 +186,9 @@ export const useScanFolders = () => {
 		updateFolderStatus: updateStatusMutation.mutateAsync,
 		startScan: startScanMutation.mutateAsync,
 		isStartingScan: startScanMutation.isPending,
+		extensions: extensionsQuery.data || [],
+		isLoadingExtensions: extensionsQuery.isLoading,
+		updateExtensions: updateExtensionsMutation.mutateAsync,
+		openInExplorer: openExplorerMutation.mutateAsync,
 	};
 };

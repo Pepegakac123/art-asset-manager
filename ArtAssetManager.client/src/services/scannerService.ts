@@ -33,4 +33,14 @@ export const scannerService = {
 	startScan: async () => {
 		return apiReq.post("/scanner/start");
 	},
+	getAllowedExtensions: async () => {
+		const { data } = await apiReq.get<string[]>("/settings/extensions");
+		return data;
+	},
+	updateAllowedExtensions: async (extensions: string[]) => {
+		return apiReq.post("/settings/extensions", extensions);
+	},
+	openInExplorer: async (path: string) => {
+		return apiReq.post("/system/open-in-explorer", { path });
+	},
 };

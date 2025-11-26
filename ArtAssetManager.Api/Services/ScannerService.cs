@@ -167,10 +167,21 @@ namespace ArtAssetManager.Api.Services
                         var existingAssetByPath = await assetRepo.GetAssetByPathAsync(filePath, stoppingToken);
                         if (existingAssetByPath != null)
                         {
-                            // Tutaj można dodać logikę "Re-scan" dla zmian daty modyfikacji
+                            if (!allowedExtensions.Contains(existingAssetByPath.FileExtension))
+                            {
+                                // Plik zmienił rozszerzenie na niedozwolone - dajem do trasha
+                                await assetRepo.SoftDeleteAssetAsync(existingAssetByPath.Id, stoppingToken);
+                                _logger.LogInformation("🗑️ Moved to trash (extension no longer allowed): {FileName}", existingAssetByPath.FileName);
+                            }
+                            if (existingAssetByPath.IsDeleted && allowedExtensions.Contains(existingAssetByPath.FileExtension))
+                            {
+                                await assetRepo.RestoreAssetAsync(existingAssetByPath.Id, stoppingToken);
+                                _logger.LogInformation("♻️ Restored from trash (extension now allowed): {FileName}", existingAssetByPath.FileName);
+                            }
                             if (globalProcessedCount % 50 == 0) await SendProgress(filePath, totalFilesToScan, globalProcessedCount);
                             continue;
                         }
+
 
                         var (thumbnailPath, metadata) = await GenerateThumbnailAsync(filePath, extension);
                         var (fileSize, lastModified) = GetFileSizeAndLastModifiedDate(filePath);
@@ -244,7 +255,7 @@ namespace ArtAssetManager.Api.Services
             {
                 ".jpg" or ".jpeg" or ".png" or ".gif" or ".webp" => FileTypes.Image,
                 ".blend" or ".fbx" or ".obj" or ".ztl" or ".zpr" => FileTypes.Model,
-                ".psd" or ".ai" or ".svg" => FileTypes.Texture,
+                ".psd" or ".ai" or ".svg" or ".exr" or ".hdr" or ".tif" or ".tiff" => FileTypes.Texture,
                 _ => FileTypes.Other
             };
         }

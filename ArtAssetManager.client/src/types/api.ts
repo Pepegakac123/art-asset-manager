@@ -164,3 +164,7 @@ export interface CreateMaterialSetRequest {
 	description?: string;
 	initialAssetIds?: number[];
 }
+
+export interface ScanStatus{
+	status: "scanning" | "idle";
+}

@@ -114,6 +114,7 @@ namespace ArtAssetManager.Api.Services
 
                 var allFilePaths = new List<string>();
 
+                await _hubContext.Clients.All.ReceiveScanStatus(ScaningStatusEnumToString(ScanStatus.Scanning));
                 await _hubContext.Clients.All.ReceiveProgress("Indexing files...", 0, 0);
 
                 foreach (var folder in activeFolders)
@@ -214,7 +215,7 @@ namespace ArtAssetManager.Api.Services
 
                 // ZAWSZE raportuj 100% na koniec
                 _logger.LogInformation("Scan Finished.");
-                await _hubContext.Clients.All.ReceiveProgress("Scan Finished", totalFilesToScan, totalFilesToScan);
+                await _hubContext.Clients.All.ReceiveScanStatus(ScaningStatusEnumToString(ScanStatus.Idle));
             }
         }
 
@@ -225,6 +226,16 @@ namespace ArtAssetManager.Api.Services
                 total,
                 current
             );
+        }
+
+        private string ScaningStatusEnumToString(ScanStatus status)
+        {
+            return status switch
+            {
+                ScanStatus.Scanning => "scanning",
+                ScanStatus.Idle => "idle",
+                _ => "unknown"
+            };
         }
 
         private string DetermineFileType(string extension)

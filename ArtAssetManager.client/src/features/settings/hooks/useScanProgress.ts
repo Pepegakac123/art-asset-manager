@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import * as signalR from "@microsoft/signalr";
-import apiReq from "@/lib/axios"; // Twój instancja axios
+import apiReq from "@/lib/axios";
 
 interface ScanState {
 	isScanning: boolean;
@@ -48,43 +48,38 @@ export const useScanProgress = () => {
 			.withAutomaticReconnect()
 			.build();
 
-		connection.on(
-			"ReceiveProgress",
-			(message: string, total: number, current: number) => {
-				const percent = total > 0 ? Math.round((current / total) * 100) : 0;
+// HANDLER 1: Tylko zmiana stanu (Start/Stop)
+    connection.on("ReceiveScanStatus", (status: string) => {
+      const isNowScanning = status === "scanning";
+      
+      setScanState((prev) => {
+        // Logika "Detect Edge": Jeśli wcześniej skanował, a teraz przestał -> SUKCES
+        // if (prev.isScanning && !isNowScanning) {
+        //    addToast({
+        //      title: "Scan Finished",
+        //      description: "Library has been updated.",
+        //      color: "success",
+        //    });
+        // }
+        return {
+          ...prev,
+          isScanning: isNowScanning,
+          // Jeśli startujemy, resetujemy progress. Jeśli kończymy, zostawiamy 100% na chwilę
+          progress: isNowScanning ? 0 : 100, 
+        };
+      });
+    });
 
-				if (message === "Scan Finished") {
-					console.log("🛑 Scan Finished Signal Received"); // Debug
-					setTimeout(() => {
-						setScanState((prev) => ({
-							...prev,
-							isScanning: false,
-							progress: 0,
-							message: "",
-						}));
-					}, 1000);
-					return;
-				}
-				setScanState((prev) => {
-					// Jeśli już skończyliśmy, a to nie jest nowy start (current > 0), ignoruj.
-					if (
-						!prev.isScanning &&
-						current > 0 &&
-						message !== "Initializing scan..."
-					) {
-						return prev;
-					}
-
-					return {
-						isScanning: true, // Tutaj włączamy
-						message,
-						total,
-						current,
-						progress: percent,
-					};
-				});
-			},
-		);
+    // HANDLER 2: Tylko aktualizacja paska postępu
+    connection.on("ReceiveProgress", (msg: string, total: number, current: number) => {
+      setScanState((prev) => ({
+        ...prev,
+        message: msg,
+        total: total,
+        current: current,
+        progress: total > 0 ? (current / total) * 100 : 0,
+      }));
+    });
 
 		connection.start().catch((err) => console.error("SignalR Error:", err));
 

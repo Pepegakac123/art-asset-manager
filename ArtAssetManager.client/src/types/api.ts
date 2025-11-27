@@ -63,7 +63,6 @@ export interface MaterialSet {
   customCoverUrl?: string | null;
   dateAdded: string;
   lastModified: string;
-  // Jeśli pobierasz szczegóły, backend może zwrócić listę assetów
   assets?: Asset[];
 }
 
@@ -172,10 +171,12 @@ export interface ValidatePathRequest {
   path: string;
 }
 
-// POST /api/material-sets -> DTOs/CreateMaterialSets.cs
 export interface CreateMaterialSetRequest {
   name: string;
   description?: string;
+  coverAssetId?: number;
+  customCoverUrl?: string;
+  customColor?: string;
   initialAssetIds?: number[];
 }
 

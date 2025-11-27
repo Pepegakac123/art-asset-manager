@@ -29,7 +29,8 @@ namespace ArtAssetManager.Api.DTOs
                 src.Name,
                 src.Description,
                 src.CoverAssetId,
-                src.CustomCoverUrl
+                src.CustomCoverUrl,
+                src.CustomColor
             ));
             CreateMap<UpdateMaterialSet, MaterialSet>();
             CreateMap<SavedSearch, SavedSearchDto>()

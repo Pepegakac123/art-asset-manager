@@ -8,6 +8,7 @@ namespace ArtAssetManager.Api.Entities
         public int? CoverAssetId { get; set; }
         public Asset? CoverAsset { get; set; }
         public string? CustomCoverUrl { get; set; }
+        public string? CustomColor { get; set; } = string.Empty;
         public DateTime DateAdded { get; set; }
         public DateTime LastModified { get; set; }
 
@@ -15,7 +16,7 @@ namespace ArtAssetManager.Api.Entities
 
         private MaterialSet() { }
 
-        public static MaterialSet Create(string Name, string? Description, int? CoverAssetId, string? CustomCoverUrl)
+        public static MaterialSet Create(string Name, string? Description, int? CoverAssetId, string? CustomCoverUrl, string? CustomColor)
         {
             var newMaterialSet = new MaterialSet
             {
@@ -23,6 +24,7 @@ namespace ArtAssetManager.Api.Entities
                 Description = Description,
                 CoverAssetId = CoverAssetId,
                 CustomCoverUrl = CustomCoverUrl,
+                CustomColor = CustomColor,
                 DateAdded = DateTime.UtcNow,
                 LastModified = DateTime.UtcNow
             };

@@ -43,6 +43,12 @@ export const assetService = {
     });
     return response.data;
   },
+  removeAssetFromMaterialSet: async (
+    setId: number,
+    assetId: string,
+  ): Promise<void> => {
+    await apiReq.delete(`/materialsets/${setId}/assets/${assetId}`);
+  },
   getSidebarStats: async (): Promise<SidebarStats> => {
     const response = await apiReq.get("/stats/sidebar");
     return response.data;

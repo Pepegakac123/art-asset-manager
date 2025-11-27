@@ -39,6 +39,7 @@ namespace ArtAssetManager.Api.Data.Repositories
             existingSet.Description = updateData.Description;
             existingSet.CoverAssetId = updateData.CoverAssetId;
             existingSet.CustomCoverUrl = updateData.CustomCoverUrl;
+            existingSet.CustomColor = updateData.CustomColor;
             existingSet.LastModified = DateTime.UtcNow;
             await _context.SaveChangesAsync(cancellationToken);
             return existingSet;

@@ -15,10 +15,13 @@ import { TagFilter } from "./TagFilter";
 import { useNavigate } from "react-router-dom";
 import { CircularProgress } from "@heroui/progress";
 import { useScanProgress } from "@/features/settings/hooks/useScanProgress";
+import { useAssets } from "@/features/gallery/hooks/useAssets";
+import { useAssetsStats } from "@/features/gallery/hooks/useAssetsStats";
 /*
 TODO: [API] Dynamic Statistics
 - "All Assets count", "Trash count": Pobierać te liczby z API (np. endpoint GET /api/stats/sidebar).
 - Uncategorized count: To ważna metryka dla workflow "Inbox Zero".
+}
 
 TODO: [FEATURE] Smart Collections & Drag-Drop
 - UI Guidelines (Sekcja 6.2): Dodać sekcję "Smart Collections" (zapisane filtry z bazy).
@@ -31,6 +34,7 @@ TODO: [ROUTING] Active Link Logic
 export const Sidebar = () => {
   const navigate = useNavigate();
   const { isScanning, progress } = useScanProgress();
+  const { sidebarStats } = useAssetsStats();
   return (
     <aside className="h-full w-full flex flex-col border-r border-default-200 bg-content1/50 backdrop-blur-xl">
       {/* LOGO */}
@@ -49,20 +53,30 @@ export const Sidebar = () => {
       <ScrollShadow className="flex-1 py-4 px-3 custom-scrollbar">
         {/* LIBRARY */}
         <SidebarSection title="Library">
-          <SidebarItem icon={Home} label="All Assets" to="/" count={1240} />
+          <SidebarItem
+            icon={Home}
+            label="All Assets"
+            to="/"
+            count={sidebarStats?.totalAssets || 0}
+          />
           <SidebarItem
             icon={Heart}
             label="Favorites"
             to="/favorites"
-            count={42}
+            count={sidebarStats?.totalFavorites || 0}
           />
           <SidebarItem
             icon={Box}
             label="Uncategorized"
             to="/uncategorized"
-            count={128}
+            count={sidebarStats?.totalUncategorized || 0}
           />
-          <SidebarItem icon={Trash2} label="Trash" to="/trash" count={12} />
+          <SidebarItem
+            icon={Trash2}
+            label="Trash"
+            to="/trash"
+            count={sidebarStats?.totalTrash || 0}
+          />
         </SidebarSection>
 
         {/* COLLECTIONS */}

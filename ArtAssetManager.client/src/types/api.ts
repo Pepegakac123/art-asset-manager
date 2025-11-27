@@ -186,3 +186,10 @@ export interface GetOrSetAllowedExtensions {
 export interface ScanStatus {
   status: "scanning" | "idle";
 }
+
+export interface SidebarStats {
+  totalAssets: number;
+  totalFavorites: number;
+  totalUncategorized: number;
+  totalTrashed: number;
+}

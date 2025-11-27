@@ -320,6 +320,32 @@ namespace ArtAssetManager.Api.Data.Repositories
                 LastScan = lastScan
             };
         }
+        public async Task<SidebarStatsDto> GetSidebarStatsAsync(CancellationToken cancellationToken)
+        {
+            var totalAssets = await _context.Assets.CountAsync(cancellationToken);
+
+            if (totalAssets == 0)
+            {
+                return new SidebarStatsDto
+                {
+                    TotalAssets = 0,
+                    TotalUncategorized = 0,
+                    TotalFavorites = 0,
+                    TotalTrashed = 0
+                };
+            }
+            var totalFavorites = await _context.Assets.CountAsync(a => a.IsFavorite == true, cancellationToken);
+            var totalTrashed = await _context.Assets.CountAsync(a => a.IsDeleted == true, cancellationToken);
+            var totalUncategorized = await _context.Assets.CountAsync(a => a.Tags.Count == 0, cancellationToken);
+
+            return new SidebarStatsDto
+            {
+                TotalAssets = totalAssets,
+                TotalUncategorized = totalUncategorized,
+                TotalFavorites = totalFavorites,
+                TotalTrashed = totalTrashed
+            };
+        }
         public async Task<List<string>> GetColorsListAsync(CancellationToken cancellationToken)
         {
             var colorList = await _context.Assets.Select(a => a.DominantColor).Where(color => color != null).Select(c => c!.ToLower()).Distinct().ToListAsync(cancellationToken);

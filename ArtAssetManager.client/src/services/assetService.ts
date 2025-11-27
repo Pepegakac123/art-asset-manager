@@ -1,5 +1,10 @@
 import apiReq from "@/lib/axios";
-import { Asset, PagedResponse, AssetQueryParams } from "@/types/api";
+import {
+  Asset,
+  PagedResponse,
+  AssetQueryParams,
+  SidebarStats,
+} from "@/types/api";
 
 export const assetService = {
   getAll: async (params: AssetQueryParams): Promise<PagedResponse<Asset>> => {
@@ -36,6 +41,10 @@ export const assetService = {
     const response = await apiReq.get(`/materialsets/${setId}/assets`, {
       params,
     });
+    return response.data;
+  },
+  getSidebarStats: async (): Promise<SidebarStats> => {
+    const response = await apiReq.get("/stats/sidebar");
     return response.data;
   },
   openInExplorer: async (path: string) => {

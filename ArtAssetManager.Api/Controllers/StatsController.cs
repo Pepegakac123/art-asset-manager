@@ -22,5 +22,11 @@ namespace ArtAssetManager.Api.Controllers
             var stats = await _assetRepository.GetStatsAsync(cancellationToken);
             return Ok(stats);
         }
+        [HttpGet("sidebar")]
+        public async Task<ActionResult<SidebarStatsDto>> GetSidebarStats(CancellationToken cancellationToken)
+        {
+            var stats = await _assetRepository.GetSidebarStatsAsync(cancellationToken);
+            return Ok(stats);
+        }
     }
 }

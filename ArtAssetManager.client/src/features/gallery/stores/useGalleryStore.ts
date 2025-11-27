@@ -22,13 +22,13 @@ export interface GalleryFilters {
   hasAlpha: boolean | null; // C#: HasAlphaChannel (null = wszystko, true = z, false = bez)
 }
 
-// 2. Definicja Sortowania (switch w C#)
 export type SortOption = "dateadded" | "filename" | "filesize" | "lastmodified";
 
 interface GalleryState {
   // --- UI State ---
   zoomLevel: number;
   viewMode: "grid" | "masonry";
+  pageSize: number;
 
   // --- Data State ---
   filters: GalleryFilters;
@@ -38,6 +38,7 @@ interface GalleryState {
   // --- Actions ---
   setZoomLevel: (zoom: number) => void;
   setViewMode: (mode: "grid" | "masonry") => void;
+  setPageSize: (size: number) => void;
 
   // Update filtrów (Partial pozwala aktualizować tylko jedno pole np. tylko tags)
   setFilters: (newFilters: Partial<GalleryFilters>) => void;
@@ -68,7 +69,7 @@ export const useGalleryStore = create<GalleryState>()(
     // Initial State
     zoomLevel: 250,
     viewMode: "grid",
-
+    pageSize: 20,
     filters: DEFAULT_FILTERS,
     sortOption: "dateadded", // Default z C#
     sortDesc: true, // Default z C# (OrderByDescending)
@@ -76,6 +77,7 @@ export const useGalleryStore = create<GalleryState>()(
     // Actions
     setZoomLevel: (zoom) => set({ zoomLevel: zoom }),
     setViewMode: (mode) => set({ viewMode: mode }),
+    setPageSize: (size) => set({ pageSize: size }),
 
     setFilters: (newFilters) =>
       set((state) => ({

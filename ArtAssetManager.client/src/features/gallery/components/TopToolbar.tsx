@@ -18,6 +18,7 @@ import {
   Minus,
   Plus,
   RefreshCcw,
+  ListFilter,
 } from "lucide-react";
 import { useGalleryStore, SortOption } from "../stores/useGalleryStore";
 import { useShallow } from "zustand/react/shallow";
@@ -38,6 +39,8 @@ export const TopToolbar = () => {
     filters,
     setFilters,
     resetFilters,
+    pageSize,
+    setPageSize,
   } = useGalleryStore(
     useShallow((state) => ({
       zoomLevel: state.zoomLevel,
@@ -51,6 +54,8 @@ export const TopToolbar = () => {
       filters: state.filters,
       setFilters: state.setFilters,
       resetFilters: state.resetFilters,
+      pageSize: state.pageSize,
+      setPageSize: state.setPageSize,
     })),
   );
 
@@ -90,13 +95,13 @@ export const TopToolbar = () => {
   // Helper do wyświetlania nazwy sortowania
   const getSortLabel = (option: SortOption) => {
     switch (option) {
-      case "dateadded":
+      case UI_CONFIG.GALLERY.AllowedSortOptions.dateadded:
         return "Date Added";
-      case "filename":
+      case UI_CONFIG.GALLERY.AllowedSortOptions.filename:
         return "File Name";
-      case "filesize":
+      case UI_CONFIG.GALLERY.AllowedSortOptions.filesize:
         return "File Size";
-      case "lastmodified":
+      case UI_CONFIG.GALLERY.AllowedSortOptions.lastmodified:
         return "Last Modified";
       default:
         return option;
@@ -156,7 +161,7 @@ export const TopToolbar = () => {
         <div className="flex w-48 items-center gap-2">
           <Slider
             size="sm"
-            step={50}
+            step={UI_CONFIG.GALLERY.STEP}
             color="primary"
             maxValue={UI_CONFIG.GALLERY.MAX_ZOOM}
             minValue={UI_CONFIG.GALLERY.MIN_ZOOM}
@@ -172,7 +177,10 @@ export const TopToolbar = () => {
                 className="rounded-full p-1 text-default-400 outline-none transition-colors hover:cursor-pointer hover:text-primary focus-visible:ring-2 focus-visible:ring-primary"
                 onClick={() =>
                   setZoomLevel(
-                    Math.max(UI_CONFIG.GALLERY.MIN_ZOOM, zoomLevel - 50),
+                    Math.max(
+                      UI_CONFIG.GALLERY.MIN_ZOOM,
+                      zoomLevel - UI_CONFIG.GALLERY.STEP,
+                    ),
                   )
                 }
               >
@@ -185,7 +193,10 @@ export const TopToolbar = () => {
                 className="rounded-full p-1 text-default-400 outline-none transition-colors hover:cursor-pointer hover:text-primary focus-visible:ring-2 focus-visible:ring-primary"
                 onClick={() =>
                   setZoomLevel(
-                    Math.min(UI_CONFIG.GALLERY.MAX_ZOOM, zoomLevel + 50),
+                    Math.min(
+                      UI_CONFIG.GALLERY.MAX_ZOOM,
+                      zoomLevel + UI_CONFIG.GALLERY.STEP,
+                    ),
                   )
                 }
               >
@@ -220,10 +231,22 @@ export const TopToolbar = () => {
                 setSortOption(selected);
               }}
             >
-              <DropdownItem key="dateadded">Date Added</DropdownItem>
-              <DropdownItem key="filename">File Name</DropdownItem>
-              <DropdownItem key="filesize">File Size</DropdownItem>
-              <DropdownItem key="lastmodified">Last Modified</DropdownItem>
+              <DropdownItem
+                key={UI_CONFIG.GALLERY.AllowedSortOptions.dateadded}
+              >
+                Date Added
+              </DropdownItem>
+              <DropdownItem key={UI_CONFIG.GALLERY.AllowedSortOptions.filename}>
+                File Name
+              </DropdownItem>
+              <DropdownItem key={UI_CONFIG.GALLERY.AllowedSortOptions.filesize}>
+                File Size
+              </DropdownItem>
+              <DropdownItem
+                key={UI_CONFIG.GALLERY.AllowedSortOptions.lastmodified}
+              >
+                Last Modified
+              </DropdownItem>
             </DropdownMenu>
           </Dropdown>
 
@@ -236,6 +259,34 @@ export const TopToolbar = () => {
           >
             {sortDesc ? <ArrowDownAZ size={18} /> : <ArrowUpAZ size={18} />}
           </Button>
+          <Dropdown>
+            <DropdownTrigger>
+              <Button
+                variant="flat"
+                size="sm"
+                className="w-fit"
+                startContent={
+                  <ListFilter size={16} className="text-default-500" />
+                }
+              >
+                {pageSize}
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu
+              aria-label="Page Size"
+              disallowEmptySelection
+              selectionMode="single"
+              selectedKeys={new Set([pageSize.toString()])}
+              onSelectionChange={(keys) => {
+                const val = Number(Array.from(keys)[0]);
+                setPageSize(val);
+              }}
+            >
+              {[20, 40, 60, 80, 100].map((size) => (
+                <DropdownItem key={size}>{size} items</DropdownItem>
+              ))}
+            </DropdownMenu>
+          </Dropdown>
         </div>
 
         {/* 4. VIEW TOGGLE */}

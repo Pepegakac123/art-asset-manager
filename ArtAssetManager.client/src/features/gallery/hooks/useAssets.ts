@@ -1,4 +1,9 @@
-import { useQuery, keepPreviousData, useMutation } from "@tanstack/react-query";
+import {
+  useQuery,
+  keepPreviousData,
+  useMutation,
+  useInfiniteQuery,
+} from "@tanstack/react-query";
 import { assetService } from "@/services/assetService";
 import { AssetQueryParams } from "@/types/api";
 import { UI_CONFIG } from "@/config/constants";
@@ -11,22 +16,33 @@ export const useAssets = (
   params: AssetQueryParams,
   collectionId?: number,
 ) => {
-  const getAssetsQuery = useQuery({
+  const getAssetsQuery = useInfiniteQuery({
     queryKey: ["assets", mode, params, collectionId],
-    queryFn: async () => {
+    initialPageParam: 1,
+    queryFn: async ({ pageParam = 1 }) => {
+      const currentParams = { ...params, pageNumber: pageParam as number };
       switch (mode) {
-        case "favorites":
-          return assetService.getFavorites(params);
-        case "trash":
-          return assetService.getTrashed(params);
-        case "collection":
+        case UI_CONFIG.GALLERY.AllowedDisplayContentModes.default:
+          return assetService.getFavorites(currentParams);
+        case UI_CONFIG.GALLERY.AllowedDisplayContentModes.trash:
+          return assetService.getTrashed(currentParams);
+        case UI_CONFIG.GALLERY.AllowedDisplayContentModes.collection:
           if (!collectionId) throw new Error("Brak ID kolekcji");
-          return assetService.getAssetsForMaterialSet(collectionId, params);
-        case "uncategorized":
-          return assetService.getAll(params); // TODO: Dodać filtr uncategorized
+          return assetService.getAssetsForMaterialSet(
+            collectionId,
+            currentParams,
+          );
+        case UI_CONFIG.GALLERY.AllowedDisplayContentModes.uncategorized:
+          return assetService.getAll(currentParams); // TODO: Dodać filtr uncategorized
         default:
-          return assetService.getAll(params);
+          return assetService.getAll(currentParams);
       }
+    },
+    getNextPageParam: (lastPage) => {
+      if (lastPage.hasNextPage) {
+        return lastPage.currentPage + 1;
+      }
+      return undefined;
     },
     placeholderData: keepPreviousData,
     enabled: mode === "collection" ? !!collectionId : true,

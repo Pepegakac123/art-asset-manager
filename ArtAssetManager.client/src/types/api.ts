@@ -88,11 +88,12 @@ export interface LibraryStats {
 
 export interface PagedResponse<T> {
   items: T[];
-  pageNumber: number;
+  currentPage: number;
+  pageSize: number;
+  totalItems: number;
   totalPages: number;
-  totalCount: number;
-  hasPreviousPage: boolean;
   hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }
 
 // ---------------------------------------------------------------------------

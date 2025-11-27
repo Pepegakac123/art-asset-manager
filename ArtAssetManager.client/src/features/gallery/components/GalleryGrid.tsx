@@ -4,7 +4,7 @@ import { AssetCard } from "./AssetCard";
 import { Spinner } from "@heroui/spinner";
 import type { UI_CONFIG } from "@/config/constants";
 import { AssetQueryParams } from "@/types/api";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useAssets } from "../hooks/useAssets";
 import { useShallow } from "zustand/react/shallow";
 // --- LEPSZY GENERATOR DANYCH ---
@@ -55,8 +55,8 @@ interface GalleryGridProps {
 export const GalleryGrid = ({ mode }: GalleryGridProps) => {
   const { collectionId } = useParams<{ collectionId: string }>();
   const parsedCollectionId = collectionId ? parseInt(collectionId) : undefined;
-
-  const { zoomLevel, viewMode, filters, sortOption, sortDesc } =
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const { zoomLevel, viewMode, filters, sortOption, sortDesc, pageSize } =
     useGalleryStore(
       useShallow((state) => ({
         zoomLevel: state.zoomLevel,
@@ -64,13 +64,14 @@ export const GalleryGrid = ({ mode }: GalleryGridProps) => {
         filters: state.filters,
         sortOption: state.sortOption,
         sortDesc: state.sortDesc,
+        pageSize: state.pageSize,
       })),
     );
 
   const queryParams: AssetQueryParams = useMemo(() => {
     return {
-      pageNumber: 1, // TODO: Paginacja w następnym kroku
-      pageSize: 50, // Na start sztywno, potem dynamicznie
+      pageNumber: 1,
+      pageSize: pageSize,
 
       // --- FILTRY ---
       fileName: filters.searchQuery || undefined,
@@ -89,13 +90,36 @@ export const GalleryGrid = ({ mode }: GalleryGridProps) => {
       sortBy: sortOption,
       sortDesc: sortDesc,
     };
-  }, [filters, sortOption, sortDesc]);
+  }, [filters, sortOption, sortDesc, pageSize]);
 
-  const { data, isLoading, isError, error, openExplorer } = useAssets(
-    mode,
-    queryParams,
-    parsedCollectionId,
-  );
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    openExplorer,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useAssets(mode, queryParams, parsedCollectionId);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Jeśli strażnik jest widoczny I mamy następną stronę I nie ładujemy jej teraz
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1, rootMargin: "200px" }, // Ładuj 200px przed końcem
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // 5. Renderowanie Stanów
   if (isLoading) {
@@ -119,14 +143,13 @@ export const GalleryGrid = ({ mode }: GalleryGridProps) => {
     );
   }
 
-  const assets = data?.items || [];
-  console.log(assets[0]);
+  const allAssets = data?.pages.flatMap((page) => page.items) || [];
 
-  if (assets.length === 0) {
+  if (allAssets.length === 0) {
     return (
       <div className="flex h-full w-full flex-col items-center justify-center text-default-500">
-        <p className="text-lg">Pusto tutaj...</p>
-        <p className="text-sm">Brak assetów spełniających kryteria.</p>
+        <p className="text-lg">No assets found</p>
+        <p className="text-sm">Try changing filters or scanning new folders.</p>
       </div>
     );
   }
@@ -137,11 +160,23 @@ export const GalleryGrid = ({ mode }: GalleryGridProps) => {
         style={{ "--col-width": `${zoomLevel}px` } as React.CSSProperties}
         className="grid grid-cols-[repeat(auto-fill,minmax(var(--col-width),1fr))] gap-4 pb-20 p-4"
       >
-        {assets.map((asset) => (
+        {allAssets.map((asset) => (
           <div key={asset.id} className="aspect-square">
             <AssetCard asset={asset} explorerfn={openExplorer} />
           </div>
         ))}
+      </div>
+      {/* Ten element jest na samym dnie. Jak go widać -> fetchNextPage() */}
+      <div
+        ref={loadMoreRef}
+        className="w-full h-20 flex items-center justify-center mt-4"
+      >
+        {isFetchingNextPage && (
+          <Spinner size="md" color="default" label="Loading more..." />
+        )}
+        {!hasNextPage && allAssets.length > 0 && (
+          <p className="text-tiny text-default-400">End of library</p>
+        )}
       </div>
     </div>
   );

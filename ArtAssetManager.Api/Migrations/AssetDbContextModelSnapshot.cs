@@ -286,7 +286,8 @@ namespace ArtAssetManager.Api.Migrations
 
                     b.HasOne("ArtAssetManager.Api.Entities.ScanFolder", "ScanFolder")
                         .WithMany("Assets")
-                        .HasForeignKey("ScanFolderId");
+                        .HasForeignKey("ScanFolderId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Parent");
 

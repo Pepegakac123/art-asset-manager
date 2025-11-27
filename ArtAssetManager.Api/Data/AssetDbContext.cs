@@ -27,7 +27,11 @@ namespace ArtAssetManager.Api.Data
             modelBuilder.Entity<ScanFolder>().HasQueryFilter(a => a.IsDeleted == false);
 
             modelBuilder.Entity<SavedSearch>().HasIndex(s => s.Name).IsUnique();
-
+            modelBuilder.Entity<Asset>()
+                    .HasOne(a => a.ScanFolder)
+                    .WithMany(s => s.Assets)
+                    .HasForeignKey(a => a.ScanFolderId)
+                    .OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<Asset>()
                 .HasIndex(a => a.FilePath)
                 .IsUnique();

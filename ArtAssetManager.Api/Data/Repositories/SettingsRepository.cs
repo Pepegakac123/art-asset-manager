@@ -18,10 +18,12 @@ namespace ArtAssetManager.Api.Data.Repositories
 
         public async Task<ScanFolder> AddScanFolderAsync(ScanFolder folder, CancellationToken cancellationToken)
         {
-            var exists = await _context.ScanFolders.AnyAsync(f => f.Path == folder.Path, cancellationToken);
-            if (exists)
+            var oldFolder = await _context.ScanFolders.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Path == folder.Path, cancellationToken);
+            if (oldFolder != null)
             {
-                throw new InvalidOperationException("Folder already exists in the scan list.");
+                oldFolder.IsDeleted = false;
+                await _context.SaveChangesAsync(cancellationToken);
+                return oldFolder;
             }
             _context.ScanFolders.Add(folder);
             await _context.SaveChangesAsync(cancellationToken);

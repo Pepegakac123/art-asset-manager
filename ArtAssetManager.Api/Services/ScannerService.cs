@@ -182,7 +182,7 @@ namespace ArtAssetManager.Api.Services
                             var correctFolder = activeFolders
                                     .OrderByDescending(f => f.Path.Length)
                                     .FirstOrDefault(f => filePath.StartsWith(f.Path));
-
+                            // Console.WriteLine($"Correct Folder: {correctFolder.Path} Folder assigned to asset {existingAssetByPath.ScanFolder.Path}");
                             if (correctFolder != null)
                             {
                                 if (existingAssetByPath.ScanFolderId != correctFolder.Id)
@@ -274,9 +274,27 @@ namespace ArtAssetManager.Api.Services
         {
             return extension switch
             {
+                // Images
                 ".jpg" or ".jpeg" or ".png" or ".gif" or ".webp" => FileTypes.Image,
-                ".blend" or ".fbx" or ".obj" or ".ztl" or ".zpr" => FileTypes.Model,
-                ".psd" or ".ai" or ".svg" or ".exr" or ".hdr" or ".tif" or ".tiff" => FileTypes.Texture,
+
+                // 3D Models
+                ".blend" or ".blend1" or ".fbx" or ".obj" or ".max" or ".ma" or ".mb" => FileTypes.Model,
+
+                // Sculpting
+                ".ztl" or ".zpr" or ".zbr" => FileTypes.Model,
+
+                // Procedural/Houdini
+                ".hip" or ".hipnc" or ".hiplc" => FileTypes.Model,
+
+                // Game Engine Assets
+                ".uasset" or ".umap" or ".unity" or ".prefab" or ".mat" or ".asset" => FileTypes.Model,
+
+                // Textures/Materials
+                ".psd" or ".psb" or ".ai" or ".eps" or ".exr" or ".hdr" or ".tif" or ".tiff" => FileTypes.Texture,
+
+                // Substance (Textures/Materials)
+                ".spp" or ".sbs" or ".sbsar" => FileTypes.Texture,
+
                 _ => FileTypes.Other
             };
         }

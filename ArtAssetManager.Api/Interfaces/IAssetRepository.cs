@@ -22,6 +22,7 @@ namespace ArtAssetManager.Api.Interfaces
         Task SetAssetRatingAsync(int assetId, int rating, CancellationToken cancellationToken);
         Task ToggleAssetFavoriteAsync(int assetId, CancellationToken cancellationToken);
         Task<PagedResult<Asset>> GetFavoritesAssetsAsync(AssetQueryParameters queryParams, CancellationToken cancellationToken);
+        Task<PagedResult<Asset>> GetUncategorizedAssetsAsync(AssetQueryParameters queryParams, CancellationToken cancellationToken);
 
         Task SoftDeleteAssetAsync(int assetId, CancellationToken cancellationToken);
         Task BulkSoftDeleteAssetsAsync(List<int> assetIds, CancellationToken cancellationToken);

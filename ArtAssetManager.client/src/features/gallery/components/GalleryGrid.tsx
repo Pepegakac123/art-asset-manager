@@ -7,25 +7,10 @@ import { AssetQueryParams } from "@/types/api";
 import { useEffect, useMemo, useRef } from "react";
 import { useAssets } from "../hooks/useAssets";
 import { useShallow } from "zustand/react/shallow";
-// --- LEPSZY GENERATOR DANYCH ---
-// const generateItems = (count: number) => {
-//   return Array.from({ length: count }, (_, i) => ({
-//     id: i,
-//     title: `SciFi_Prop_v${i}.blend`,
-//     type: i % 4 === 0 ? "BLEND" : i % 3 === 0 ? "FBX" : "PNG",
-//     img: `https://picsum.photos/seed/${i + 120}/400/400`, // Random images
-//     isFavorite: i % 7 === 0, // Co 7 element jest ulubiony
-//   }));
-// };
 
 /*
-TODO: [API] Integration with React Query
-- Zastąpić `generateItems` hookiem `useInfiniteQuery` z biblioteki @tanstack/react-query.
-- Endpoint: GET /api/assets (z parametrami: page, pageSize, tags, filters).
 
-TODO: [UX] Infinite Scroll / Load More
-- UI Guidelines (Sekcja 7.4): Zaimplementować mechanizm "Load More" lub Infinite Scroll.
-- Obecnie renderujemy wszystko naraz - przy 10k assetów przeglądarka wybuchnie bez wirtualizacji siatki (np. @tanstack/react-virtual) LUB paginacji.
+
 
 TODO: [LAYOUT] Masonry Layout Support
 - UI Guidelines (Sekcja 7.2): Dodać obsługę trybu `viewMode === 'masonry'`.

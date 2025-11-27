@@ -198,6 +198,23 @@ namespace ArtAssetManager.Api.Data.Repositories
             };
         }
 
+        public async Task<PagedResult<Asset>> GetUncategorizedAssetsAsync(
+           AssetQueryParameters queryParams, CancellationToken cancellationToken
+       )
+        {
+            IQueryable<Asset> query = _context.Assets.IgnoreQueryFilters().Where(a => a.Tags.Count == 0);
+
+            query = query.ApplyFilteringAndSorting(queryParams);
+
+            var totalItems = await query.CountAsync(cancellationToken);
+            return new PagedResult<Asset>
+            {
+                Items = await query.Skip((queryParams.PageNumber - 1) * queryParams.PageSize)
+        .Take(queryParams.PageSize).ToListAsync(cancellationToken),
+                TotalItems = totalItems
+            };
+        }
+
 
         private async Task<Asset> GetAssetIgnoreFilters(int assetId, CancellationToken cancellationToken)
         {

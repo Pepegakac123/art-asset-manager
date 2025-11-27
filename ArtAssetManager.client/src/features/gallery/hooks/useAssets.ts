@@ -33,7 +33,7 @@ export const useAssets = (
             currentParams,
           );
         case UI_CONFIG.GALLERY.AllowedDisplayContentModes.uncategorized:
-          return assetService.getAll(currentParams); // TODO: Dodać filtr uncategorized
+          return assetService.getUncategorizedAssets(currentParams); // TODO: Dodać filtr uncategorized
         default:
           return assetService.getAll(currentParams);
       }

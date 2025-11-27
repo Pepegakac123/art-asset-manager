@@ -263,6 +263,32 @@ namespace ArtAssetManager.Api.Controllers
             };
             return Ok(response);
         }
+        [HttpGet("uncategorized")]
+        public async Task<ActionResult<PagedResponse<AssetDto>>> GetUncategorizedAssets([FromQuery] AssetQueryParameters queryParams, CancellationToken cancellationToken)
+        {
+            if (queryParams.PageNumber <= 0) queryParams.PageNumber = AssetQueryParameters.DefaultPage;
+            if (queryParams.PageSize <= 0) queryParams.PageSize = AssetQueryParameters.DefaultPageSize;
+            if (queryParams.PageSize > AssetQueryParameters.MaxPageSize) queryParams.PageSize = AssetQueryParameters.MaxPageSize;
+            var pagedResult = await _assetRepo.GetUncategorizedAssetsAsync(queryParams, cancellationToken);
+
+            var assetsDto = _mapper.Map<IEnumerable<AssetDto>>(pagedResult.Items);
+
+            var totalPages = (int)Math.Ceiling(pagedResult.TotalItems / (double)queryParams.PageSize);
+            var hasNext = queryParams.PageNumber < totalPages;
+            var hasPrevious = queryParams.PageNumber > 1;
+
+            var response = new PagedResponse<AssetDto>
+            {
+                Items = assetsDto.ToList(),
+                TotalItems = pagedResult.TotalItems,
+                PageSize = queryParams.PageSize,
+                CurrentPage = queryParams.PageNumber,
+                TotalPages = totalPages,
+                HasNextPage = hasNext,
+                HasPreviousPage = hasPrevious
+            };
+            return Ok(response);
+        }
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> SoftlyDeleteAsset([FromRoute] int id, CancellationToken cancellationToken)

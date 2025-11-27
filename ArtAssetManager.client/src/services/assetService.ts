@@ -22,6 +22,12 @@ export const assetService = {
     const response = await apiReq.get("/assets/deleted", { params });
     return response.data;
   },
+  getUncategorizedAssets: async (
+    params: AssetQueryParams,
+  ): Promise<PagedResponse<Asset>> => {
+    const response = await apiReq.get("/assets/uncategorized", { params });
+    return response.data;
+  },
   getAssetsForMaterialSet: async (
     setId: number,
     params: AssetQueryParams,

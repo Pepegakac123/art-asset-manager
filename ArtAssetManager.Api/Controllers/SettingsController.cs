@@ -133,7 +133,7 @@ namespace ArtAssetManager.Api.Controllers
                     HttpContext.Request.Path
                 ));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500, new ApiErrorResponse(HttpStatusCode.InternalServerError, "Error saving settings", HttpContext.Request.Path));
             }

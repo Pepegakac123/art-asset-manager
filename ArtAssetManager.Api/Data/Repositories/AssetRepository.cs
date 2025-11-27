@@ -104,6 +104,11 @@ namespace ArtAssetManager.Api.Data.Repositories
                 throw;
             }
         }
+        public async Task UpdateAssetAsync(Asset asset, CancellationToken ct = default)
+        {
+            _context.Assets.Update(asset); // To jest bezpieczne - jeśli obiekt jest już śledzony, EF tylko potwierdzi stan.
+            await _context.SaveChangesAsync(ct);
+        }
         public async Task<PagedResult<Asset>> GetPagedAssetsAsync(
             AssetQueryParameters queryParams, CancellationToken cancellationToken
         )

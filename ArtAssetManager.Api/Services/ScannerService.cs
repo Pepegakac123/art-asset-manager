@@ -48,7 +48,7 @@ namespace ArtAssetManager.Api.Services
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("🚀 Scanner Service started!");
-            //  Uruchom to w tle i nie czekaj aż skończy. Gdyby było await to kod by sie zamroził w tym miejscu
+            //  Gdyby było await to kod by sie zamroził w tym miejscu
             _ = StartSchedulerAsync(stoppingToken); // Scheduler działą w tle
 
             await foreach (var mode in _trigger.WaitForTriggersAsync(stoppingToken))
@@ -167,6 +167,7 @@ namespace ArtAssetManager.Api.Services
                         var existingAssetByPath = await assetRepo.GetAssetByPathAsync(filePath, stoppingToken);
                         if (existingAssetByPath != null)
                         {
+                            bool wasModified = false;
                             if (!allowedExtensions.Contains(existingAssetByPath.FileExtension))
                             {
                                 // Plik zmienił rozszerzenie na niedozwolone - dajem do trasha
@@ -177,6 +178,26 @@ namespace ArtAssetManager.Api.Services
                             {
                                 await assetRepo.RestoreAssetAsync(existingAssetByPath.Id, stoppingToken);
                                 _logger.LogInformation("♻️ Restored from trash (extension now allowed): {FileName}", existingAssetByPath.FileName);
+                            }
+                            var correctFolder = activeFolders
+                                    .OrderByDescending(f => f.Path.Length)
+                                    .FirstOrDefault(f => filePath.StartsWith(f.Path));
+
+                            if (correctFolder != null)
+                            {
+                                if (existingAssetByPath.ScanFolderId != correctFolder.Id)
+                                {
+                                    _logger.LogWarning("🩹 Self-Healing: Asset {FileName} re-adopted from FolderId {OldId} to {NewId}",
+                                        existingAssetByPath.FileName, existingAssetByPath.ScanFolderId, correctFolder.Id);
+
+                                    existingAssetByPath.ScanFolderId = correctFolder.Id;
+
+                                    wasModified = true;
+                                }
+                            }
+                            if (wasModified)
+                            {
+                                await assetRepo.UpdateAssetAsync(existingAssetByPath, stoppingToken);
                             }
                             if (globalProcessedCount % 50 == 0) await SendProgress(filePath, totalFilesToScan, globalProcessedCount);
                             continue;
@@ -209,7 +230,7 @@ namespace ArtAssetManager.Api.Services
                         _logger.LogInformation("✅ Added: {FileName}", newAsset.FileName);
                         // await Task.Delay(TimeSpan.FromSeconds(2)); do testu
                         // --- PROGRESS REPORTING (Smart Update) ---
-                        // Raportuj: 
+                        // Raportuj:
                         // 1. Pierwszy plik
                         // 2. Co 10 plików (dla płynności)
                         // 3. Ostatni plik
@@ -312,7 +333,7 @@ namespace ArtAssetManager.Api.Services
                 catch (Exception ex)
                 {
                     _logger.LogWarning("Failed to generate thumbnail for image {Path}: {Message}", filePath, ex.Message);
-                    // Jeśli failnie generowanie obrazka, spadnie niżej do switcha i zwróci generic placeholder. 
+                    // Jeśli failnie generowanie obrazka, spadnie niżej do switcha i zwróci generic placeholder.
                 }
             }
 
@@ -415,5 +436,3 @@ namespace ArtAssetManager.Api.Services
 
     }
 }
-
-

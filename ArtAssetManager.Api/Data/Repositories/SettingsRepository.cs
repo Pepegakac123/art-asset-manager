@@ -1,4 +1,3 @@
-using System.Text.Json;
 using ArtAssetManager.Api.Entities;
 using ArtAssetManager.Api.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +15,7 @@ namespace ArtAssetManager.Api.Data.Repositories
         {
             return await _context.ScanFolders.ToListAsync(cancellationToken);
         }
+
         public async Task<ScanFolder> AddScanFolderAsync(ScanFolder folder, CancellationToken cancellationToken)
         {
             var exists = await _context.ScanFolders.AnyAsync(f => f.Path == folder.Path, cancellationToken);
@@ -31,9 +31,25 @@ namespace ArtAssetManager.Api.Data.Repositories
         }
         public async Task DeleteScanFolderAsync(int id, CancellationToken cancellationToken)
         {
-            var folder = await _context.ScanFolders.FindAsync(id);
-            if (folder == null) throw new KeyNotFoundException($"Folder {id} not found");
-            folder.IsDeleted = true;
+
+            var folderToDelete = await _context.ScanFolders.FindAsync(new object[] { id }, cancellationToken);
+
+            if (folderToDelete == null)
+                throw new KeyNotFoundException($"Folder with ID {id} not found");
+
+            var parentFolder = await _context.ScanFolders
+                .Where(f => f.Id != id && !f.IsDeleted)
+                .Where(f => folderToDelete.Path.StartsWith(f.Path))
+                .OrderByDescending(f => f.Path.Length)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (parentFolder != null)
+            {
+                await _context.Assets
+                    .Where(a => a.ScanFolderId == id)
+                    .ExecuteUpdateAsync(s => s.SetProperty(a => a.ScanFolderId, parentFolder.Id), cancellationToken);
+            }
+            folderToDelete.IsDeleted = true;
             await _context.SaveChangesAsync(cancellationToken);
         }
         public async Task<ScanFolder?> GetScanFolderByIdAsync(int id, CancellationToken cancellationToken)

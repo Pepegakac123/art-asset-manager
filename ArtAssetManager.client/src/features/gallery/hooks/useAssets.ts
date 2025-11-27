@@ -22,7 +22,7 @@ export const useAssets = (
     queryFn: async ({ pageParam = 1 }) => {
       const currentParams = { ...params, pageNumber: pageParam as number };
       switch (mode) {
-        case UI_CONFIG.GALLERY.AllowedDisplayContentModes.default:
+        case UI_CONFIG.GALLERY.AllowedDisplayContentModes.favorites:
           return assetService.getFavorites(currentParams);
         case UI_CONFIG.GALLERY.AllowedDisplayContentModes.trash:
           return assetService.getTrashed(currentParams);

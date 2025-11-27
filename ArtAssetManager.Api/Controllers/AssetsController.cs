@@ -243,7 +243,6 @@ namespace ArtAssetManager.Api.Controllers
             if (queryParams.PageNumber <= 0) queryParams.PageNumber = AssetQueryParameters.DefaultPage;
             if (queryParams.PageSize <= 0) queryParams.PageSize = AssetQueryParameters.DefaultPageSize;
             if (queryParams.PageSize > AssetQueryParameters.MaxPageSize) queryParams.PageSize = AssetQueryParameters.MaxPageSize;
-
             var pagedResult = await _assetRepo.GetFavoritesAssetsAsync(queryParams, cancellationToken);
 
             var assetsDto = _mapper.Map<IEnumerable<AssetDto>>(pagedResult.Items);

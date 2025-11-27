@@ -1,217 +1,255 @@
-import { Card, CardBody } from "@heroui/card";
+import { Card, CardFooter, CardHeader } from "@heroui/card";
 import { Image } from "@heroui/image";
 import { Checkbox } from "@heroui/checkbox";
 import { Button } from "@heroui/button";
 import {
-	Dropdown,
-	DropdownTrigger,
-	DropdownMenu,
-	DropdownItem,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
 } from "@heroui/dropdown";
 import {
-	Heart,
-	MoreVertical,
-	FileBox,
-	Edit,
-	FolderPlus,
-	Trash,
-	Box,
+  Heart,
+  MoreVertical,
+  Edit,
+  FolderPlus,
+  Trash,
+  Box,
+  Image as ImageIcon,
+  FileBox,
+  FolderOpen,
+  Maximize2,
+  HardDrive,
 } from "lucide-react";
-import { useGalleryStore } from "../stores/useGalleryStore";
 import { useState } from "react";
-import { Tooltip } from "@heroui/tooltip";
+import { Asset } from "@/types/api";
+import { useAssets } from "../hooks/useAssets";
+import { AxiosResponse } from "axios";
+import { UseMutateFunction } from "@tanstack/react-query";
 
-/*
-TODO: [STATE] Global Selection Sync
-- Usunąć lokalny stan `const [isSelected, setIsSelected] = useState(false)`.
-- Podpiąć checkbox pod globalny store: `isSelected = useGalleryStore(s => s.selectedAssetIds.includes(id))`.
-- To krytyczne, aby Multi-Select działał z Shift+Click i przyciskami "Select All".
-
-TODO: [ACTIONS] Connect Context Menu to API
-- Menu "Rename": Otworzyć modal/input i strzelić do PATCH /api/assets/{id}/rename.
-- Menu "Delete": Strzelić do DELETE /api/assets/{id} (Soft Delete).
-- Menu "Add to Collection": Otworzyć modal wyboru kolekcji.
-
-TODO: [UX] Open in Explorer
-- Plan (Krok 25): Dodać opcję "Show in Explorer" w menu kontekstowym (wymaga endpointu backendowego).
-
-TODO: [PERFORMANCE] Image Optimization
-- ThumbnailUrl: Upewnić się, że backend zwraca małą miniaturkę (np. 400px), a nie pełny plik 4K.
-*/
-
-export interface AssetCardProps {
-	id: number;
-	title: string;
-	type: string;
-	thumbnailUrl: string;
-	isFavorite?: boolean;
+interface AssetCardProps {
+  asset: Asset;
+  explorerfn: UseMutateFunction<
+    AxiosResponse<any, any, {}>,
+    any,
+    string,
+    unknown
+  >;
+  style?: React.CSSProperties;
 }
 
-export const AssetCard = ({
-	id,
-	title,
-	type,
-	thumbnailUrl,
-	isFavorite = false,
-}: AssetCardProps) => {
-	const selectedAssetId = useGalleryStore((state) => state.selectedAssetId);
-	const setSelectedAssetId = useGalleryStore(
-		(state) => state.setSelectedAssetId,
-	);
-	const isActive = selectedAssetId === id;
+export const AssetCard = ({ asset, explorerfn, style }: AssetCardProps) => {
+  const {
+    id,
+    fileName,
+    fileType,
+    filePath,
+    thumbnailUrl,
+    imageWidth,
+    imageHeight,
+    fileExtension,
+  } = asset;
 
-	// TODO: W przyszłości podpiąć isSelected pod globalny store multi-selectu.
-	const [isSelected, setIsSelected] = useState(false);
-	const [isHovered, setIsHovered] = useState(false);
+  const [isSelected, setIsSelected] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-	const showControls = isHovered || isSelected;
+  // Bezpieczne łączenie URL (naprawa podwójnych slashy)
+  const imageUrl = thumbnailUrl
+    ? `${import.meta.env.VITE_API_URL}${thumbnailUrl.startsWith("/") ? "" : "/"}${thumbnailUrl}`
+    : "/placeholder.png";
 
-	const actionBubbleClass = `
-    flex items-center justify-center min-w-8 w-8 h-8 rounded-full 
-    bg-content1/90 backdrop-blur-md 
-    border transition-all duration-200
-    ${isActive || isSelected ? "border-primary shadow-[0_0_10px_rgba(249,115,22,0.2)]" : "border-white/10 hover:border-primary hover:text-primary"}
-  `;
+  const showControls = isHovered || isSelected || isMenuOpen;
 
-	return (
-		<Card
-			shadow="sm"
-			isPressable
-			onPress={() => setSelectedAssetId(id)}
-			onMouseEnter={() => setIsHovered(true)}
-			onMouseLeave={() => setIsHovered(false)}
-			className={`
-        aspect-square transition-all duration-200 bg-content1 group
-        ${isActive || isSelected ? "ring-2 ring-primary ring-offset-2 ring-offset-background z-10" : "border-transparent hover:border-default-300"}
-      `}
-			data-selected={isSelected}
-		>
-			<CardBody className="p-0 overflow-hidden relative h-full w-full">
-				{/* 1. OBRAZEK */}
-				<Image
-					removeWrapper
-					radius="none"
-					alt={title}
-					className={`z-0 w-full h-full object-cover transition-transform duration-500 ${isHovered ? "scale-110" : "scale-100"}`}
-					src={thumbnailUrl}
-				/>
+  // Helper do ikonki
+  const getFileIcon = () => {
+    switch (fileType?.toLowerCase()) {
+      case "model":
+        return <Box size={14} className="text-white/80" />;
+      case "image":
+      case "texture":
+        return <ImageIcon size={14} className="text-white/80" />;
+      default:
+        return <FileBox size={14} className="text-white/80" />;
+    }
+  };
+  const formatBytes = (bytes: number, decimals = 0) => {
+    if (!+bytes) return "0 B";
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ["B", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+  };
+  // Funkcja otwierająca (zamiast isPressable)
+  const handleCardClick = () => {
+    console.log("Open details for asset:", id);
+  };
 
-				{/* 2. OVERLAY */}
-				<div
-					className={`absolute inset-0 bg-black/60 transition-opacity duration-300 z-10 pointer-events-none
-            ${showControls ? "opacity-100" : "opacity-0"}`}
-				/>
+  // Wrapper zapobiegający odpaleniu handleCardClick przy kliknięciu w akcje
+  const stopProp = (e: React.SyntheticEvent) => {
+    e.stopPropagation();
+  };
 
-				{/* 3. GÓRA-PRAWA: AKCJE (Equal Size Bubbles) */}
-				<div
-					className={`absolute top-2 right-2 z-20 flex flex-row items-center gap-2 transition-opacity duration-200 ${showControls ? "opacity-100" : "opacity-0"}`}
-				>
-					{/* A. CHECKBOX WRAPPER (Udaje przycisk) */}
-					<Tooltip content="Select Item" delay={500} closeDelay={0}>
-						<div className={actionBubbleClass}>
-							<Checkbox
-								isSelected={isSelected}
-								onValueChange={setIsSelected}
-								radius="full"
-								color="primary"
-								size="md" // Większy rozmiar checkboxa
-								aria-label="Select asset"
-								classNames={{
-									wrapper: "m-0 p-0 mr-[-1px]", // Reset marginów HeroUI
-									// Ukrywamy domyślne tło checkboxa, bo wrapper robi robotę,
-									// chyba że jest zaznaczony - wtedy chcemy pomarańczowe wypełnienie
-									base: "p-0 m-0 gap-0",
-								}}
-							/>
-						</div>
-					</Tooltip>
+  return (
+    <Card
+      // ❌ USUNIĘTE: isPressable (to powodowało błąd zagnieżdżonych buttonów)
+      shadow="sm"
+      radius="lg"
+      className={`group relative h-full w-full border-none bg-black/20 transition-transform hover:scale-[1.02] ${
+        isSelected ? "ring-2 ring-primary" : ""
+      }`}
+      style={style}
+      // ✅ DODANE: Obsługa kliknięcia "ręcznie"
+      onClick={handleCardClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* --- HEADER: Akcje (Checkbox, Heart, Menu) --- */}
+      {/* Absolute positioning na górze */}
+      <CardHeader className="absolute top-0 z-20 flex w-full justify-between p-2">
+        <div
+          className={`flex gap-2 transition-opacity duration-200 ${
+            showControls ? "opacity-100" : "opacity-0"
+          }`}
+          onClick={stopProp} // Ważne: Kliknięcie w to nie otwiera assetu
+          onKeyDown={stopProp}
+        >
+          <Checkbox
+            isSelected={isSelected}
+            onValueChange={setIsSelected}
+            size="sm"
+            classNames={{
+              wrapper:
+                "bg-black/40 border-white/50 group-data-[selected=true]:bg-primary",
+            }}
+          />
+        </div>
 
-					{/* B. SERCE (Favorite) */}
-					<Tooltip
-						content={isFavorite ? "Remove from Favorites" : "Add to Favorites"}
-						delay={500}
-						closeDelay={0}
-					>
-						<Button
-							isIconOnly
-							size="sm"
-							radius="full"
-							variant="light" // Używamy light, bo wrapper (actionBubbleClass) daje tło
-							className={`${actionBubbleClass} ${isFavorite ? "text-danger border-danger hover:border-danger" : "text-default-400"}`}
-						>
-							<Heart size={18} fill={isFavorite ? "currentColor" : "none"} />
-						</Button>
-					</Tooltip>
-				</div>
+        <div
+          className={`flex gap-1 transition-opacity duration-200 ${
+            showControls ? "opacity-100" : "opacity-0"
+          }`}
+          onClick={stopProp}
+          onKeyDown={stopProp}
+        >
+          <Button
+            isIconOnly
+            size="sm"
+            radius="full"
+            variant="light"
+            className="bg-black/40 text-white backdrop-blur-md hover:bg-primary/80 hover:text-white"
+            onPress={() => explorerfn(filePath)}
+            title="Open in Explorer"
+          >
+            <FolderOpen size={16} />
+          </Button>
+          {/* Przycisk Ulubione */}
+          <Button
+            isIconOnly
+            size="sm"
+            radius="full"
+            variant="light"
+            className="bg-black/40 text-white backdrop-blur-md hover:bg-black/60"
+            onPress={() => console.log("Toggle favorite", id)}
+          >
+            <Heart
+              size={16}
+              className={
+                asset.isFavorite ? "fill-danger text-danger" : "text-white"
+              }
+            />
+          </Button>
 
-				{/* 4. DÓŁ-LEWA: TYP PLIKU (Badge) */}
-				<div
-					className={`absolute bottom-2 left-2 z-20 transition-opacity duration-200 ${showControls ? "opacity-100" : "opacity-0"}`}
-				>
-					<div className="px-2 py-1 rounded-md bg-black/80 backdrop-blur-md border border-white/10 flex items-center gap-1.5 shadow-lg">
-						{type === "BLEND" && <Box size={14} className="text-orange-500" />}
-						{type === "FBX" && <Box size={14} className="text-blue-500" />}
-						{type === "PNG" && <FileBox size={14} className="text-green-500" />}
-						<span className="text-[10px] font-bold text-white uppercase tracking-wider">
-							{type}
-						</span>
-					</div>
-				</div>
+          {/* Menu Dropdown */}
+          <Dropdown placement="bottom-end" onOpenChange={setIsMenuOpen}>
+            <DropdownTrigger>
+              <Button
+                isIconOnly
+                size="sm"
+                radius="full"
+                variant="light"
+                className="bg-black/40 text-white backdrop-blur-md hover:bg-black/60"
+              >
+                <MoreVertical size={16} />
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu
+              aria-label="Asset Actions"
+              onAction={(key) => console.log("Action:", key)}
+            >
+              <DropdownItem key="rename" startContent={<Edit size={16} />}>
+                Rename
+              </DropdownItem>
+              <DropdownItem
+                key="add-set"
+                startContent={<FolderPlus size={16} />}
+              >
+                Add to Collection
+              </DropdownItem>
+              <DropdownItem
+                key="delete"
+                className="text-danger"
+                color="danger"
+                startContent={<Trash size={16} />}
+              >
+                Delete
+              </DropdownItem>
+            </DropdownMenu>
+          </Dropdown>
+        </div>
+      </CardHeader>
 
-				{/* 5. DÓŁ-PRAWA: MENU KONTEKSTOWE */}
-				<div
-					className={`absolute bottom-2  right-2 z-20 transition-opacity duration-200 ${showControls ? "opacity-100" : "opacity-0"}`}
-				>
-					<Dropdown placement="bottom-end">
-						<DropdownTrigger>
-							{/* Używamy tej samej klasy 'actionBubbleClass' dla spójności */}
-							<Button
-								isIconOnly
-								size="sm"
-								radius="full"
-								variant="light"
-								className={actionBubbleClass}
-							>
-								<MoreVertical
-									size={18}
-									className="text-default-400 group-hover:text-primary transition-colors"
-								/>
-							</Button>
-						</DropdownTrigger>
+      {/* --- BODY: Obrazek tła --- */}
+      {/* removeWrapper + object-cover sprawia że obrazek działa jak background-image */}
+      <Image
+        removeWrapper
+        alt={fileName}
+        className="z-0 h-full w-full object-cover"
+        src={imageUrl}
+        fallbackSrc="https://via.placeholder.com/400x400?text=No+Preview"
+      />
 
-						<DropdownMenu
-							aria-label="Asset Actions"
-							classNames={{
-								base: "bg-content1  shadow-xl",
-							}}
-							itemClasses={{
-								base: "data-[hover=true]:bg-primary/10 data-[hover=true]:text-primary text-default-500 transition-colors",
-								title: "text-sm font-medium",
-							}}
-						>
-							<DropdownItem key="rename" startContent={<Edit size={16} />}>
-								Rename
-							</DropdownItem>
-							<DropdownItem
-								key="add-set"
-								startContent={<FolderPlus size={16} />}
-							>
-								Add to Collection
-							</DropdownItem>
-							<DropdownItem
-								key="delete"
-								className="text-danger group/del"
-								color="danger"
-								startContent={
-									<Trash size={16} className="group-hover/del:text-danger" />
-								}
-							>
-								Delete
-							</DropdownItem>
-						</DropdownMenu>
-					</Dropdown>
-				</div>
-			</CardBody>
-		</Card>
-	);
+      {/* --- FOOTER: Rozmyty pasek z nazwą --- */}
+      <CardFooter className="absolute bottom-0 z-10 w-full justify-between border-t border-white/10 bg-black/60 p-2 backdrop-blur-md">
+        <div className="flex w-full flex-col items-start gap-1">
+          {/* Nazwa pliku */}
+          <p className="w-full truncate text-tiny font-bold text-white/90 text-left">
+            {fileName}
+          </p>
+
+          {/* Metadane*/}
+          <div className="flex w-full items-center justify-between mt-1">
+            {/* LEWA: Typ Pliku */}
+            <span
+              className="flex items-center gap-1 text-[10px] text-white/60"
+              title="File Type"
+            >
+              {getFileIcon()}
+              <span className="uppercase tracking-wider font-medium">
+                {fileExtension?.replace(".", "")}
+              </span>
+            </span>
+
+            {/* PRAWA: Wymiary i Rozmiar */}
+            <div className="flex items-center gap-2 text-[9px] text-white/50">
+              {/* Wymiary (jeśli są) */}
+              {(imageWidth ?? 0) > 0 && (imageHeight ?? 0) > 0 && (
+                <span className="flex items-center gap-1" title="Resolution">
+                  <Maximize2 size={10} className="text-white/40" />
+                  {imageWidth}×{imageHeight}
+                </span>
+              )}
+
+              {/* Rozmiar Pliku */}
+              <span className="flex items-center gap-1" title="File Size">
+                <HardDrive size={10} className="text-white/40" />
+                {formatBytes(asset.fileSize)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </CardFooter>
+    </Card>
+  );
 };

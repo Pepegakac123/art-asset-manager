@@ -1,17 +1,22 @@
 import { useParams } from "react-router-dom";
 import { useGalleryStore } from "../stores/useGalleryStore";
-import { AssetCard } from "./AssetCard"; // Import nowej karty
-
+import { AssetCard } from "./AssetCard";
+import { Spinner } from "@heroui/spinner";
+import type { UI_CONFIG } from "@/config/constants";
+import { AssetQueryParams } from "@/types/api";
+import { useMemo } from "react";
+import { useAssets } from "../hooks/useAssets";
+import { useShallow } from "zustand/react/shallow";
 // --- LEPSZY GENERATOR DANYCH ---
-const generateItems = (count: number) => {
-	return Array.from({ length: count }, (_, i) => ({
-		id: i,
-		title: `SciFi_Prop_v${i}.blend`,
-		type: i % 4 === 0 ? "BLEND" : i % 3 === 0 ? "FBX" : "PNG",
-		img: `https://picsum.photos/seed/${i + 120}/400/400`, // Random images
-		isFavorite: i % 7 === 0, // Co 7 element jest ulubiony
-	}));
-};
+// const generateItems = (count: number) => {
+//   return Array.from({ length: count }, (_, i) => ({
+//     id: i,
+//     title: `SciFi_Prop_v${i}.blend`,
+//     type: i % 4 === 0 ? "BLEND" : i % 3 === 0 ? "FBX" : "PNG",
+//     img: `https://picsum.photos/seed/${i + 120}/400/400`, // Random images
+//     isFavorite: i % 7 === 0, // Co 7 element jest ulubiony
+//   }));
+// };
 
 /*
 TODO: [API] Integration with React Query
@@ -41,40 +46,103 @@ TODO: [UX] Floating Bulk Actions Dock
 */
 
 type DisplayContentMode =
-	| "default"
-	| "favorites"
-	| "uncategorized"
-	| "trash"
-	| "collection";
+  keyof typeof UI_CONFIG.GALLERY.AllowedDisplayContentModes;
+
 interface GalleryGridProps {
-	mode: DisplayContentMode;
+  mode: DisplayContentMode;
 }
 
 export const GalleryGrid = ({ mode }: GalleryGridProps) => {
-	const params = useParams();
+  const { collectionId } = useParams<{ collectionId: string }>();
+  const parsedCollectionId = collectionId ? parseInt(collectionId) : undefined;
 
-	const zoomLevel = useGalleryStore((state) => state.zoomLevel);
+  const { zoomLevel, viewMode, filters, sortOption, sortDesc } =
+    useGalleryStore(
+      useShallow((state) => ({
+        zoomLevel: state.zoomLevel,
+        viewMode: state.viewMode,
+        filters: state.filters,
+        sortOption: state.sortOption,
+        sortDesc: state.sortDesc,
+      })),
+    );
 
-	// Generujemy 50 elementów
-	const items = generateItems(50);
+  const queryParams: AssetQueryParams = useMemo(() => {
+    return {
+      pageNumber: 1, // TODO: Paginacja w następnym kroku
+      pageSize: 50, // Na start sztywno, potem dynamicznie
 
-	return (
-		<div className="h-full w-full">
-			<div
-				style={{ "--col-width": `${zoomLevel}px` } as React.CSSProperties}
-				className="grid grid-cols-[repeat(auto-fill,minmax(var(--col-width),1fr))] gap-4 pb-20 p-4"
-			>
-				{items.map((item) => (
-					<AssetCard
-						key={item.id}
-						id={item.id}
-						title={item.title}
-						type={item.type}
-						thumbnailUrl={item.img}
-						isFavorite={item.isFavorite}
-					/>
-				))}
-			</div>
-		</div>
-	);
+      // --- FILTRY ---
+      fileName: filters.searchQuery || undefined,
+      tags: filters.tags.length > 0 ? filters.tags : undefined,
+      matchAll: filters.matchAllTags,
+
+      fileType: filters.fileTypes.length > 0 ? filters.fileTypes : undefined,
+      dominantColors: filters.colors.length > 0 ? filters.colors : undefined,
+
+      ratingMin: filters.ratingRange[0],
+      ratingMax: filters.ratingRange[1],
+
+      dateFrom: filters.dateRange.from || undefined,
+      dateTo: filters.dateRange.to || undefined,
+
+      sortBy: sortOption,
+      sortDesc: sortDesc,
+    };
+  }, [filters, sortOption, sortDesc]);
+
+  const { data, isLoading, isError, error, openExplorer } = useAssets(
+    mode,
+    queryParams,
+    parsedCollectionId,
+  );
+
+  // 5. Renderowanie Stanów
+  if (isLoading) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <Spinner size="lg" label="Loading assets..." color="primary" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center text-danger">
+        <p className="text-xl font-bold">Błąd ładowania galerii</p>
+        <p className="text-sm opacity-70">
+          {(error as Error).message ||
+            (error as any)?.response?.data?.message ||
+            (error as any)?.response?.data?.error}
+        </p>
+      </div>
+    );
+  }
+
+  const assets = data?.items || [];
+  console.log(assets[0]);
+
+  if (assets.length === 0) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center text-default-500">
+        <p className="text-lg">Pusto tutaj...</p>
+        <p className="text-sm">Brak assetów spełniających kryteria.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full w-full">
+      <div
+        style={{ "--col-width": `${zoomLevel}px` } as React.CSSProperties}
+        className="grid grid-cols-[repeat(auto-fill,minmax(var(--col-width),1fr))] gap-4 pb-20 p-4"
+      >
+        {assets.map((asset) => (
+          <div key={asset.id} className="aspect-square">
+            <AssetCard asset={asset} explorerfn={openExplorer} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 };

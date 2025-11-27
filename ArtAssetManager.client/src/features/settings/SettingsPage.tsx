@@ -254,7 +254,7 @@ export default function SettingsPage() {
               <Card
                 key={folder.id}
                 className={cn(
-                  "flex items-center justify-between p-4 border rounded-lg transition-all",
+                  "flex items-center justify-between p-4  rounded-lg transition-all",
 
                   !folder.isActive &&
                     "opacity-60 bg-default-100 grayscale-[0.5]",

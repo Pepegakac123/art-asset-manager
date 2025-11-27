@@ -1,78 +1,91 @@
-import { UI_CONFIG } from "@/config/constants";
 import { create } from "zustand";
-import {persist} from "zustand/middleware"
+import { devtools } from "zustand/middleware";
 
-type viewModeType = "grid" | "masonry" | "list";
+export interface GalleryFilters {
+  searchQuery: string; // C#: FileName
+  tags: string[]; // C#: Tags
+  matchAllTags: boolean; // C#: MatchAll
+  fileTypes: string[]; // C#: FileType
+  colors: string[]; // C#: DominantColors
 
-interface GalleryState {
-	/*
-TODO: [STATE] Refactor Selection for Multi-Select
-- Zmienić `selectedAssetId: number | null` na `selectedAssetIds: Set<number>` (lub array).
-- UI Guidelines (Sekcja 7.5): Potrzebujemy tego do "Floating Action Bar" (Taguj X assetów, Usuń X assetów).
-- Dodać akcje: `toggleSelection(id)`, `clearSelection()`, `selectAll()`.
+  ratingRange: [number, number]; // C#: RatingMin, RatingMax (Slider UI zwraca tablicę)
+  dateRange: {
+    // C#: DateFrom, DateTo
+    from: string | null;
+    to: string | null;
+  };
 
-TODO: [FILTER] Add Technical Filters State
-- UI Guidelines (Sekcja 6.4): Dodać stan dla filtrów technicznych:
-  - ratingRange: [min, max]
-  - fileTypes: string[] (np. ['model', 'image'])
-  - dateRange: DateRange
-*/
+  // Wymiary (Opcjonalne)
+  widthRange: [number, number]; // C#: MinWidth, MaxWidth
+  heightRange: [number, number]; // C#: MinHeight, MaxHeight
 
-	// --- UI STATE ---
-	zoomLevel: number;
-	viewMode: viewModeType;
-	sortOption: string;
-
-	// --- FILTER STATE ---
-	selectedAssetId: number | null;
-	selectedTags: string[];
-	isStrictMode: boolean;
-
-	// --- ACTIONS ---
-	setZoomLevel: (level: number) => void;
-	setViewMode: (mode: viewModeType) => void;
-	setSortOption: (option: string) => void;
-	setSelectedAssetId: (id: number | null) => void;
-	toggleTag: (tag: string) => void;
-	removeTag: (tag: string) => void;
-	setStrictMode: (isActive: boolean) => void;
+  hasAlpha: boolean | null; // C#: HasAlphaChannel (null = wszystko, true = z, false = bez)
 }
 
+// 2. Definicja Sortowania (switch w C#)
+export type SortOption = "dateadded" | "filename" | "filesize" | "lastmodified";
+
+interface GalleryState {
+  // --- UI State ---
+  zoomLevel: number;
+  viewMode: "grid" | "masonry";
+
+  // --- Data State ---
+  filters: GalleryFilters;
+  sortOption: SortOption;
+  sortDesc: boolean; // C#: SortDesc
+
+  // --- Actions ---
+  setZoomLevel: (zoom: number) => void;
+  setViewMode: (mode: "grid" | "masonry") => void;
+
+  // Update filtrów (Partial pozwala aktualizować tylko jedno pole np. tylko tags)
+  setFilters: (newFilters: Partial<GalleryFilters>) => void;
+
+  // Helpersy do sortowania
+  setSortOption: (option: SortOption) => void;
+  toggleSortDirection: () => void;
+
+  // Reset
+  resetFilters: () => void;
+}
+
+const DEFAULT_FILTERS: GalleryFilters = {
+  searchQuery: "",
+  tags: [],
+  matchAllTags: true,
+  fileTypes: [],
+  colors: [],
+  ratingRange: [0, 5],
+  dateRange: { from: null, to: null },
+  widthRange: [0, 8192],
+  heightRange: [0, 8192],
+  hasAlpha: null,
+};
+
 export const useGalleryStore = create<GalleryState>()(
-  persist(
-    (set) => ({
-      	zoomLevel: UI_CONFIG.GALLERY.DEFAULT_ZOOM,
-	viewMode: "grid",
-	sortOption: "newest",
-	selectedAssetId: null,
-	selectedTags: [],
-	isStrictMode: true,
+  devtools((set) => ({
+    // Initial State
+    zoomLevel: 250,
+    viewMode: "grid",
 
-	setZoomLevel: (level) => set({ zoomLevel: level }),
-	setViewMode: (mode) => set({ viewMode: mode }),
-	setSortOption: (option) => set({ sortOption: option }),
-	setSelectedAssetId: (id) => set({ selectedAssetId: id }),
+    filters: DEFAULT_FILTERS,
+    sortOption: "dateadded", // Default z C#
+    sortDesc: true, // Default z C# (OrderByDescending)
 
-	toggleTag: (tag) =>
-		set((state) => {
-			const exists = state.selectedTags.includes(tag);
-			return {
-				selectedTags: exists
-					? state.selectedTags.filter((t) => t !== tag)
-					: [...state.selectedTags, tag],
-			};
-		}),
+    // Actions
+    setZoomLevel: (zoom) => set({ zoomLevel: zoom }),
+    setViewMode: (mode) => set({ viewMode: mode }),
 
-	removeTag: (tag) =>
-		set((state) => ({
-			selectedTags: state.selectedTags.filter((t) => t !== tag),
-		})),
+    setFilters: (newFilters) =>
+      set((state) => ({
+        filters: { ...state.filters, ...newFilters },
+      })),
 
-	setStrictMode: (isActive) => set({ isStrictMode: isActive }),
-    }),
-    {
-      name: "gallery-storage",
-      partialize: (state) => ({ zoomLevel: state.zoomLevel, sortOption: state.sortOption, isStrictMode: state.isStrictMode, viewMode: state.viewMode }),
-    }
-  )
+    setSortOption: (option) => set({ sortOption: option }),
+
+    toggleSortDirection: () => set((state) => ({ sortDesc: !state.sortDesc })),
+
+    resetFilters: () => set({ filters: DEFAULT_FILTERS }),
+  })),
 );

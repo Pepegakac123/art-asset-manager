@@ -85,9 +85,9 @@ export const Sidebar = () => {
         <SidebarCollections />
 
         {/* TAGS */}
-        {/*<SidebarSection title="Tags">
-					<TagFilter />
-				</SidebarSection>*/}
+        <SidebarSection title="Tags">
+          <TagFilter />
+        </SidebarSection>
       </ScrollShadow>
 
       {/* FOOTER */}

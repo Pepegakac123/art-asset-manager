@@ -33,7 +33,9 @@ namespace ArtAssetManager.Api.Data.Repositories
         }
         public async Task<IEnumerable<Tag>> GetAllTagsAsync(CancellationToken cancellationToken)
         {
-            return await _context.Tags.ToListAsync(cancellationToken);
+            return await _context.Tags
+                    .OrderByDescending(t => t.Assets.Count)
+                    .ToListAsync(cancellationToken);
         }
     }
 }

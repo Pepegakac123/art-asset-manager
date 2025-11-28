@@ -6,9 +6,6 @@
 export interface Tag {
   id: number;
   name: string;
-  count?: number;
-  // Opcjonalne, jeśli backend zwraca kolor w DTO
-  color?: string;
 }
 
 export interface ScanFolder {

@@ -8,5 +8,6 @@ export const useAssetsStats = () => {
   });
   return {
     sidebarStats: getSidebarStats.data,
+    isLoading: getSidebarStats.isLoading,
   };
 };

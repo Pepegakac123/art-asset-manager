@@ -15,5 +15,7 @@ namespace ArtAssetManager.Api.Interfaces
         Task RemoveAssetFromSetAsync(int assetId, int materialSetId, CancellationToken cancellationToken);
 
         Task<PagedResult<Asset>> GetAssetsForSetAsync(int setId, AssetQueryParameters queryParams, CancellationToken cancellationToken);
+
+        Task<int> CountByMaterialSetIdAsync(int materialSetId, CancellationToken cancellationToken);
     }
 }

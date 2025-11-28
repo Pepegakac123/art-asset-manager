@@ -115,5 +115,12 @@ namespace ArtAssetManager.Api.Data.Repositories
                 TotalItems = totalItems
             };
         }
+        public async Task<int> CountByMaterialSetIdAsync(int materialSetId, CancellationToken cancellationToken)
+        {
+            return await _context.MaterialSets
+                .Where(ms => ms.Id == materialSetId)
+                .SelectMany(ms => ms.Assets)
+                .CountAsync(cancellationToken);
+        }
     }
 }

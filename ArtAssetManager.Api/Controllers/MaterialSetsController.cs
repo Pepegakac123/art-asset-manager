@@ -75,6 +75,8 @@ namespace ArtAssetManager.Api.Controllers
                 var newMaterialSet = _mapper.Map<MaterialSet>(body);
                 var updatedMaterialSet = await _materialSetRepository.UpdateAsync(id, newMaterialSet, cancellationToken);
                 var materialSetDto = _mapper.Map<MaterialSetDto>(updatedMaterialSet);
+                var materialCount = await _materialSetRepository.CountByMaterialSetIdAsync(id, cancellationToken);
+                materialSetDto.Count = materialCount;
                 return Ok(materialSetDto);
             }
             catch (KeyNotFoundException ex)

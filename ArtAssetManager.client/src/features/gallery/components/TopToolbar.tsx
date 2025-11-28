@@ -26,9 +26,9 @@ import { UI_CONFIG } from "@/config/constants";
 import { useLocation, useMatch } from "react-router-dom";
 import { useMaterialSet } from "@/layouts/sidebar/hooks/useMaterialSets";
 import { Skeleton } from "@heroui/skeleton";
+import { useAssetsStats } from "../hooks/useAssetsStats";
 
 export const TopToolbar = () => {
-  // 1. Pobieramy stan (używając nowego obiektu filters!)
   const {
     zoomLevel,
     setZoomLevel,
@@ -64,32 +64,64 @@ export const TopToolbar = () => {
   const [searchValue, setSearchValue] = useState(filters.searchQuery);
   const location = useLocation();
 
+  // Dane Kolekcji
   const collectionMatch = useMatch("/collections/:id");
   const collectionId = collectionMatch?.params.id;
-
   const { data: activeCollection, isLoading: isLoadingCollection } =
     useMaterialSet(collectionId);
 
+  const { sidebarStats: stats, isLoading: isLoadingStats } = useAssetsStats();
+
+  // --- LOGIKA TYTUŁU ---
   const getPageTitle = () => {
+    // 1. Priorytet: Kolekcja
     if (collectionMatch) {
       if (isLoadingCollection)
-        return <Skeleton className="h-7 w-12 rounded-lg" />;
+        return <Skeleton className="h-7 w-48 rounded-lg" />;
       return activeCollection?.name || "Collection";
     }
-    switch (location.pathname) {
-      case "/favorites":
-        return "Favorites";
-      case "/trash":
-        return "Recycle Bin";
-      case "/uncategorized":
-        return "Uncategorized";
-      case "/":
-        return "All Assets";
-      default:
-        return "All Assets";
-    }
+
+    // 2. Reszta stron
+    const path = location.pathname;
+    if (path.startsWith("/favorites")) return "Favorites";
+    if (path.startsWith("/trash")) return "Recycle Bin";
+    if (path.startsWith("/uncategorized")) return "Uncategorized";
+
+    return "All Assets";
   };
-  // Aktualizuj Store dopiero po 400ms bezczynności
+
+  // --- LOGIKA LICZNIKA ---
+  const getPageCounter = () => {
+    let count: number | undefined = 0;
+    let loading = false;
+
+    if (collectionMatch) {
+      // Jesteśmy w kolekcji
+      loading = isLoadingCollection;
+      count = activeCollection?.count; // Pamiętaj o dodaniu tego pola w DTO backendu!
+    } else {
+      // Jesteśmy w widoku globalnym
+      loading = isLoadingStats;
+      const path = location.pathname;
+
+      if (path.startsWith("/favorites")) count = stats?.totalFavorites;
+      else if (path.startsWith("/trash")) count = stats?.totalTrashed;
+      else if (path.startsWith("/uncategorized"))
+        count = stats?.totalUncategorized;
+      else count = stats?.totalAssets; // Default: All Assets
+    }
+
+    if (loading) return <Skeleton className="h-6 w-16 rounded-full" />;
+    const displayCount = count ?? 0;
+
+    return (
+      <span className="rounded-full bg-default-100 px-2.5 py-0.5 text-xs font-medium text-default-500">
+        {displayCount}
+      </span>
+    );
+  };
+
+  // Debounce dla wyszukiwania
   useEffect(() => {
     const handler = setTimeout(() => {
       if (searchValue !== filters.searchQuery) {
@@ -99,11 +131,13 @@ export const TopToolbar = () => {
 
     return () => clearTimeout(handler);
   }, [searchValue, setFilters, filters.searchQuery]);
+
+  // Synchronizacja inputa ze storem (gdyby zmienił się z innej strony)
   useEffect(() => {
     setSearchValue(filters.searchQuery);
   }, [filters.searchQuery]);
 
-  // Helper do wyświetlania nazwy sortowania
+  // Helper nazewnictwa sortowania
   const getSortLabel = (option: SortOption) => {
     switch (option) {
       case UI_CONFIG.GALLERY.AllowedSortOptions.dateadded:
@@ -121,15 +155,12 @@ export const TopToolbar = () => {
 
   return (
     <div className="sticky top-0 z-50 flex h-16 w-full items-center justify-between border-b border-default-200 bg-background/80 px-6 backdrop-blur-md">
-      <div className="flex items-center gap-4">
-        <h1 className="text-lg font-bold tracking-tight text-foreground">
+      {/* SEKCJA A: TYTUŁ I LICZNIK */}
+      <div className="flex items-center gap-4 w-fit">
+        <h1 className="text-lg font-bold tracking-tight text-foreground truncate max-w-[300px]">
           {getPageTitle()}
         </h1>
-        {/* TODO: Podpiąć tutaj totalCount z React Query (wymaga przekazania propsa lub contextu) */}
-        {/* Na razie placeholder */}
-        {/* <span className="rounded-full bg-default-100 px-2.5 py-0.5 text-xs font-medium text-default-500">
-          ... items
-        </span> */}
+        {getPageCounter()}
       </div>
 
       {/* SEKCJA B: WYSZUKIWANIE */}
@@ -155,7 +186,7 @@ export const TopToolbar = () => {
 
       {/* SEKCJA C: KONTROLA */}
       <div className="flex items-center gap-4">
-        {/* 1. RESET FILTRÓW (Opcjonalny, ale przydatny) */}
+        {/* 1. RESET FILTRÓW */}
         <Button
           isIconOnly
           variant="light"
@@ -169,7 +200,7 @@ export const TopToolbar = () => {
         <div className="h-6 w-px bg-default-300" />
 
         {/* 2. ZOOM SLIDER */}
-        <div className="flex w-48 items-center gap-2">
+        <div className="flex w-32 xl:w-48 items-center gap-2">
           <Slider
             size="sm"
             step={UI_CONFIG.GALLERY.STEP}
@@ -219,7 +250,7 @@ export const TopToolbar = () => {
 
         <div className="h-6 w-px bg-default-300" />
 
-        {/* 3. SORTOWANIE (Split Button Pattern) */}
+        {/* 3. SORTOWANIE */}
         <div className="flex items-center gap-1">
           <Dropdown>
             <DropdownTrigger>
@@ -227,7 +258,7 @@ export const TopToolbar = () => {
                 variant="flat"
                 size="sm"
                 endContent={<ChevronDown size={16} />}
-                className="text-default-600 capitalize min-w-[120px] justify-between"
+                className="text-default-600 capitalize min-w-[120px] justify-between hidden sm:flex"
               >
                 {getSortLabel(sortOption)}
               </Button>
@@ -270,12 +301,14 @@ export const TopToolbar = () => {
           >
             {sortDesc ? <ArrowDownAZ size={18} /> : <ArrowUpAZ size={18} />}
           </Button>
+
+          {/* PAGE SIZE SELECTOR */}
           <Dropdown>
             <DropdownTrigger>
               <Button
                 variant="flat"
                 size="sm"
-                className="w-fit"
+                className="w-fit min-w-[60px]"
                 startContent={
                   <ListFilter size={16} className="text-default-500" />
                 }

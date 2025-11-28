@@ -103,7 +103,7 @@ namespace ArtAssetManager.Api.Controllers
             }
         }
 
-        [HttpGet("{id}/assets")]
+        [HttpGet("{setId}/assets")]
         public async Task<ActionResult<PagedResponse<AssetDto>>> GetAssets(
                     [FromRoute] int setId, [FromQuery] AssetQueryParameters queryParams, CancellationToken cancellationToken
                 )

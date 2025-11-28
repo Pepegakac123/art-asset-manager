@@ -1,31 +1,46 @@
 import apiReq from "@/lib/axios";
-import { CreateMaterialSetRequest, MaterialSet } from "@/types/api"; // Upewnij się że masz te typy
+import {
+  AddScanFolderRequest,
+  ScanFolder,
+  UpdateScanFolderStatusRequest,
+} from "@/types/api";
 
-export const materialSetService = {
-  getAll: async (): Promise<MaterialSet[]> => {
-    const response = await apiReq.get("/materialsets");
-    return response.data;
+export const scannerService = {
+  getFolders: async () => {
+    const { data } = await apiReq.get<ScanFolder[]>("/settings/folders");
+    return data;
   },
-
-  getById: async (id: string): Promise<MaterialSet> => {
-    const response = await apiReq.get(`/materialsets/${id}`);
-    return response.data;
+  addFolder: async (path: string) => {
+    return apiReq.post("/settings/folders", {
+      folderPath: path,
+    } as AddScanFolderRequest);
   },
-
-  create: async (data: CreateMaterialSetRequest): Promise<MaterialSet> => {
-    const response = await apiReq.post("/materialsets", data);
-    return response.data;
+  deleteFolder: async (id: number) => {
+    return apiReq.delete(`/settings/folders/${id}`);
   },
-
-  update: async (
-    id: string,
-    data: CreateMaterialSetRequest,
-  ): Promise<MaterialSet> => {
-    const response = await apiReq.put(`/materialsets/${id}`, data);
-    return response.data;
+  updateFolderStatus: async (id: number, isActive: boolean) => {
+    return apiReq.patch<ScanFolder>(`/settings/folders/${id}`, {
+      isActive,
+    } as UpdateScanFolderStatusRequest);
   },
-
-  delete: async (id: string): Promise<void> => {
-    await apiReq.delete(`/materialsets/${id}`);
+  validatePath: async (path: string) => {
+    const { data } = await apiReq.post<{ isValid: boolean }>(
+      "/system/validate-path",
+      { path },
+    );
+    return data;
+  },
+  startScan: async () => {
+    return apiReq.post("/scanner/start");
+  },
+  getAllowedExtensions: async () => {
+    const { data } = await apiReq.get<string[]>("/settings/extensions");
+    return data;
+  },
+  updateAllowedExtensions: async (extensions: string[]) => {
+    return apiReq.post("/settings/extensions", extensions);
+  },
+  openInExplorer: async (path: string) => {
+    return apiReq.post("/system/open-in-explorer", { path });
   },
 };

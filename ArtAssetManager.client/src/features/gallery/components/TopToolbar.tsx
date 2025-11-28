@@ -23,7 +23,9 @@ import {
 import { useGalleryStore, SortOption } from "../stores/useGalleryStore";
 import { useShallow } from "zustand/react/shallow";
 import { UI_CONFIG } from "@/config/constants";
-import { useLocation } from "react-router-dom";
+import { useLocation, useMatch } from "react-router-dom";
+import { useMaterialSet } from "@/layouts/sidebar/hooks/useMaterialSets";
+import { Skeleton } from "@heroui/skeleton";
 
 export const TopToolbar = () => {
   // 1. Pobieramy stan (używając nowego obiektu filters!)
@@ -62,7 +64,18 @@ export const TopToolbar = () => {
   const [searchValue, setSearchValue] = useState(filters.searchQuery);
   const location = useLocation();
 
+  const collectionMatch = useMatch("/collections/:id");
+  const collectionId = collectionMatch?.params.id;
+
+  const { data: activeCollection, isLoading: isLoadingCollection } =
+    useMaterialSet(collectionId);
+
   const getPageTitle = () => {
+    if (collectionMatch) {
+      if (isLoadingCollection)
+        return <Skeleton className="h-7 w-12 rounded-lg" />;
+      return activeCollection?.name || "Collection";
+    }
     switch (location.pathname) {
       case "/favorites":
         return "Favorites";
@@ -70,10 +83,8 @@ export const TopToolbar = () => {
         return "Recycle Bin";
       case "/uncategorized":
         return "Uncategorized";
-      // TODO: Dla kolekcji trzeba by pobrać nazwę z API, na razie placeholder
-      case (location.pathname.match(/^\/collections\/\d+/) || {}).input:
-        return "Collection";
       case "/":
+        return "All Assets";
       default:
         return "All Assets";
     }

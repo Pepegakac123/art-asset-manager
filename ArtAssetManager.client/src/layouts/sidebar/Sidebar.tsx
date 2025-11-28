@@ -12,11 +12,13 @@ import {
 import { SidebarSection } from "./SidebarSection";
 import { SidebarItem } from "./SidebarItem";
 import { TagFilter } from "./TagFilter";
+import { Skeleton } from "@heroui/skeleton";
 import { useNavigate } from "react-router-dom";
 import { CircularProgress } from "@heroui/progress";
 import { useScanProgress } from "@/features/settings/hooks/useScanProgress";
 import { useAssets } from "@/features/gallery/hooks/useAssets";
 import { useAssetsStats } from "@/features/gallery/hooks/useAssetsStats";
+import { SidebarCollections } from "./SidebarCollections";
 /*
 TODO: [API] Dynamic Statistics
 - "All Assets count", "Trash count": Pobierać te liczby z API (np. endpoint GET /api/stats/sidebar).
@@ -75,53 +77,12 @@ export const Sidebar = () => {
             icon={Trash2}
             label="Trash"
             to="/trash"
-            count={sidebarStats?.totalTrash || 0}
+            count={sidebarStats?.totalTrashed || 0}
           />
         </SidebarSection>
 
         {/* COLLECTIONS */}
-        <SidebarSection title="Collections">
-          {/* max-h-48 (ok 192px) sprawi, że jak będzie ich dużo, pojawi się scroll wewnątrz sekcji */}
-          <ScrollShadow
-            className="max-h-48 custom-scrollbar"
-            hideScrollBar={false}
-          >
-            <div className="flex flex-col gap-0.5 pr-1">
-              <SidebarItem
-                icon={Shapes}
-                label="Sci-Fi Project A"
-                to="/c/scifi"
-              />
-              <SidebarItem
-                icon={Shapes}
-                label="Fantasy Props"
-                to="/c/fantasy"
-              />
-              <SidebarItem
-                icon={Shapes}
-                label="Instagram Dailies"
-                to="/c/dailies"
-              />
-              <SidebarItem
-                icon={Shapes}
-                label="Client Work 2024"
-                to="/c/work"
-              />
-              <SidebarItem icon={Shapes} label="Old References" to="/c/refs" />
-              <SidebarItem icon={Shapes} label="Environment Kit" to="/c/env" />
-              <SidebarItem icon={Shapes} label="Weapon Parts" to="/c/weap" />
-            </div>
-          </ScrollShadow>
-
-          <Button
-            size="sm"
-            variant="light"
-            className="w-full justify-start h-8 text-xs text-default-400 data-[hover=true]:text-primary mt-1 pl-2"
-            startContent={<span className="text-lg font-light mr-1">+</span>}
-          >
-            New Collection
-          </Button>
-        </SidebarSection>
+        <SidebarCollections />
 
         {/* TAGS */}
         {/*<SidebarSection title="Tags">

@@ -61,6 +61,7 @@ export interface MaterialSet {
   description?: string | null;
   coverAssetId?: number | null;
   customCoverUrl?: string | null;
+  customColor?: string;
   dateAdded: string;
   lastModified: string;
   assets?: Asset[];

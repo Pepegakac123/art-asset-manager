@@ -25,3 +25,22 @@ export const UI_CONFIG = {
     RETRY_COUNT: 3,
   },
 } as const;
+
+export const PRESET_COLORS = [
+  "#000000", // Black
+  "#FFFFFF", // White
+  "#808080", // Gray
+  "#C0C0C0", // Silver
+  "#FF0000", // Red
+  "#800000", // Maroon
+  "#FFFF00", // Yellow
+  "#808000", // Olive
+  "#00FF00", // Lime
+  "#008000", // Green
+  "#00FFFF", // Cyan
+  "#008080", // Teal
+  "#0000FF", // Blue
+  "#000080", // Navy
+  "#FF00FF", // Magenta
+  "#800080", // Purple
+];

@@ -45,6 +45,9 @@ export const useMaterialSets = () => {
       queryClient.invalidateQueries({
         queryKey: [QUERY_KEY, variables.id],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["material-set", variables.id],
+      });
 
       addToast({
         title: "Updated",

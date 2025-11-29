@@ -18,7 +18,7 @@ export interface GalleryFilters {
   // Wymiary (Opcjonalne)
   widthRange: [number, number]; // C#: MinWidth, MaxWidth
   heightRange: [number, number]; // C#: MinHeight, MaxHeight
-
+  fileSizeRange: [number, number];
   hasAlpha: boolean | null; // C#: HasAlphaChannel (null = wszystko, true = z, false = bez)
 }
 
@@ -61,6 +61,7 @@ const DEFAULT_FILTERS: GalleryFilters = {
   dateRange: { from: null, to: null },
   widthRange: [0, 8192],
   heightRange: [0, 8192],
+  fileSizeRange: [0, 4096],
   hasAlpha: null,
 };
 

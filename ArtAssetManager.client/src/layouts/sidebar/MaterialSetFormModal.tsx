@@ -191,7 +191,7 @@ export const MaterialSetFormModal = ({
                 <AccordionItem
                   key="advanced"
                   aria-label="Advanced Options"
-                  title="Custom Cover URL"
+                  title="Advanced Options"
                   classNames={{
                     trigger:
                       "py-2 data-[hover=true]:bg-default-100 rounded-lg px-2",

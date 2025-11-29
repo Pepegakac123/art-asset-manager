@@ -18,6 +18,10 @@ export const UI_CONFIG = {
       filesize: "filesize",
       lastmodified: "lastmodified",
     },
+    FilterOptions: {
+      MAX_DIMENSION: 8160,
+      MAX_FILE_SIZE: 4096,
+    },
   },
   QUERY: {
     STALE_TIME: 1000 * 60 * 5, // 5 minut
@@ -44,3 +48,6 @@ export const PRESET_COLORS = [
   "#FF00FF", // Magenta
   "#800080", // Purple
 ];
+export const ALLOWED_FILE_TYPES = ["model", "image", "texture", "other"];
+export const BYTES_IN_MB = 1024 * 1024;
+export const MAX_MB = 4096;

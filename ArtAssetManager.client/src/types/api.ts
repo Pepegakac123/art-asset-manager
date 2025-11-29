@@ -121,11 +121,11 @@ export interface AssetQueryParams {
   dominantColors?: string[]; // backend: List<string> DominantColors
 
   // Zakresy (Ranges)
-  fileSizeMin?: number; // backend: long?
+  fileSizeMin?: number;
   fileSizeMax?: number;
   ratingMin?: number;
   ratingMax?: number;
-  dateFrom?: string; // DateTime?
+  dateFrom?: string;
   dateTo?: string;
 
   // Wymiary obrazu

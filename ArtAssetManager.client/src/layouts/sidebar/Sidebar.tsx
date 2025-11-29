@@ -19,6 +19,7 @@ import { useScanProgress } from "@/features/settings/hooks/useScanProgress";
 import { useAssets } from "@/features/gallery/hooks/useAssets";
 import { useAssetsStats } from "@/features/gallery/hooks/useAssetsStats";
 import { SidebarCollections } from "./SidebarCollections";
+import { SidebarFilters } from "@/features/gallery/components/SidebarFilters";
 /*
 TODO: [API] Dynamic Statistics
 - "All Assets count", "Trash count": Pobierać te liczby z API (np. endpoint GET /api/stats/sidebar).
@@ -87,6 +88,11 @@ export const Sidebar = () => {
         {/* TAGS */}
         <SidebarSection title="Tags">
           <TagFilter />
+        </SidebarSection>
+
+        {/* Filters */}
+        <SidebarSection title="Filters">
+          <SidebarFilters />
         </SidebarSection>
       </ScrollShadow>
 

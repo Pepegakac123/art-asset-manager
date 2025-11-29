@@ -427,8 +427,8 @@ namespace ArtAssetManager.Api.Controllers
             }
         }
 
-        [HttpGet("/colors")]
-        public async Task<ActionResult> GetColorsList(CancellationToken cancellationToken)
+        [HttpGet("colors")]
+        public async Task<ActionResult<List<string>>> GetColorsList(CancellationToken cancellationToken)
         {
             var colorList = await _assetRepo.GetColorsListAsync(cancellationToken);
             return Ok(colorList);

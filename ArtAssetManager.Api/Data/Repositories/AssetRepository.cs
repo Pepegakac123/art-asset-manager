@@ -348,8 +348,14 @@ namespace ArtAssetManager.Api.Data.Repositories
         }
         public async Task<List<string>> GetColorsListAsync(CancellationToken cancellationToken)
         {
-            var colorList = await _context.Assets.Select(a => a.DominantColor).Where(color => color != null).Select(c => c!.ToLower()).Distinct().ToListAsync(cancellationToken);
-            return colorList!;
+            var colorList = await _context.Assets
+                .AsNoTracking()
+                .Where(a => !a.IsDeleted && a.DominantColor != null)
+                .Select(a => a.DominantColor!.ToLower())
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            return colorList;
         }
     };
 

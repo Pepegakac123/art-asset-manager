@@ -71,3 +71,11 @@ export const useAssets = (
     openExplorer: openExplorerMutation.mutate,
   };
 };
+export const useColors = () => {
+  const colorsQuery = useQuery({
+    queryKey: ["colors"],
+    queryFn: assetService.getColorsList,
+  });
+
+  return colorsQuery.data;
+};

@@ -53,6 +53,10 @@ export const assetService = {
     const response = await apiReq.get("/stats/sidebar");
     return response.data;
   },
+  getColorsList: async (): Promise<string[]> => {
+    const response = await apiReq.get("/assets/colors");
+    return response.data;
+  },
   openInExplorer: async (path: string) => {
     return apiReq.post("/system/open-in-explorer", { path });
   },

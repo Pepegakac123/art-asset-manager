@@ -2,7 +2,7 @@ import { useParams } from "react-router-dom";
 import { useGalleryStore } from "../stores/useGalleryStore";
 import { AssetCard } from "./AssetCard";
 import { Spinner } from "@heroui/spinner";
-import type { UI_CONFIG } from "@/config/constants";
+import { BYTES_IN_MB, MAX_MB, UI_CONFIG } from "@/config/constants";
 import { AssetQueryParams } from "@/types/api";
 import { useEffect, useMemo, useRef } from "react";
 import { useAssets } from "../hooks/useAssets";
@@ -69,9 +69,29 @@ export const GalleryGrid = ({ mode }: GalleryGridProps) => {
       ratingMin: filters.ratingRange[0],
       ratingMax: filters.ratingRange[1],
 
+      minWidth: filters.widthRange[0] > 0 ? filters.widthRange[0] : undefined,
+      maxWidth:
+        filters.widthRange[1] < UI_CONFIG.GALLERY.FilterOptions.MAX_DIMENSION
+          ? filters.widthRange[1]
+          : undefined,
+      minHeight:
+        filters.heightRange[0] > 0 ? filters.heightRange[0] : undefined,
+      maxHeight:
+        filters.heightRange[1] < UI_CONFIG.GALLERY.FilterOptions.MAX_DIMENSION
+          ? filters.heightRange[1]
+          : undefined,
+      fileSizeMin:
+        filters.fileSizeRange[0] > 0
+          ? filters.fileSizeRange[0] * BYTES_IN_MB
+          : undefined,
+
+      fileSizeMax:
+        filters.fileSizeRange[1] < MAX_MB
+          ? filters.fileSizeRange[1] * BYTES_IN_MB
+          : undefined,
       dateFrom: filters.dateRange.from || undefined,
       dateTo: filters.dateRange.to || undefined,
-
+      hasAlphaChannel: filters.hasAlpha || undefined,
       sortBy: sortOption,
       sortDesc: sortDesc,
     };

@@ -7,6 +7,8 @@ import { AssetQueryParams } from "@/types/api";
 import { useEffect, useMemo, useRef } from "react";
 import { useAssets } from "../hooks/useAssets";
 import { useShallow } from "zustand/react/shallow";
+import { useAssetsStats } from "../hooks/useAssetsStats";
+import { NoResults } from "./NoResults";
 
 /*
 
@@ -41,6 +43,7 @@ export const GalleryGrid = ({ mode }: GalleryGridProps) => {
   const { collectionId } = useParams<{ collectionId: string }>();
   const parsedCollectionId = collectionId ? parseInt(collectionId) : undefined;
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const { sidebarStats } = useAssetsStats();
   const { zoomLevel, viewMode, filters, sortOption, sortDesc, pageSize } =
     useGalleryStore(
       useShallow((state) => ({
@@ -151,11 +154,11 @@ export const GalleryGrid = ({ mode }: GalleryGridProps) => {
   const allAssets = data?.pages.flatMap((page) => page.items) || [];
 
   if (allAssets.length === 0) {
+    const totalLibraryAssets = sidebarStats?.totalAssets || 0;
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center text-default-500">
-        <p className="text-lg">No assets found</p>
-        <p className="text-sm">Try changing filters or scanning new folders.</p>
-      </div>
+      <NoResults
+        variant={totalLibraryAssets === 0 ? "empty-library" : "no-matches"}
+      />
     );
   }
 

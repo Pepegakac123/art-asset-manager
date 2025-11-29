@@ -28,7 +28,7 @@ export const MainLayout = () => {
 
       {/* 4. INSPECTOR (Prawy panel) */}
       {}
-      <aside className="col-start-3 col-end-4 row-start-2 border-l border-default-200 bg-content1/50">
+      <aside className="col-start-3 col-end-4 row-start-2 border-l border-default-200 bg-content1 h-full overflow-hidden relative flex flex-col">
         <InspectorPanel />
       </aside>
     </div>

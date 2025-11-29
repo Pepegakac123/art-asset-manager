@@ -21,3 +21,34 @@
 - [ ] **Search Bar behavior:**
     - Wpisanie tekstu w SearchBar powinno albo resetować inne filtry, albo działać addytywnie (decyzja UX).
 - [ ] **Clear All:** Przycisk "Clear All" widoczny, gdy cokolwiek jest pofiltrowane.
+
+## 3. Inspector Panel Implementation (The Right Sidebar) 🕵️‍♂️
+**Cel:** Stworzenie panelu "Inspector" z podziałem na tryb Single i Multi-Select.
+**Lokalizacja:** `src/features/inspector/components/InspectorPanel.tsx`
+
+- [ ] **Krok 1: Layout & Single Mode Skeleton**
+    - [ ] Struktura Flexbox: Sticky Header (góra), Scrollable Content (środek), Sticky Footer (dół).
+    - [ ] Mockowanie danych na podstawie `AssetDetailsDto` (żeby widzieć UI bez API).
+- [ ] **Krok 2: Header Logic (Thumbnail & Title)**
+    - [ ] Wyświetlanie nazwy pliku (Input editable).
+    - [ ] Ścieżka pliku pod nazwą + przycisk "Copy Path" (do schowka).
+    - [ ] **Thumbnail Hover UX:**
+        - [ ] Dla obrazków: Ikonka Lupy (otwiera modal podglądu).
+        - [ ] Dla 3D/Innych: Ikonka Ołówka (upload custom thumbnail).
+- [ ] **Krok 3: Core Editor (Scrollable Area)**
+    - [ ] **Rating:** Interaktywne gwiazdki (1-5).
+    - [ ] **Description:** Textarea z `auto-save on blur`.
+    - [ ] **Tags Area:** Input typu "Chips" + lista tagów.
+- [ ] **Krok 4: Metadata Tabs**
+    - [ ] Implementacja Tabs: "Details", "Versions", "Collections".
+    - [ ] **Details Tab:** Grid wyświetlający techniczne dane (FileSize, Dimensions, BitDepth, Alpha, FileHash).
+    - [ ] **Versions Tab:** Placeholder na listę wersji (Faza 8).
+- [ ] **Krok 5: Sticky Footer Actions**
+    - [ ] Przyciski: Open File, Open Explorer, Favorite (Heart).
+    - [ ] Kolekcje: "Add to Collection" (zawsze) i "Remove from Collection" (tylko gdy jesteśmy w widoku kolekcji).
+- [ ] **Krok 6: Multi-Select (Batch Mode) 📦**
+    - [ ] Wykrywanie zaznaczenia > 1 elementu.
+    - [ ] UI dla Batch Actions:
+        - [ ] "Add to Collection" (dla wszystkich).
+        - [ ] "Tagging" (dodaj tag do wszystkich).
+        - [ ] "Rating" (ustaw ocenę dla wszystkich).

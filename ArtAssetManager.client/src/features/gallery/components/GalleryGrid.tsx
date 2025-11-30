@@ -44,17 +44,31 @@ export const GalleryGrid = ({ mode }: GalleryGridProps) => {
   const parsedCollectionId = collectionId ? parseInt(collectionId) : undefined;
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const { sidebarStats } = useAssetsStats();
-  const { zoomLevel, viewMode, filters, sortOption, sortDesc, pageSize } =
-    useGalleryStore(
-      useShallow((state) => ({
-        zoomLevel: state.zoomLevel,
-        viewMode: state.viewMode,
-        filters: state.filters,
-        sortOption: state.sortOption,
-        sortDesc: state.sortDesc,
-        pageSize: state.pageSize,
-      })),
-    );
+  const {
+    zoomLevel,
+    viewMode,
+    filters,
+    sortOption,
+    sortDesc,
+    pageSize,
+    selectedAssetIds,
+    lastSelectedAssetId,
+    selectAsset,
+    setSelection,
+  } = useGalleryStore(
+    useShallow((state) => ({
+      zoomLevel: state.zoomLevel,
+      viewMode: state.viewMode,
+      filters: state.filters,
+      sortOption: state.sortOption,
+      sortDesc: state.sortDesc,
+      pageSize: state.pageSize,
+      selectedAssetIds: state.selectedAssetIds,
+      lastSelectedAssetId: state.lastSelectedAssetId,
+      selectAsset: state.selectAsset,
+      setSelection: state.setSelection,
+    })),
+  );
 
   const queryParams: AssetQueryParams = useMemo(() => {
     return {
@@ -111,6 +125,31 @@ export const GalleryGrid = ({ mode }: GalleryGridProps) => {
     isFetchingNextPage,
   } = useAssets(mode, queryParams, parsedCollectionId);
 
+  const handleAssetClick = (e: React.MouseEvent, assetId: number) => {
+    // 1. SHIFT CLICK (Range Selection)
+    if (e.shiftKey && lastSelectedAssetId !== null) {
+      const lastIndex = allAssets.findIndex(
+        (a) => a.id === lastSelectedAssetId,
+      );
+      const currentIndex = allAssets.findIndex((a) => a.id === assetId);
+
+      if (lastIndex !== -1 && currentIndex !== -1) {
+        const start = Math.min(lastIndex, currentIndex);
+        const end = Math.max(lastIndex, currentIndex);
+
+        // kawałek tablicy assetów, które są pomiędzy kliknięciami
+        const rangeIds = allAssets.slice(start, end + 1).map((a) => a.id);
+
+        setSelection(rangeIds);
+        return;
+      }
+    }
+
+    // 2. CTRL/CMD CLICK (Multi Toggle)
+    const isMulti = e.ctrlKey || e.metaKey;
+    selectAsset(assetId, isMulti);
+  };
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -166,11 +205,18 @@ export const GalleryGrid = ({ mode }: GalleryGridProps) => {
     <div className="h-full w-full">
       <div
         style={{ "--col-width": `${zoomLevel}px` } as React.CSSProperties}
-        className="grid grid-cols-[repeat(auto-fill,minmax(var(--col-width),1fr))] gap-4 pb-20 p-4"
+        className="grid grid-cols-[repeat(auto-fill,minmax(var(--col-width),1fr))] gap-4 pb-20 p-4 select-none outline-none"
       >
         {allAssets.map((asset) => (
           <div key={asset.id} className="aspect-square">
-            <AssetCard asset={asset} explorerfn={openExplorer} />
+            <AssetCard
+              asset={asset}
+              isSelected={selectedAssetIds.has(asset.id)}
+              isBulkMode={selectedAssetIds.size > 1}
+              onClick={(e) => handleAssetClick(e, asset.id)}
+              onDoubleClick={() => openExplorer(asset.filePath)}
+              explorerfn={openExplorer}
+            />
           </div>
         ))}
       </div>

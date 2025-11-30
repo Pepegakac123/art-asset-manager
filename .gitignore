@@ -46,3 +46,5 @@ yarn-error.log
 assets.db
 *.sqlite
 *.db-journal
+
+/Test_Data

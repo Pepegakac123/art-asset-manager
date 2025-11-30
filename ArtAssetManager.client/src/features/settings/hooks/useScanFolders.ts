@@ -127,7 +127,7 @@ export const useScanFolders = () => {
         severity: "success",
         variant: "flat",
       });
-      // Opcjonalnie: Invalidate, żeby odświeżyć status 'Runnning' jeśli go pobieramy z API
+      queryClient.invalidateQueries({ queryKey: ["scanner-status"] });
     },
     onError: (error: any) => {
       addToast({

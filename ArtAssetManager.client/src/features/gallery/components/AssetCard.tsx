@@ -23,12 +23,15 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Asset } from "@/types/api";
-import { useAssets } from "../hooks/useAssets";
 import { AxiosResponse } from "axios";
 import { UseMutateFunction } from "@tanstack/react-query";
 
 interface AssetCardProps {
   asset: Asset;
+  isSelected: boolean;
+  isBulkMode: boolean;
+  onClick: (e: React.MouseEvent) => void;
+  onDoubleClick: () => void;
   explorerfn: UseMutateFunction<
     AxiosResponse<any, any, {}>,
     any,
@@ -38,7 +41,15 @@ interface AssetCardProps {
   style?: React.CSSProperties;
 }
 
-export const AssetCard = ({ asset, explorerfn, style }: AssetCardProps) => {
+export const AssetCard = ({
+  asset,
+  isSelected,
+  isBulkMode,
+  onClick,
+  onDoubleClick,
+  explorerfn,
+  style,
+}: AssetCardProps) => {
   const {
     id,
     fileName,
@@ -50,18 +61,18 @@ export const AssetCard = ({ asset, explorerfn, style }: AssetCardProps) => {
     fileExtension,
   } = asset;
 
-  const [isSelected, setIsSelected] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Bezpieczne łączenie URL (naprawa podwójnych slashy)
+  // imageUrl helper
   const imageUrl = thumbnailUrl
     ? `${import.meta.env.VITE_API_URL}${thumbnailUrl.startsWith("/") ? "" : "/"}${thumbnailUrl}`
     : "/placeholder.png";
 
   const showControls = isHovered || isSelected || isMenuOpen;
+  const showCheckbox = isSelected && isBulkMode;
 
-  // Helper do ikonki
+  // Helper icons
   const getFileIcon = () => {
     switch (fileType?.toLowerCase()) {
       case "model":
@@ -73,6 +84,7 @@ export const AssetCard = ({ asset, explorerfn, style }: AssetCardProps) => {
         return <FileBox size={14} className="text-white/80" />;
     }
   };
+
   const formatBytes = (bytes: number, decimals = 0) => {
     if (!+bytes) return "0 B";
     const k = 1024;
@@ -81,70 +93,68 @@ export const AssetCard = ({ asset, explorerfn, style }: AssetCardProps) => {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
   };
-  // Funkcja otwierająca (zamiast isPressable)
-  const handleCardClick = () => {
-    console.log("Open details for asset:", id);
-  };
 
-  // Wrapper zapobiegający odpaleniu handleCardClick przy kliknięciu w akcje
+  // Zatrzymuje propagację, żeby kliknięcie w przycisk nie zaznaczało karty
   const stopProp = (e: React.SyntheticEvent) => {
     e.stopPropagation();
   };
 
   return (
     <Card
-      // ❌ USUNIĘTE: isPressable (to powodowało błąd zagnieżdżonych buttonów)
       shadow="sm"
       radius="lg"
+      // Usuwamy onClick stąd, bo Karta bywa kapryśna. Przenosimy go do "Click Zone".
       className={`group relative h-full w-full border-none bg-black/20 transition-transform hover:scale-[1.02] ${
         isSelected ? "ring-2 ring-primary" : ""
       }`}
       style={style}
-      // ✅ DODANE: Obsługa kliknięcia "ręcznie"
-      onClick={handleCardClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      // Ważne: isPressable={false} domyślnie, traktujemy to jako kontener
     >
-      {/* --- HEADER: Akcje (Checkbox, Heart, Menu) --- */}
-      {/* Absolute positioning na górze */}
-      <CardHeader className="absolute top-0 z-20 flex w-full justify-between p-2">
+      {/* WARSTWA 1 (GÓRA - Z-30): AKCJE
+          Te elementy muszą być klikalne i leżeć NAJWYŻEJ.
+      */}
+      <CardHeader className="absolute top-0 z-30 flex w-full justify-between p-2 pointer-events-none">
+        {/* Checkbox Wrapper - pointer-events-auto przywraca klikalność wewnątrz nagłówka */}
         <div
-          className={`flex gap-2 transition-opacity duration-200 ${
-            showControls ? "opacity-100" : "opacity-0"
+          className={`flex gap-2 transition-opacity duration-200 pointer-events-auto ${
+            showCheckbox ? "opacity-100" : "opacity-0"
           }`}
-          onClick={stopProp} // Ważne: Kliknięcie w to nie otwiera assetu
-          onKeyDown={stopProp}
+          // Kliknięcie w checkbox-wrapper ma działać jak klik w kartę (zaznaczenie)
+          // Ale uwaga: Checkbox w środku ma pointer-events-none, więc ten div łapie klik.
+          onClick={onClick}
         >
           <Checkbox
             isSelected={isSelected}
-            onValueChange={setIsSelected}
-            size="sm"
             classNames={{
               wrapper:
-                "bg-black/40 border-white/50 group-data-[selected=true]:bg-primary",
+                "pointer-events-none bg-black/40 border-white/50 group-data-[selected=true]:bg-primary",
+              base: "pointer-events-none",
             }}
           />
         </div>
 
+        {/* Przyciski - pointer-events-auto */}
         <div
-          className={`flex gap-1 transition-opacity duration-200 ${
+          className={`flex gap-1 transition-opacity duration-200 pointer-events-auto ${
             showControls ? "opacity-100" : "opacity-0"
           }`}
           onClick={stopProp}
           onKeyDown={stopProp}
+          onDoubleClick={stopProp} // Zapobiega otwarciu explorera przy szybkim klikaniu w menu
         >
           <Button
             isIconOnly
             size="sm"
             radius="full"
             variant="light"
-            className="bg-black/40 text-white backdrop-blur-md hover:bg-primary/80 hover:text-white"
+            className="bg-black/40 text-white backdrop-blur-md hover:bg-primary/80"
             onPress={() => explorerfn(filePath)}
-            title="Open in Explorer"
           >
             <FolderOpen size={16} />
           </Button>
-          {/* Przycisk Ulubione */}
+
           <Button
             isIconOnly
             size="sm"
@@ -161,7 +171,6 @@ export const AssetCard = ({ asset, explorerfn, style }: AssetCardProps) => {
             />
           </Button>
 
-          {/* Menu Dropdown */}
           <Dropdown placement="bottom-end" onOpenChange={setIsMenuOpen}>
             <DropdownTrigger>
               <Button
@@ -174,10 +183,7 @@ export const AssetCard = ({ asset, explorerfn, style }: AssetCardProps) => {
                 <MoreVertical size={16} />
               </Button>
             </DropdownTrigger>
-            <DropdownMenu
-              aria-label="Asset Actions"
-              onAction={(key) => console.log("Action:", key)}
-            >
+            <DropdownMenu aria-label="Asset Actions">
               <DropdownItem key="rename" startContent={<Edit size={16} />}>
                 Rename
               </DropdownItem>
@@ -200,49 +206,49 @@ export const AssetCard = ({ asset, explorerfn, style }: AssetCardProps) => {
         </div>
       </CardHeader>
 
-      {/* --- BODY: Obrazek tła --- */}
-      {/* removeWrapper + object-cover sprawia że obrazek działa jak background-image */}
+      {/* WARSTWA 2 (ŚRODEK - Z-20): CLICK ZONE (The Magic Fix 🪄)
+          To jest niewidzialna tafla szkła, która łapie wszystkie kliknięcia w "ciało" karty.
+      */}
+      <div
+        className="absolute inset-0 z-20 w-full h-full cursor-pointer"
+        onClick={onClick}
+        onDoubleClick={onDoubleClick}
+      />
+
+      {/* WARSTWA 3 (DÓŁ - Z-0/10): CONTENT
+          Elementy wizualne, nie interaktywne.
+      */}
+
+      {/* Obrazek - Z-0 */}
       <Image
         removeWrapper
         alt={fileName}
-        className="z-0 h-full w-full object-cover"
+        className="z-0 h-full w-full object-cover pointer-events-none"
         src={imageUrl}
-        fallbackSrc="https://via.placeholder.com/400x400?text=No+Preview"
+        fallbackSrc="/placeholder.png"
       />
 
-      {/* --- FOOTER: Rozmyty pasek z nazwą --- */}
-      <CardFooter className="absolute bottom-0 z-10 w-full justify-between border-t border-white/10 bg-black/60 p-2 backdrop-blur-md">
+      {/* Footer*/}
+      <CardFooter className="absolute bottom-0 z-40 w-full justify-between border-t border-white/10 bg-black/60 p-2 backdrop-blur-md pointer-events-none">
         <div className="flex w-full flex-col items-start gap-1">
-          {/* Nazwa pliku */}
           <p className="w-full truncate text-tiny font-bold text-white/90 text-left">
             {fileName}
           </p>
-
-          {/* Metadane*/}
           <div className="flex w-full items-center justify-between mt-1">
-            {/* LEWA: Typ Pliku */}
-            <span
-              className="flex items-center gap-1 text-[10px] text-white/60"
-              title="File Type"
-            >
+            <span className="flex items-center gap-1 text-[10px] text-white/60">
               {getFileIcon()}
               <span className="uppercase tracking-wider font-medium">
                 {fileExtension?.replace(".", "")}
               </span>
             </span>
-
-            {/* PRAWA: Wymiary i Rozmiar */}
             <div className="flex items-center gap-2 text-[9px] text-white/50">
-              {/* Wymiary (jeśli są) */}
               {(imageWidth ?? 0) > 0 && (imageHeight ?? 0) > 0 && (
-                <span className="flex items-center gap-1" title="Resolution">
+                <span className="flex items-center gap-1">
                   <Maximize2 size={10} className="text-white/40" />
                   {imageWidth}×{imageHeight}
                 </span>
               )}
-
-              {/* Rozmiar Pliku */}
-              <span className="flex items-center gap-1" title="File Size">
+              <span className="flex items-center gap-1">
                 <HardDrive size={10} className="text-white/40" />
                 {formatBytes(asset.fileSize)}
               </span>

@@ -35,6 +35,10 @@ interface GalleryState {
   sortOption: SortOption;
   sortDesc: boolean; // C#: SortDesc
 
+  // Stany Assetów
+  selectedAssetIds: Set<number>;
+  lastSelectedAssetId: number | null;
+
   // --- Actions ---
   setZoomLevel: (zoom: number) => void;
   setViewMode: (mode: "grid" | "masonry") => void;
@@ -49,6 +53,10 @@ interface GalleryState {
 
   // Reset
   resetFilters: () => void;
+
+  selectAsset: (id: number, multi: boolean) => void;
+  setSelection: (ids: number[]) => void;
+  clearSelection: () => void;
 }
 
 const DEFAULT_FILTERS: GalleryFilters = {
@@ -74,6 +82,8 @@ export const useGalleryStore = create<GalleryState>()(
     filters: DEFAULT_FILTERS,
     sortOption: "dateadded", // Default z C#
     sortDesc: true, // Default z C# (OrderByDescending)
+    selectedAssetIds: new Set<number>(),
+    lastSelectedAssetId: null,
 
     // Actions
     setZoomLevel: (zoom) => set({ zoomLevel: zoom }),
@@ -90,5 +100,25 @@ export const useGalleryStore = create<GalleryState>()(
     toggleSortDirection: () => set((state) => ({ sortDesc: !state.sortDesc })),
 
     resetFilters: () => set({ filters: DEFAULT_FILTERS }),
+
+    selectAsset: (id, multi) => {
+      if (multi) {
+        set((state) => ({
+          selectedAssetIds: new Set([...state.selectedAssetIds, id]),
+          lastSelectedAssetId: id,
+        }));
+      } else {
+        set({ selectedAssetIds: new Set([id]), lastSelectedAssetId: id });
+      }
+    },
+
+    setSelection: (ids) =>
+      set({
+        selectedAssetIds: new Set(ids),
+        lastSelectedAssetId: ids[0] || null,
+      }),
+
+    clearSelection: () =>
+      set({ selectedAssetIds: new Set(), lastSelectedAssetId: null }),
   })),
 );

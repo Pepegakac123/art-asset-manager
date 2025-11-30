@@ -98,8 +98,12 @@ export const useMaterialSets = () => {
       assetService.addAssetToMaterialSet(setId, assetId),
 
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["asset", variables.assetId] });
+      queryClient.invalidateQueries({
+        queryKey: ["material-set", variables.setId.toString()],
+      });
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["assets"] });
+      queryClient.invalidateQueries({ queryKey: ["asset", variables.assetId] });
     },
     onError: (error: any) => {
       addToast({
@@ -115,8 +119,12 @@ export const useMaterialSets = () => {
       assetService.removeAssetFromMaterialSet(setId, assetId.toString()),
 
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["asset", variables.assetId] });
+      queryClient.invalidateQueries({
+        queryKey: ["material-set", variables.setId.toString()],
+      });
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["assets"] });
+      queryClient.invalidateQueries({ queryKey: ["asset", variables.assetId] });
 
       addToast({
         title: "Removed",

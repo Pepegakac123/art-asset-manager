@@ -63,7 +63,8 @@ export interface MaterialSet {
   customColor?: string;
   dateAdded: string;
   lastModified: string;
-  count?: number;
+  totalAssets: number;
+  // count?: number;
   assets?: Asset[];
 }
 

@@ -24,7 +24,6 @@ namespace ArtAssetManager.Api.DTOs
                 .ReverseMap();
             CreateMap<MaterialSet, MaterialSetDto>()
                         .ForMember(
-
                             dest => dest.TotalAssets,
                             opt => opt.MapFrom(src => src.Assets.Count)
                         );

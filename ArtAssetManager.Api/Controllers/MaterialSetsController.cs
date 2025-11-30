@@ -33,7 +33,7 @@ namespace ArtAssetManager.Api.Controllers
             return Ok(materialSetsDto);
         }
         [HttpGet("{id}")]
-        public async Task<ActionResult<MaterialSetDetailsDto>> GetMaterialSet([FromRoute] int id, CancellationToken cancellationToken)
+        public async Task<ActionResult<MaterialSetDto>> GetMaterialSet([FromRoute] int id, CancellationToken cancellationToken)
         {
             if (id <= 0)
             {
@@ -42,8 +42,7 @@ namespace ArtAssetManager.Api.Controllers
             try
             {
                 var materialSet = await _materialSetRepository.GetByIdAsync(id, cancellationToken);
-                var materialSetDto = _mapper.Map<MaterialSetDetailsDto>(materialSet);
-                return Ok(materialSetDto);
+                return Ok(materialSet);
             }
             catch (KeyNotFoundException ex)
             {
@@ -52,16 +51,20 @@ namespace ArtAssetManager.Api.Controllers
             }
         }
         [HttpPost]
-        public async Task<ActionResult<MaterialSetDto>> AddMaterialSet([FromBody] CreateMaterialSetRequest body, CancellationToken cancellationToken)
+        public async Task<ActionResult<MaterialSetDto>> AddMaterialSet([FromBody] CreateMaterialSetRequest request, CancellationToken cancellationToken)
         {
-            var newMaterialSet = _mapper.Map<MaterialSet>(body);
-            var createdMaterialSet = await _materialSetRepository.AddAsync(newMaterialSet, cancellationToken);
-            var materialSetDto = _mapper.Map<MaterialSetDto>(createdMaterialSet);
-            return CreatedAtAction(
-        nameof(GetMaterialSet),
-        new { id = materialSetDto.Id },
-        materialSetDto
-    );
+            var exists = await _materialSetRepository.ExistsByNameAsync(request.Name, cancellationToken);
+
+            if (exists)
+            {
+                return Conflict(new { message = $"Collection with name '{request.Name}' already exists." });
+            }
+            var materialSet = MaterialSet.Create(request.Name, request.Description, null, request.CustomCoverUrl, request.CustomColor);
+
+            await _materialSetRepository.AddAsync(materialSet, cancellationToken);
+            var dto = _mapper.Map<MaterialSetDto>(materialSet);
+
+            return CreatedAtAction(nameof(GetMaterialSet), new { id = dto.Id }, dto);
         }
         [HttpPut("{id}")]
         public async Task<ActionResult<MaterialSetDto>> UpdateMaterialSet([FromRoute] int id, [FromBody] UpdateMaterialSet body, CancellationToken cancellationToken)
@@ -76,7 +79,7 @@ namespace ArtAssetManager.Api.Controllers
                 var updatedMaterialSet = await _materialSetRepository.UpdateAsync(id, newMaterialSet, cancellationToken);
                 var materialSetDto = _mapper.Map<MaterialSetDto>(updatedMaterialSet);
                 var materialCount = await _materialSetRepository.CountByMaterialSetIdAsync(id, cancellationToken);
-                materialSetDto.Count = materialCount;
+                materialSetDto.TotalAssets = materialCount;
                 return Ok(materialSetDto);
             }
             catch (KeyNotFoundException ex)

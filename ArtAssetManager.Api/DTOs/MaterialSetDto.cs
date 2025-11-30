@@ -9,6 +9,5 @@ namespace ArtAssetManager.Api.DTOs
         public int? CoverAssetId { get; set; }
         public string? CustomCoverUrl { get; set; }
         public string? CustomColor { get; set; }
-        public int? Count { get; set; }
     }
 }

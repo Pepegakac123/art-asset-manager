@@ -98,7 +98,7 @@ export const TopToolbar = () => {
     if (collectionMatch) {
       // Jesteśmy w kolekcji
       loading = isLoadingCollection;
-      count = activeCollection?.count; // Pamiętaj o dodaniu tego pola w DTO backendu!
+      count = activeCollection?.totalAssets; // Pamiętaj o dodaniu tego pola w DTO backendu!
     } else {
       // Jesteśmy w widoku globalnym
       loading = isLoadingStats;

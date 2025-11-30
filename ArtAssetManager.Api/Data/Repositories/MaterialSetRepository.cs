@@ -2,6 +2,7 @@ using ArtAssetManager.Api.Data.Helpers;
 using ArtAssetManager.Api.Entities;
 using ArtAssetManager.Api.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using ArtAssetManager.Api.DTOs;
 
 namespace ArtAssetManager.Api.Data.Repositories
 {
@@ -17,9 +18,22 @@ namespace ArtAssetManager.Api.Data.Repositories
         {
             return await _context.MaterialSets.ToListAsync(cancellationToken);
         }
-        public async Task<MaterialSet> GetByIdAsync(int id, CancellationToken cancellationToken)
+        public async Task<MaterialSetDto> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
-            var set = await _context.MaterialSets.Include(ms => ms.Assets).FirstOrDefaultAsync(x => x.Id == id, cancellationToken) ?? throw new KeyNotFoundException($"Nie znaleziono setu o ID:{id} ");
+            var set = await _context.MaterialSets
+                .AsNoTracking()
+                .Where(x => x.Id == id)
+                .Select(x => new MaterialSetDto
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    Description = x.Description,
+                    TotalAssets = x.Assets.Count(),
+                    CoverAssetId = x.CoverAssetId,
+                    CustomCoverUrl = x.CustomCoverUrl
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
             return set;
         }
         public async Task<MaterialSet> AddAsync(MaterialSet materialSet, CancellationToken cancellationToken)
@@ -121,6 +135,11 @@ namespace ArtAssetManager.Api.Data.Repositories
                 .Where(ms => ms.Id == materialSetId)
                 .SelectMany(ms => ms.Assets)
                 .CountAsync(cancellationToken);
+        }
+        public async Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken)
+        {
+            return await _context.MaterialSets
+                .AnyAsync(x => x.Name.ToLower() == name.ToLower(), cancellationToken);
         }
     }
 }

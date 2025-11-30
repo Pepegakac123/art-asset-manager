@@ -1,12 +1,13 @@
 using ArtAssetManager.Api.Data.Helpers;
 using ArtAssetManager.Api.Entities;
+using ArtAssetManager.Api.DTOs;
 
 namespace ArtAssetManager.Api.Interfaces
 {
     public interface IMaterialSetRepository
     {
         Task<IEnumerable<MaterialSet>> GetAllAsync(CancellationToken cancellationToken);
-        Task<MaterialSet> GetByIdAsync(int id, CancellationToken cancellationToken);
+        Task<MaterialSetDto> GetByIdAsync(int id, CancellationToken cancellationToken);
         Task<MaterialSet> AddAsync(MaterialSet materialSet, CancellationToken cancellationToken);
         Task<MaterialSet> UpdateAsync(int id, MaterialSet updateData, CancellationToken cancellationToken);
         Task DeleteAsync(int id, CancellationToken cancellationToken);
@@ -17,5 +18,6 @@ namespace ArtAssetManager.Api.Interfaces
         Task<PagedResult<Asset>> GetAssetsForSetAsync(int setId, AssetQueryParameters queryParams, CancellationToken cancellationToken);
 
         Task<int> CountByMaterialSetIdAsync(int materialSetId, CancellationToken cancellationToken);
+        Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken);
     }
 }

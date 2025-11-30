@@ -25,6 +25,7 @@ import { useState } from "react";
 import { Asset } from "@/types/api";
 import { AxiosResponse } from "axios";
 import { UseMutateFunction } from "@tanstack/react-query";
+import { useAssetActions } from "@/features/inspector/hooks/useAssetActions";
 
 interface AssetCardProps {
   asset: Asset;
@@ -50,7 +51,6 @@ export const AssetCard = ({
   explorerfn,
   style,
 }: AssetCardProps) => {
-  console.log(asset);
   const {
     id,
     fileName,
@@ -64,6 +64,7 @@ export const AssetCard = ({
 
   const [isHovered, setIsHovered] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { toggleFavorite } = useAssetActions(asset.id);
 
   // imageUrl helper
   const imageUrl = thumbnailPath
@@ -162,7 +163,7 @@ export const AssetCard = ({
             radius="full"
             variant="light"
             className="bg-black/40 text-white backdrop-blur-md hover:bg-black/60"
-            onPress={() => console.log("Toggle favorite", id)}
+            onPress={() => toggleFavorite()}
           >
             <Heart
               size={16}

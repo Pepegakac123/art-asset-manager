@@ -10,28 +10,6 @@ import { useShallow } from "zustand/react/shallow";
 import { useAssetsStats } from "../hooks/useAssetsStats";
 import { NoResults } from "./NoResults";
 
-/*
-
-
-
-TODO: [LAYOUT] Masonry Layout Support
-- UI Guidelines (Sekcja 7.2): Dodać obsługę trybu `viewMode === 'masonry'`.
-- Obecnie Grid jest sztywny (`aspect-square`). W Masonry kafelki mają różną wysokość.
-
-TODO: [UX] Bulk Actions Bar (Floating)
-- UI Guidelines (Sekcja 7.5): Dodać warunkowe renderowanie komponentu <FloatingActionBar /> na dole ekranu, gdy `selectedAssetIds.length > 0`.
-*/
-
-/*
-TODO: [UX] Floating Bulk Actions Dock
-- Requirements:
-  - Show ONLY when selectedAssetIds.length > 1.
-  - Fixed position: bottom-8, centered (z-index: 50).
-  - Visuals: Glassmorphism, dark background, rounded-full.
-  - Actions: "Select All", "Clear Selection", "Add to Collection", "Delete", "Tag Selected".
-  - Animation: Slide-up entry animation (Framer Motion or Tailwind animate-in).
-*/
-
 type DisplayContentMode =
   keyof typeof UI_CONFIG.GALLERY.AllowedDisplayContentModes;
 
@@ -44,6 +22,7 @@ export const GalleryGrid = ({ mode }: GalleryGridProps) => {
   const parsedCollectionId = collectionId ? parseInt(collectionId) : undefined;
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const { sidebarStats } = useAssetsStats();
+
   const {
     zoomLevel,
     viewMode,

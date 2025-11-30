@@ -30,6 +30,7 @@ export interface Asset {
   imageWidth?: number | null;
   imageHeight?: number | null;
   dominantColor?: string | null;
+  bitDepth?: number | null;
 
   // Metadane
   dateAdded: string; // DateTime w C# to string w JSON
@@ -44,6 +45,7 @@ export interface Asset {
   // Relacje
   scanFolderId?: number | null;
   tags: Tag[];
+  materialSets?: { id: number; name: string; customColor?: string | null }[];
 
   // Parent/Child (Wersjonowanie)
   parentId?: number | null;

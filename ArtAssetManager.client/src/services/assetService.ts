@@ -50,6 +50,12 @@ export const assetService = {
     });
     return response.data;
   },
+  addAssetToMaterialSet: async (
+    setId: number,
+    assetId: number,
+  ): Promise<void> => {
+    await apiReq.post(`/materialsets/${setId}/assets/${assetId}`);
+  },
   removeAssetFromMaterialSet: async (
     setId: number,
     assetId: string,
@@ -64,7 +70,13 @@ export const assetService = {
     const response = await apiReq.get("/assets/colors");
     return response.data;
   },
+  toggleFavorite: async (id: number): Promise<void> => {
+    await apiReq.patch(`/assets/${id}/toggle-favorite`);
+  },
   openInExplorer: async (path: string) => {
     return apiReq.post("/system/open-in-explorer", { path });
+  },
+  openInProgram: async (path: string) => {
+    return apiReq.post("/system/open-in-program", { path });
   },
 };

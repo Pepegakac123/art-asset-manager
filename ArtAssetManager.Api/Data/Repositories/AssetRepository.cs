@@ -19,9 +19,11 @@ namespace ArtAssetManager.Api.Data.Repositories
         public async Task<Asset?> GetAssetByIdAsync(int id, CancellationToken cancellationToken)
         {
             return await _context.Assets
-            .Include(a => a.Tags)
-            .Include(a => a.Children)
-            .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
+                .Include(a => a.Tags)
+                .Include(a => a.Children)
+                .Include(a => a.MaterialSets)
+                .AsSplitQuery()
+                .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
         }
         public async Task<Asset?> GetAssetByPathAsync(string path, CancellationToken cancellationToken)
         {

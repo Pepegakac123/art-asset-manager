@@ -9,7 +9,14 @@ namespace ArtAssetManager.Api.DTOs
         public AutoMapperProfile()
         {
 
-            CreateMap<Asset, AssetDetailsDto>();
+            CreateMap<Asset, AssetDetailsDto>()
+            .ForMember(dest => dest.MaterialSets, opt => opt.MapFrom(src =>
+                    src.MaterialSets.Select(ms => new SimpleMaterialSetDto
+                    {
+                        Id = ms.Id,
+                        Name = ms.Name,
+                        CustomColor = ms.CustomColor
+                    })));
             CreateMap<Asset, ChildDto>();
             CreateMap<Tag, TagDto>();
             CreateMap<Asset, AssetDto>();

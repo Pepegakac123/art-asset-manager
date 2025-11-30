@@ -22,5 +22,13 @@ namespace ArtAssetManager.Api.DTOs
 
         public List<TagDto> Tags { get; set; } = new List<TagDto>();
         public List<ChildDto> Children { get; set; } = new List<ChildDto>();
+        public List<SimpleMaterialSetDto> MaterialSets { get; set; } = new();
+    }
+
+    public class SimpleMaterialSetDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string? CustomColor { get; set; }
     }
 }

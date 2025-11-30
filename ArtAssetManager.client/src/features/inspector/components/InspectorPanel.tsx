@@ -23,6 +23,8 @@ import { useAsset } from "../hooks/useAsset";
 import { InspectorHeader } from "./single/InspectorHeader";
 import { InspectorProperties } from "./single/InspectorProperties";
 import { InspectorTags } from "./single/InspectorTags";
+import { InspectorTabs } from "./single/InspectorTabs";
+import { InspectorFooter } from "./single/InspectorFooter";
 
 // --- HELPER: SECTION HEADER ---
 const SectionHeader = ({
@@ -126,12 +128,11 @@ export const InspectorPanel = () => {
   // --- SINGLE ASSET RENDER ---
   return (
     <div className="h-full w-full flex flex-col bg-content1">
-      {/* 1. Header */}
+      {/* 1. Header */} {/* SEKCJA EDITABLE WŁAŚCIWOŚCI */}
       <InspectorHeader asset={asset} />
-
       {/* 2. SCROLLABLE CONTENT */}
       <ScrollShadow className="flex-1 min-h-0 flex flex-col custom-scrollbar">
-        {/* SEKCJA EDITABLE WŁAŚCIWOŚCI */}
+        {/* SEKCJA NON-EDITABLE WŁAŚCIWOŚCI */}
         <InspectorProperties asset={asset} />
         <Divider className="opacity-50" />
         {/* SEKCJA TAGÓW */}
@@ -139,106 +140,11 @@ export const InspectorPanel = () => {
         <Divider className="opacity-50" />
 
         {/* TABS */}
-        <div className="flex-1 flex flex-col">
-          <Tabs
-            fullWidth
-            size="sm"
-            variant="underlined"
-            selectedKey={activeTab}
-            onSelectionChange={(k) => setActiveTab(k as string)}
-            classNames={{
-              tabList: "p-0 border-b border-default-100 bg-content1 w-full",
-              cursor: "w-full bg-primary h-[2px]",
-              tab: "h-9 px-0",
-              tabContent:
-                "text-tiny font-medium group-data-[selected=true]:text-primary text-default-500",
-            }}
-          >
-            <Tab key="details" title="Details">
-              <div className="p-4 flex flex-col gap-2">
-                <DetailRow
-                  label="Format"
-                  value={asset.fileExtension?.toUpperCase() || asset.fileType}
-                />
-                <DetailRow
-                  label="File Size"
-                  value={`${(asset.fileSize / 1024 / 1024).toFixed(2)} MB`}
-                />
-                {asset.imageWidth && asset.imageHeight && (
-                  <DetailRow
-                    label="Dimensions"
-                    value={`${asset.imageWidth} x ${asset.imageHeight}`}
-                  />
-                )}
-                <DetailRow
-                  label="Created"
-                  value={new Date(asset.dateAdded).toLocaleDateString()}
-                />
-
-                {asset.dominantColor && (
-                  <div className="flex justify-between items-center py-1.5 border-b border-default-100/50 last:border-0">
-                    <span className="text-tiny text-default-500">Color</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-tiny text-default-900 font-mono">
-                        {asset.dominantColor}
-                      </span>
-                      <div
-                        className="w-3 h-3 rounded-full ring-1 ring-default-200 shadow-sm"
-                        style={{ backgroundColor: asset.dominantColor }}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </Tab>
-            <Tab key="versions" title="Versions">
-              <div className="p-6 text-center text-default-400">
-                <Layers size={24} className="opacity-50 mx-auto mb-2" />
-                <span className="text-tiny">No versions</span>
-              </div>
-            </Tab>
-            <Tab key="collections" title="Collections">
-              <div className="p-6 text-center text-default-400">
-                <FolderOpen size={24} className="opacity-50 mx-auto mb-2" />
-                <span className="text-tiny">No collections</span>
-              </div>
-            </Tab>
-          </Tabs>
-        </div>
+        <InspectorTabs asset={asset} />
+        <Divider className="opacity-50" />
       </ScrollShadow>
-
       {/* 4. STICKY FOOTER ACTIONS */}
-      <div className="flex-none p-3 border-t border-default-200 bg-content1 flex gap-2 items-center">
-        <Tooltip content="Open File">
-          <Button
-            isIconOnly
-            variant="light"
-            size="sm"
-            className="text-default-500"
-          >
-            <ExternalLink size={18} />
-          </Button>
-        </Tooltip>
-
-        <div className="flex-1" />
-
-        <Tooltip content={asset.isFavorite ? "Unfavorite" : "Favorite"}>
-          <Button
-            isIconOnly
-            variant={asset.isFavorite ? "flat" : "light"}
-            color={asset.isFavorite ? "danger" : "default"}
-            size="sm"
-            className={
-              asset.isFavorite ? "text-danger bg-danger/10" : "text-default-500"
-            }
-          >
-            <Heart
-              size={18}
-              fill={asset.isFavorite ? "currentColor" : "none"}
-            />
-          </Button>
-        </Tooltip>
-      </div>
+      <InspectorFooter asset={asset} />
     </div>
   );
 };

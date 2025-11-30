@@ -1,3 +1,4 @@
+import { assetService } from "@/services/assetService";
 import { materialSetService } from "@/services/materialSetService";
 import { CreateMaterialSetRequest, MaterialSet } from "@/types/api";
 import { addToast } from "@heroui/toast";
@@ -92,6 +93,46 @@ export const useMaterialSets = () => {
       });
     },
   });
+  const addAssetToSetMutation = useMutation({
+    mutationFn: ({ setId, assetId }: { setId: number; assetId: number }) =>
+      assetService.addAssetToMaterialSet(setId, assetId),
+
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["asset", variables.assetId] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+    },
+    onError: (error: any) => {
+      addToast({
+        title: "Error",
+        description:
+          error.response?.data?.message || "Failed to add to collection.",
+        color: "danger",
+      });
+    },
+  });
+  const removeAssetFromSetMutation = useMutation({
+    mutationFn: ({ setId, assetId }: { setId: number; assetId: number }) =>
+      assetService.removeAssetFromMaterialSet(setId, assetId.toString()),
+
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["asset", variables.assetId] });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+
+      addToast({
+        title: "Removed",
+        description: "Asset removed from collection.",
+        color: "default",
+        variant: "flat",
+      });
+    },
+    onError: () => {
+      addToast({
+        title: "Error",
+        description: "Failed to remove asset.",
+        color: "danger",
+      });
+    },
+  });
 
   return {
     // Data
@@ -108,6 +149,12 @@ export const useMaterialSets = () => {
 
     deleteMaterialSet: deleteMutation.mutateAsync,
     isDeleting: deleteMutation.isPending,
+
+    // Asset Operations
+    addAssetToSet: addAssetToSetMutation.mutateAsync,
+    isAddingAsset: addAssetToSetMutation.isPending,
+    removeAssetFromSet: removeAssetFromSetMutation.mutateAsync,
+    isRemovingAsset: removeAssetFromSetMutation.isPending,
   };
 };
 

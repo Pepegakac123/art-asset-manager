@@ -2,7 +2,15 @@ import { useState, useEffect, KeyboardEvent } from "react";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { Tooltip } from "@heroui/tooltip";
-import { Copy, Check, X, FileText, RefreshCw, Layers } from "lucide-react";
+import {
+  Copy,
+  Check,
+  X,
+  FileText,
+  RefreshCw,
+  Layers,
+  Edit3,
+} from "lucide-react";
 import { Asset } from "@/types/api";
 import { addToast } from "@heroui/toast";
 import { useAssetMutation } from "../../hooks/useAsset";
@@ -71,9 +79,15 @@ export const InspectorHeader = ({ asset }: InspectorHeaderProps) => {
   return (
     <div className="flex-none p-4 flex flex-col gap-3 border-b border-default-100 bg-content1">
       {/* 1. SEKCJA TYTUŁU */}
-      <div className="flex flex-col gap-1">
-        <span className="text-[10px] uppercase font-bold text-default-400 tracking-wider flex items-center gap-1">
-          <FileText size={10} /> Asset Name
+      <div className="flex flex-col gap-1 group/title">
+        <span className="text-[10px] uppercase font-bold text-default-400 tracking-wider flex items-center gap-1 justify-between">
+          <div className="flex items-center gap-1">
+            <FileText size={10} /> Asset Name
+          </div>
+          <Edit3
+            size={10}
+            className="opacity-0 group-hover/title:opacity-100 transition-opacity text-default-400"
+          />
         </span>
         <Input
           variant="underlined"
@@ -82,13 +96,16 @@ export const InspectorHeader = ({ asset }: InspectorHeaderProps) => {
           onBlur={handleSave}
           onKeyDown={handleKeyDown}
           size="lg"
+          placeholder="Enter asset name"
           classNames={{
-            input: "font-bold text-medium text-default-900",
-            inputWrapper: "border-b-default-200 px-0 h-10",
+            input:
+              "font-bold text-medium text-default-900 group-hover/title:text-primary transition-colors",
+            inputWrapper:
+              "border-b-default-200 group-hover/title:border-b-primary/50 px-0 h-4 transition-colors",
           }}
           endContent={
             localFileName !== asset.fileName && (
-              <div className="flex gap-1">
+              <div className="flex gap-1 animate-appearance-in">
                 <button
                   type="button"
                   onClick={handleSave}

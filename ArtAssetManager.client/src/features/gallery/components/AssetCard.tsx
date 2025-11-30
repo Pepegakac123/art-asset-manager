@@ -26,6 +26,7 @@ import { Asset } from "@/types/api";
 import { AxiosResponse } from "axios";
 import { UseMutateFunction } from "@tanstack/react-query";
 import { useAssetActions } from "@/features/inspector/hooks/useAssetActions";
+import { API_BASE_URL } from "@/config/constants";
 
 interface AssetCardProps {
   asset: Asset;
@@ -65,11 +66,14 @@ export const AssetCard = ({
   const [isHovered, setIsHovered] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { toggleFavorite } = useAssetActions(asset.id);
+  const getThumbnailUrl = (path: string | null) => {
+    if (!path) return "thumbnails/placeholdery/generic_placeholder.webp";
+    if (path.startsWith("http")) return path;
 
-  // imageUrl helper
-  const imageUrl = thumbnailPath
-    ? `${import.meta.env.VITE_API_URL}${thumbnailPath.startsWith("/") ? "" : "/"}${thumbnailPath}`
-    : "/placeholder.png";
+    const cleanPath = path.startsWith("/") ? path.slice(1) : path;
+
+    return `${API_BASE_URL}/${cleanPath}`;
+  };
 
   const showControls = isHovered || isSelected || isMenuOpen;
   const showCheckbox = isSelected && isBulkMode;
@@ -226,8 +230,8 @@ export const AssetCard = ({
         removeWrapper
         alt={fileName}
         className="z-0 h-full w-full object-cover pointer-events-none"
-        src={imageUrl}
-        fallbackSrc="/placeholder.png"
+        src={getThumbnailUrl(thumbnailPath ?? "")}
+        fallbackSrc="/thumbnails/placeholdery/generic_placeholder.webp"
       />
 
       {/* Footer*/}

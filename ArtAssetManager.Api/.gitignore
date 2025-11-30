@@ -7,3 +7,7 @@ wwwroot/thumbnails/*
 !/wwwroot/thumbnails/placeholder.png
 !/wwwroot/thumbnails/placeholders/
 !/wwwroot/thumbnails/placeholders/*
+/wwwroot/index.html
+/wwwroot/vite.svg
+/wwwroot/assets
+Publish

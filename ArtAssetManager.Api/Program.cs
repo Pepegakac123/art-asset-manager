@@ -46,7 +46,7 @@ try
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     });
     builder.Services.AddControllers();
-
+    builder.WebHost.UseUrls("http://*:5270");
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowReactApp",
@@ -68,6 +68,7 @@ try
     }
 
     // app.UseHttpsRedirection(); Błedy z signalR na localhost
+    app.UseDefaultFiles();
     app.UseStaticFiles();
     if (app.Environment.IsDevelopment())
     {
@@ -98,7 +99,29 @@ try
     });
 
     app.MapHub<ScanHub>("/hubs/scan");
-
+    app.MapFallbackToFile("index.html");
+    using (var scope = app.Services.CreateScope())
+    {
+        var services = scope.ServiceProvider;
+        try
+        {
+            var context = services.GetRequiredService<AssetDbContext>();
+            context.Database.Migrate();
+            Console.WriteLine("✅ Baza danych zaktualizowana pomyślnie.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Błąd podczas migracji bazy: {ex.Message}");
+        }
+    }
+    Console.ForegroundColor = ConsoleColor.Green;
+    Console.WriteLine("=============================================");
+    Console.WriteLine("   ART ASSET MANAGER - GOTOWY DO PRACY");
+    Console.WriteLine("=============================================");
+    Console.WriteLine("   Otwórz przeglądarkę i wejdź na:");
+    Console.WriteLine("   👉 http://localhost:5270");
+    Console.WriteLine("=============================================");
+    Console.ResetColor();
     app.Run();
 }
 catch (Exception ex)

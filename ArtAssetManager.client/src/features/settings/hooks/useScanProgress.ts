@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import * as signalR from "@microsoft/signalr";
 import apiReq from "@/lib/axios";
 import { useQueryClient } from "@tanstack/react-query";
+import { API_BASE_URL } from "@/config/constants";
 
 interface ScanState {
   isScanning: boolean;
@@ -44,8 +45,10 @@ export const useScanProgress = () => {
 
   // 2. SIGNALR (Nasłuchiwanie)
   useEffect(() => {
+    const cleanBaseUrl = API_BASE_URL.replace(/\/$/, "");
+    const hubUrl = `${cleanBaseUrl}/hubs/scan`;
     const connection = new signalR.HubConnectionBuilder()
-      .withUrl("http://localhost:5244/hubs/scan")
+      .withUrl(hubUrl)
       .configureLogging(signalR.LogLevel.Error) // Mniej logów w konsoli
       .withAutomaticReconnect()
       .build();

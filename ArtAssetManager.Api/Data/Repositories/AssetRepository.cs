@@ -44,10 +44,29 @@ namespace ArtAssetManager.Api.Data.Repositories
             if (asset == null) return null;
 
             if (request.FileName != null) asset.FileName = request.FileName;
-            if (request.FileType != null) asset.FileType = request.FileType;
-            if (request.Rating.HasValue) asset.Rating = request.Rating.Value;
-            if (request.IsFavorite.HasValue) asset.IsFavorite = request.IsFavorite.Value;
-            if (request.Description != null) asset.Description = request.Description;
+            if (!string.IsNullOrEmpty(request.ThumbnailPath))
+            {
+                asset.ThumbnailPath = request.ThumbnailPath;
+            }
+            if (request.FileType != null)
+            {
+                if (new[] { "image", "texture", "model" }.Contains(request.FileType.ToLower()))
+                {
+                    asset.FileType = request.FileType.ToLower();
+                }
+            }
+            if (request.Rating.HasValue)
+            {
+                asset.Rating = Math.Clamp(request.Rating.Value, 0, 5);
+            }
+            if (request.IsFavorite.HasValue)
+            {
+                asset.IsFavorite = request.IsFavorite.Value;
+            }
+            if (request.Description != null)
+            {
+                asset.Description = request.Description;
+            }
             await _context.SaveChangesAsync(cancellationToken);
             return asset;
         }

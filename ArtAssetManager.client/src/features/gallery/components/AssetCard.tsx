@@ -50,12 +50,13 @@ export const AssetCard = ({
   explorerfn,
   style,
 }: AssetCardProps) => {
+  console.log(asset);
   const {
     id,
     fileName,
     fileType,
     filePath,
-    thumbnailUrl,
+    thumbnailPath,
     imageWidth,
     imageHeight,
     fileExtension,
@@ -65,8 +66,8 @@ export const AssetCard = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // imageUrl helper
-  const imageUrl = thumbnailUrl
-    ? `${import.meta.env.VITE_API_URL}${thumbnailUrl.startsWith("/") ? "" : "/"}${thumbnailUrl}`
+  const imageUrl = thumbnailPath
+    ? `${import.meta.env.VITE_API_URL}${thumbnailPath.startsWith("/") ? "" : "/"}${thumbnailPath}`
     : "/placeholder.png";
 
   const showControls = isHovered || isSelected || isMenuOpen;

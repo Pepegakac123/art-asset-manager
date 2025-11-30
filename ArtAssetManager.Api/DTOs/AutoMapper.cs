@@ -12,9 +12,7 @@ namespace ArtAssetManager.Api.DTOs
             CreateMap<Asset, AssetDetailsDto>();
             CreateMap<Asset, ChildDto>();
             CreateMap<Tag, TagDto>();
-            CreateMap<Asset, AssetDto>().ForMember(
-                dest => dest.ThumbnailUrl, opt => opt.MapFrom(src => src.ThumbnailPath)
-            );
+            CreateMap<Asset, AssetDto>();
             CreateMap<ScanFolder, ScanFolderDto>()
                 .ReverseMap();
             CreateMap<MaterialSet, MaterialSetDto>()

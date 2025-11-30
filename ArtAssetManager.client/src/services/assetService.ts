@@ -17,7 +17,7 @@ export const assetService = {
     const response = await apiReq.get("/assets/favorites", { params });
     return response.data;
   },
-  getById: async (id: string): Promise<Asset> => {
+  getById: async (id: number): Promise<Asset> => {
     const response = await apiReq.get(`/assets/${id}`);
     return response.data;
   },
@@ -31,6 +31,10 @@ export const assetService = {
     params: AssetQueryParams,
   ): Promise<PagedResponse<Asset>> => {
     const response = await apiReq.get("/assets/uncategorized", { params });
+    return response.data;
+  },
+  patch: async (id: number, updates: Partial<Asset>): Promise<Asset> => {
+    const response = await apiReq.patch<Asset>(`/assets/${id}`, updates);
     return response.data;
   },
   getAssetsForMaterialSet: async (

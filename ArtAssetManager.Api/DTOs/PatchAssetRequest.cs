@@ -7,5 +7,6 @@ namespace ArtAssetManager.Api.DTOs
         public string? Description { get; set; }
         public int? Rating { get; set; }
         public bool? IsFavorite { get; set; }
+        public string? ThumbnailPath { get; set; }
     }
 }

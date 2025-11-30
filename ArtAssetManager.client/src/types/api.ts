@@ -26,7 +26,7 @@ export interface Asset {
   fileHash?: string | null;
 
   // Wizualne
-  thumbnailUrl?: string | null;
+  thumbnailPath?: string | null;
   imageWidth?: number | null;
   imageHeight?: number | null;
   dominantColor?: string | null;

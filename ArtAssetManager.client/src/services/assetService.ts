@@ -37,6 +37,9 @@ export const assetService = {
     const response = await apiReq.patch<Asset>(`/assets/${id}`, updates);
     return response.data;
   },
+  updateTags: async (id: number, tagsNames: string[]): Promise<void> => {
+    await apiReq.post(`/assets/${id}/tags`, { tagsNames });
+  },
   getAssetsForMaterialSet: async (
     setId: number,
     params: AssetQueryParams,

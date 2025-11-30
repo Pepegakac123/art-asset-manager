@@ -21,6 +21,8 @@ import { useGalleryStore } from "@/features/gallery/stores/useGalleryStore";
 import { useAsset } from "../hooks/useAsset";
 // IMPORT NOWEGO KOMPONENTU
 import { InspectorHeader } from "./single/InspectorHeader";
+import { InspectorProperties } from "./single/InspectorProperties";
+import { InspectorTags } from "./single/InspectorTags";
 
 // --- HELPER: SECTION HEADER ---
 const SectionHeader = ({
@@ -124,79 +126,16 @@ export const InspectorPanel = () => {
   // --- SINGLE ASSET RENDER ---
   return (
     <div className="h-full w-full flex flex-col bg-content1">
-      {/* 1. NOWY HEADER KOMPONENT ✅ */}
+      {/* 1. Header */}
       <InspectorHeader asset={asset} />
 
       {/* 2. SCROLLABLE CONTENT */}
       <ScrollShadow className="flex-1 min-h-0 flex flex-col custom-scrollbar">
-        <div className="p-4 flex flex-col gap-5">
-          {/* Rating */}
-          <div className="flex flex-col gap-1">
-            <SectionHeader title="Rating" />
-            <div className="flex text-warning px-1 cursor-pointer hover:opacity-80 transition-opacity">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <span
-                  key={i}
-                  className={
-                    i < (asset.rating || 0)
-                      ? "text-warning"
-                      : "text-default-300"
-                  }
-                >
-                  ★
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Description */}
-          <div className="flex flex-col gap-1">
-            <SectionHeader title="Description" icon={FileText} />
-            <Textarea
-              placeholder="Add a description..."
-              minRows={2}
-              maxRows={8}
-              variant="faded"
-              size="sm"
-              defaultValue={asset.description || ""}
-              classNames={{
-                input: "text-tiny",
-                inputWrapper:
-                  "bg-default-50 border-default-200 hover:border-default-300",
-              }}
-            />
-          </div>
-
-          {/* Tags */}
-          <div className="flex flex-col gap-2">
-            <SectionHeader title="Tags" icon={TagIcon} />
-            <div className="flex flex-wrap gap-1.5 px-1">
-              {asset.tags && asset.tags.length > 0 ? (
-                asset.tags.map((tag: any) => (
-                  <Chip
-                    key={tag.id}
-                    size="sm"
-                    variant="flat"
-                    classNames={{
-                      base: "bg-default-100 hover:bg-default-200 transition-colors cursor-pointer h-6",
-                      content: "text-tiny text-default-600 font-medium",
-                    }}
-                  >
-                    #{tag.name}
-                  </Chip>
-                ))
-              ) : (
-                <span className="text-tiny text-default-400 italic">
-                  No tags
-                </span>
-              )}
-              <button className="h-6 px-2 border border-dashed border-default-300 rounded-small text-[10px] text-default-400 hover:text-default-600 hover:border-default-400 transition-colors flex items-center">
-                + Add
-              </button>
-            </div>
-          </div>
-        </div>
-
+        {/* SEKCJA EDITABLE WŁAŚCIWOŚCI */}
+        <InspectorProperties asset={asset} />
+        <Divider className="opacity-50" />
+        {/* SEKCJA TAGÓW */}
+        <InspectorTags asset={asset} />
         <Divider className="opacity-50" />
 
         {/* TABS */}

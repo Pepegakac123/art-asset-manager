@@ -64,7 +64,7 @@ export const InspectorHeader = ({ asset }: InspectorHeaderProps) => {
       title: "Type Updated",
       description: `Converted to ${newType}`,
       color: "primary",
-      variant: "flat",
+      variant: "solid",
     });
   };
 
@@ -135,7 +135,7 @@ export const InspectorHeader = ({ asset }: InspectorHeaderProps) => {
         </div>
       </div>
 
-      {/* 3. SEKCJA TYPU PLIKU (NOWA) */}
+      {/* 3. SEKCJA TYPU PLIKU */}
       <div className="flex flex-col gap-1">
         <span className="text-[10px] uppercase font-bold text-default-400 tracking-wider flex items-center gap-1">
           <Layers size={10} /> File Type

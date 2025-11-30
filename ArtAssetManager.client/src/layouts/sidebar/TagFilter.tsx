@@ -93,7 +93,7 @@ export const TagFilter = () => {
           }
         }}
         classNames={{
-          popoverContent: "bg-content1 border border-default-200",
+          popoverContent: "bg-content1 border border-default-200 mb-6",
         }}
         inputProps={{
           classNames: {
@@ -115,72 +115,87 @@ export const TagFilter = () => {
         )}
       </Autocomplete>
 
+      {/* 3. SELECTED TAGS (ACTIVE FILTER CHIPS) */}
       {selectedTags.length > 0 && (
-        <div className="flex flex-wrap gap-2 mt-3 mb-2 animate-appearance-in">
+        <div className="flex flex-wrap gap-2 mb-6 mt-6 animate-appearance-in">
           {selectedTags.map((tag) => (
             <Chip
               key={tag}
-              size="md"
+              onClose={() => handleToggleTag(tag)}
               variant="solid"
               color="primary"
-              onClose={() => handleToggleTag(tag)}
+              size="sm"
               classNames={{
-                base: "h-7",
-                content: "text-xs font-bold px-2 text-white",
-                closeButton: "text-white/70 hover:text-white",
+                base: "h-6 bg-primary shadow-md shadow-primary/20",
+                content:
+                  "text-[10px] font-bold px-1 text-white uppercase tracking-wider",
+                closeButton: "text-white/70 hover:text-white transition-colors",
               }}
             >
               {tag}
             </Chip>
           ))}
+          {/* Przycisk Clear All */}
+          <button
+            type="button"
+            onClick={() => setFilters({ tags: [] })}
+            className="text-[10px] text-default-400 hover:text-danger transition-colors underline decoration-dotted underline-offset-2 ml-1"
+          >
+            Clear all
+          </button>
         </div>
       )}
-      {/* 4. POPULAR TAGS (Dynamic section) */}
-      <div className="mt-5">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-default-400/80 mb-2.5 px-1">
+
+      {/* 4. POPULAR TAGS (CLOUD) */}
+      <div>
+        <p className="text-[12px] font-semibold uppercase tracking-[0.15em] text-default-400/80 mb-3 mt-6 px-1">
           Popular Tags
         </p>
 
         {isLoading ? (
-          <div className="flex flex-wrap gap-2 opacity-70">
-            <Skeleton className="h-7 w-16 rounded-lg" />
+          <div className="flex flex-wrap gap-2">
+            {[1, 2, 3].map((i) => (
+              <Skeleton
+                key={i}
+                className="h-6 w-16 rounded-md bg-default-200/50"
+              />
+            ))}
           </div>
         ) : popularTagsList.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {popularTagsList.map((tag) => {
               const isActive = selectedTags.includes(tag.name);
+
               return (
                 <Chip
                   key={tag.id}
-                  size="md"
+                  size="sm"
                   variant="flat"
-                  className={`cursor-pointer transition-all border ${
-                    isActive
-                      ? "bg-primary/10 border-primary/50 text-primary"
-                      : "bg-default-100 border-transparent hover:border-primary/30 hover:text-foreground text-default-500"
-                  }`}
+                  className={`
+                          cursor-pointer transition-all duration-200 select-none border
+                          ${
+                            isActive
+                              ? "bg-primary/10 border-primary/40 text-primary font-semibold shadow-[0_0_10px_rgba(var(--heroui-primary),0.15)]"
+                              : "bg-default-100/50 border-transparent text-default-500 hover:bg-default-200 hover:text-default-700 hover:border-default-300"
+                          }
+                        `}
                   classNames={{
-                    base: "h-7",
-                    content: "text-xs font-medium px-2",
+                    base: "h-6 px-0",
+                    content: "text-[12px] px-2 flex items-center gap-1",
                   }}
-                  startContent={
-                    <Hash
-                      size={12}
-                      className={isActive ? "text-primary" : "opacity-50"}
-                    />
-                  }
                   onClick={() => handleToggleTag(tag.name)}
                 >
+                  {!isActive && <Hash size={10} className="opacity-40" />}
                   {tag.name}
                 </Chip>
               );
             })}
           </div>
         ) : (
-          <div className="flex items-center gap-2 px-1 text-default-400">
+          <div className="flex items-center gap-2 px-1 py-4 text-default-400 border border-dashed border-default-200 rounded-lg justify-center bg-default-50/50">
             <Info size={14} className="opacity-50" />
-            <span className="text-[10px] font-medium opacity-60">
-              No tags yet. Tag assets to populate list.
+            <span className="text-[10px] opacity-70">
+              Library has no tags yet.
             </span>
           </div>
         )}

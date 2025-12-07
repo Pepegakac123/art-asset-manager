@@ -65,14 +65,6 @@ export const useScanProgress = () => {
         queryClient.invalidateQueries({ queryKey: ["colors"] });
       }
       setScanState((prev) => {
-        // Logika "Detect Edge": Jeśli wcześniej skanował, a teraz przestał -> SUKCES
-        // if (prev.isScanning && !isNowScanning) {
-        //    addToast({
-        //      title: "Scan Finished",
-        //      description: "Library has been updated.",
-        //      color: "success",
-        //    });
-        // }
         return {
           ...prev,
           isScanning: isNowScanning,

@@ -19,6 +19,9 @@ namespace ArtAssetManager.Api.DTOs
         public string DominantColor { get; set; } = string.Empty;
         public int? BitDepth { get; set; }
         public bool? HasAlphaChannel { get; set; }
+        public DateTime DateAdded { get; set; }
+        public DateTime LastModified { get; set; }
+        public DateTime LastScanned { get; set; }
 
         public List<TagDto> Tags { get; set; } = new List<TagDto>();
         public List<ChildDto> Children { get; set; } = new List<ChildDto>();

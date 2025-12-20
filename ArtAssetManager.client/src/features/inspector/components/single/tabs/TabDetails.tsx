@@ -40,6 +40,7 @@ const DetailTile = ({
 );
 
 export const TabDetails = ({ asset }: { asset: Asset }) => {
+  console.log(asset);
   return (
     <div className="flex flex-col gap-3 p-1">
       <div className="grid grid-cols-2 gap-2">

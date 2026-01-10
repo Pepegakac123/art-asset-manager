@@ -3,13 +3,15 @@ import { assetService } from "@/services/assetService";
 import { Asset } from "@/types/api";
 import { addToast } from "@heroui/toast";
 
+// Hook grupujący szybkie akcje na assecie (Ulubione, Otwórz w Explorerze)
 export const useAssetActions = (assetId: number) => {
   const queryClient = useQueryClient();
 
-  //  TOGGLE FAVORITE
+  // AKCJA 1: Przełącz Ulubione (z Optimistic UI)
   const favoriteMutation = useMutation({
     mutationFn: () => assetService.toggleFavorite(assetId),
 
+    // Optymistyczna aktualizacja UI (zmiana koloru serduszka natychmiast)
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ["asset", assetId] });
 
@@ -25,6 +27,7 @@ export const useAssetActions = (assetId: number) => {
     },
 
     onError: (_err, _vars, context) => {
+      // Rollback w razie błędu
       if (context?.previousAsset) {
         queryClient.setQueryData(["asset", assetId], context.previousAsset);
       }
@@ -36,6 +39,7 @@ export const useAssetActions = (assetId: number) => {
     },
 
     onSettled: () => {
+      // Odśwież wszystko co może zależeć od statusu ulubionego
       queryClient.invalidateQueries({ queryKey: ["asset", assetId] });
       queryClient.invalidateQueries({ queryKey: ["assets"] });
       queryClient.invalidateQueries({ queryKey: ["favorites"] });
@@ -43,7 +47,7 @@ export const useAssetActions = (assetId: number) => {
     },
   });
 
-  // 2. OPEN IN EXPLORER
+  // AKCJA 2: Otwórz folder zawierający plik
   const explorerMutation = useMutation({
     mutationFn: (path: string) => assetService.openInExplorer(path),
     onError: () => {
@@ -55,7 +59,7 @@ export const useAssetActions = (assetId: number) => {
     },
   });
 
-  // 3. OPEN IN PROGRAM (Default App)
+  // AKCJA 3: Otwórz plik w domyślnym programie
   const programMutation = useMutation({
     mutationFn: (path: string) => assetService.openInProgram(path),
     onError: () => {

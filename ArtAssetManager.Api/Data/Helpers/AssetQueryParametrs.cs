@@ -1,10 +1,11 @@
 namespace ArtAssetManager.Api.Data.Helpers
 {
+    // Klasa DTO przechowująca wszystkie możliwe filtry z UI galerii
     public class AssetQueryParameters
     {
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 10;
-        public bool MatchAll { get; set; } = false;
+        public bool MatchAll { get; set; } = false; // Czy tagi mają działać jako AND (true) czy OR (false)
         public bool SortDesc { get; set; } = false;
         public string? FileName { get; set; } = null;
         public List<string>? FileType { get; set; } = null;
@@ -23,6 +24,8 @@ namespace ArtAssetManager.Api.Data.Helpers
         public int? MinHeight { get; set; }
         public int? MaxHeight { get; set; }
         public bool? HasAlphaChannel { get; set; }
+        
+        // Stałe konfiguracyjne dla paginacji
         public const int DefaultPage = 1;
         public const int DefaultPageSize = 20;
         public const int MaxPageSize = 60;

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ArtAssetManager.Api.Data.Repositories
 {
+    // Repozytorium tagów
     public class TagRepository : ITagRepository
     {
         private readonly AssetDbContext _context;
@@ -13,16 +14,23 @@ namespace ArtAssetManager.Api.Data.Repositories
         {
             _context = context;
         }
+        
+        // Pobiera istniejące tagi lub tworzy nowe w jednej operacji (dla unikania duplikatów)
         public async Task<Result<IEnumerable<Tag>>> GetOrCreateTagsAsync(IEnumerable<string> tagNames, CancellationToken cancellationToken)
         {
             var normalizedTagNames = tagNames.Select(n => n.Trim().ToLower()).Distinct().ToList();
+            
+            // 1. Znajdź istniejące
             var existingTags = await _context.Tags
             .Where(t => normalizedTagNames.Contains(t.Name))
             .ToListAsync(cancellationToken);
 
             var existingNames = existingTags.Select(t => t.Name).ToHashSet();
+            
+            // 2. Wyznacz brakujące
             var missingNames = normalizedTagNames.Where(n => !existingNames.Contains(n));
 
+            // 3. Dodaj tylko brakujące
             var newTags = missingNames.Select(n => Tag.Create(n)).ToList();
             if (newTags.Any())
             {
@@ -31,6 +39,8 @@ namespace ArtAssetManager.Api.Data.Repositories
             }
             return Result<IEnumerable<Tag>>.Success(existingTags.Concat(newTags));
         }
+        
+        // Pobiera tagi posortowane wg popularności (liczby użyć)
         public async Task<IEnumerable<Tag>> GetAllTagsAsync(CancellationToken cancellationToken)
         {
             return await _context.Tags

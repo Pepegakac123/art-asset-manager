@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ArtAssetManager.Api.Controllers
 {
+    // Kontroler do zapisywania ulubionych/częstych wyszukiwań użytkownika (Smart Collections)
     [ApiController]
     [Route("api/saved-searches")]
     public class SavedSearchesController : ControllerBase
@@ -35,6 +36,8 @@ namespace ArtAssetManager.Api.Controllers
             var savedSearchDto = _mapper.Map<SavedSearchDto>(savedSearch);
             return Ok(savedSearchDto);
         }
+        
+        // Zapisuje nową konfigurację wyszukiwania (filtry + nazwa)
         [HttpPost]
         public async Task<ActionResult<SavedSearchDto>> AddSavedSearch([FromBody] CreateSavedSearchRequest body, CancellationToken cancellationToken)
         {

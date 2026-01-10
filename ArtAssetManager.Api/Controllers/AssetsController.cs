@@ -11,6 +11,7 @@ using ArtAssetManager.Api.Errors;
 
 namespace ArtAssetManager.Api.Controllers
 {
+    // Kontroler zarządzający głównymi operacjami na plikach (Assetach)
     [ApiController]
     [Route("api/assets")]
     public class AssetsController : ControllerBase
@@ -26,13 +27,13 @@ namespace ArtAssetManager.Api.Controllers
             _mapper = mapper;
         }
 
-
-
+        // Pobiera listę assetów z obsługą stronicowania i filtrowania
         [HttpGet] // GET /api/assets
         public async Task<ActionResult<PagedResponse<AssetDto>>> GetAssets(
              [FromQuery] AssetQueryParameters queryParams, CancellationToken cancellationToken
          )
         {
+            // Zabezpieczenie parametrów paginacji przed nieprawidłowymi wartościami
             if (queryParams.PageNumber <= 0) queryParams.PageNumber = AssetQueryParameters.DefaultPage;
             if (queryParams.PageSize <= 0) queryParams.PageSize = AssetQueryParameters.DefaultPageSize;
             if (queryParams.PageSize > AssetQueryParameters.MaxPageSize) queryParams.PageSize = AssetQueryParameters.MaxPageSize;
@@ -41,6 +42,7 @@ namespace ArtAssetManager.Api.Controllers
 
             var assetsDto = _mapper.Map<IEnumerable<AssetDto>>(pagedResult.Items);
 
+            // Obliczenia metadanych paginacji (ilość stron, czy jest następna/poprzednia)
             var totalPages = (int)Math.Ceiling(pagedResult.TotalItems / (double)queryParams.PageSize);
             var hasNext = queryParams.PageNumber < totalPages;
             var hasPrevious = queryParams.PageNumber > 1;
@@ -60,7 +62,7 @@ namespace ArtAssetManager.Api.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<AssetDetailsDto>> GetAssetById([FromRoute] int id, CancellationToken cancellationToken) //
+        public async Task<ActionResult<AssetDetailsDto>> GetAssetById([FromRoute] int id, CancellationToken cancellationToken)
         {
 
             if (id <= 0)
@@ -78,6 +80,7 @@ namespace ArtAssetManager.Api.Controllers
             return Ok(assetDto);
         }
 
+        // Pobiera inne wersje tego samego assetu (np. duplikaty lub wersje o innej rozdzielczości)
         [HttpGet("{id}/versions")]
         public async Task<ActionResult<IEnumerable<AssetDto>>> GetAssetVersions([FromRoute] int id, CancellationToken cancellationToken)
         {
@@ -100,6 +103,7 @@ namespace ArtAssetManager.Api.Controllers
 
         }
 
+        // Tworzy relację rodzic-dziecko między assetami (np. plik źródłowy PSD i wyeksportowany JPG)
         [HttpPost("{childId}/link-to/{parentId}")]
         public async Task<ActionResult> LinkAssetToParentAsync(
             [FromRoute] int childId,
@@ -131,6 +135,7 @@ namespace ArtAssetManager.Api.Controllers
             }
         }
 
+        // Aktualizuje tagi dla pojedynczego assetu (tworzy nowe tagi jeśli nie istnieją)
         [HttpPost("{id}/tags")]
         public async Task<ActionResult> UpdateAssetTagsAsync(
             [FromRoute] int id,
@@ -143,6 +148,7 @@ namespace ArtAssetManager.Api.Controllers
             }
             try
             {
+                // Najpierw pobieramy lub tworzymy encje tagów na podstawie nazw
                 var tagsResult = await _tagRepo.GetOrCreateTagsAsync(body.TagsNames, cancellationToken);
                 if (!tagsResult.IsSuccess)
                 {
@@ -159,6 +165,8 @@ namespace ArtAssetManager.Api.Controllers
             }
 
         }
+
+        // Masowa aktualizacja tagów dla wielu assetów jednocześnie
         [HttpPost("bulk/tags")]
         public async Task<ActionResult> BulkUpdateAssetTagsAsync(
            [FromBody] BulkUpdateAssetTagsRequest body, CancellationToken cancellationToken
@@ -182,6 +190,7 @@ namespace ArtAssetManager.Api.Controllers
             }
         }
 
+        // Edycja metadanych (np. opis)
         [HttpPatch("{id}")]
         public async Task<ActionResult<AssetDto>> PatchAsset(int id, [FromBody] PatchAssetRequest request, CancellationToken cancellationToken)
         {
@@ -263,6 +272,8 @@ namespace ArtAssetManager.Api.Controllers
             };
             return Ok(response);
         }
+
+        // Pobiera assety, które nie mają przypisanych żadnych tagów ani kategorii
         [HttpGet("uncategorized")]
         public async Task<ActionResult<PagedResponse<AssetDto>>> GetUncategorizedAssets([FromQuery] AssetQueryParameters queryParams, CancellationToken cancellationToken)
         {
@@ -290,6 +301,7 @@ namespace ArtAssetManager.Api.Controllers
             return Ok(response);
         }
 
+        // "Miękkie" usuwanie - przenosi do kosza (flaga IsDeleted = true)
         [HttpDelete("{id}")]
         public async Task<ActionResult> SoftlyDeleteAsset([FromRoute] int id, CancellationToken cancellationToken)
         {
@@ -335,6 +347,8 @@ namespace ArtAssetManager.Api.Controllers
             };
             return Ok(response);
         }
+
+        // Przywracanie assetu z kosza
         [HttpPost("{id}/restore")]
         public async Task<ActionResult> RestoreAsset([FromRoute] int id, CancellationToken cancellationToken)
         {
@@ -353,6 +367,8 @@ namespace ArtAssetManager.Api.Controllers
                 return NotFound(new ApiErrorResponse(HttpStatusCode.NotFound, $"Błąd: {ex.Message}", HttpContext.Request.Path));
             }
         }
+
+        // Trwałe usuwanie assetu z bazy danych
         [HttpDelete("{id}/permanent")]
         public async Task<ActionResult> PermanentlyDeleteAsset([FromRoute] int id, CancellationToken cancellationToken)
         {
@@ -371,7 +387,8 @@ namespace ArtAssetManager.Api.Controllers
                 return NotFound(new ApiErrorResponse(HttpStatusCode.NotFound, $"Błąd: {ex.Message}", HttpContext.Request.Path));
             }
         }
-        // --- BULK OPERACJE DLA KOSZA ---
+        
+        // --- SEKCJA OPERACJI ZBIORCZYCH (BULK) DLA KOSZA ---
 
         [HttpPost("bulk/delete")]
         public async Task<ActionResult> BulkSoftlyDeleteAssets([FromBody] List<int> assetIds, CancellationToken cancellationToken)

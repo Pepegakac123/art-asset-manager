@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ArtAssetManager.Api.Controllers
 {
+    // Kontroler do ręcznego sterowania procesem skanowania dysku
     [ApiController]
     [Route("api/scanner")]
     public class ScannerController : ControllerBase
@@ -13,6 +14,8 @@ namespace ArtAssetManager.Api.Controllers
         {
             _trigger = trigger;
         }
+
+        // Ręczne wymuszenie skanowania folderów (np. przycisk "Odśwież" w UI)
         [HttpPost("start")]
         public async Task<ActionResult> TriggerScan()
         {
@@ -20,6 +23,8 @@ namespace ArtAssetManager.Api.Controllers
             await _trigger.TriggerScanAsync(ScanMode.Manual);
             return NoContent();
         }
+
+        // Sprawdza, czy skaner aktualnie pracuje
         [HttpGet("status")]
         public IActionResult GetStatus()
         {

@@ -1,5 +1,7 @@
 namespace ArtAssetManager.Api.Services.Helpers
 {
+    // Prosta klasa pomocnicza (DTO wewnątrz-serwisowe)
+    // Służy do przekazywania wyników analizy obrazu (ImageSharp) do logiki tworzenia Assetu
     public class AssetMetadata
     {
         public int Width { get; set; }

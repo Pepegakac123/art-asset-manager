@@ -4,14 +4,17 @@ import { addToast } from "@heroui/toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, XCircle, FolderPlus, Trash2 } from "lucide-react";
 
+// Kompleksowy hook zarządzający ustawieniami folderów skanowania
 export const useScanFolders = () => {
   const queryClient = useQueryClient();
 
+  // Pobieranie listy folderów
   const foldersQuery = useQuery({
     queryKey: ["scan-folders"],
     queryFn: scannerService.getFolders,
   });
 
+  // Dodawanie nowego folderu
   const addFolderMutation = useMutation({
     mutationFn: scannerService.addFolder,
     onSuccess: () => {
@@ -37,6 +40,7 @@ export const useScanFolders = () => {
     },
   });
 
+  // Usuwanie folderu
   const deleteFolderMutation = useMutation({
     mutationFn: scannerService.deleteFolder,
     onSuccess: () => {
@@ -60,6 +64,8 @@ export const useScanFolders = () => {
       });
     },
   });
+
+  // Aktualizacja statusu folderu (Aktywny/Nieaktywny) z Optimistic Update
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, isActive }: { id: number; isActive: boolean }) =>
       scannerService.updateFolderStatus(id, isActive),
@@ -114,9 +120,13 @@ export const useScanFolders = () => {
       });
     },
   });
+
+  // Walidacja ścieżki przed dodaniem
   const validateMutation = useMutation({
     mutationFn: scannerService.validatePath,
   });
+
+  // Ręczne uruchomienie skanera
   const startScanMutation = useMutation({
     mutationFn: scannerService.startScan,
     onSuccess: () => {
@@ -140,6 +150,8 @@ export const useScanFolders = () => {
       });
     },
   });
+
+  // Zarządzanie rozszerzeniami plików
   const extensionsQuery = useQuery({
     queryKey: ["allowed-extensions"],
     queryFn: scannerService.getAllowedExtensions,
@@ -176,6 +188,7 @@ export const useScanFolders = () => {
       });
     },
   });
+
   return {
     folders: foldersQuery.data,
     isLoading: foldersQuery.isLoading,

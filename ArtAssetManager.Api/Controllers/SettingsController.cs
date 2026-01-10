@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ArtAssetManager.Api.Controllers
 {
+    // Kontroler ustawień globalnych aplikacji (foldery skanowania, rozszerzenia plików)
     [ApiController]
     [Route("api/settings")]
     public class SettingsController : ControllerBase
@@ -49,9 +50,11 @@ namespace ArtAssetManager.Api.Controllers
             return Ok(scanFoldersDto);
         }
 
+        // Dodaje nowy folder do listy obserwowanych przez skaner
         [HttpPost("folders")]
         public async Task<ActionResult<ScanFolderDto>> AddScanFolderAsync([FromBody] AddScanFolderRequest body, CancellationToken cancellationToken)
         {
+            // Normalizacja ścieżki (usuwanie zbędnych slashy, dopasowanie do OS)
             var normalizedPath = Path.GetFullPath(body.FolderPath);
 
             if (!Directory.Exists(normalizedPath))
@@ -90,6 +93,8 @@ namespace ArtAssetManager.Api.Controllers
                 return NotFound(new ApiErrorResponse(HttpStatusCode.NotFound, $"Folder skanowania o ID {id} nie został znaleziony.", HttpContext.Request.Path));
             }
         }
+        
+        // Włączanie/wyłączanie skanowania dla konkretnego folderu
         [HttpPatch("folders/{id}")]
         public async Task<ActionResult<ScanFolderDto>> ToggleScanFolderActive([FromRoute] int id, [FromBody] UpdateFolderStatusRequest body, CancellationToken cancellationToken)
         {
@@ -109,12 +114,15 @@ namespace ArtAssetManager.Api.Controllers
             }
         }
 
+        // Pobiera listę dozwolonych rozszerzeń plików (np. .jpg, .png, .obj)
         [HttpGet("extensions")]
         public async Task<ActionResult<List<string>>> GetAllowedExtensionsAsync(CancellationToken cancellationToken)
         {
             var extensions = await _settingsRepo.GetAllowedExtensionsAsync(cancellationToken);
             return Ok(extensions);
         }
+        
+        // Zapisuje listę rozszerzeń, które mają być indeksowane
         [HttpPost("extensions")]
         public async Task<ActionResult> SetAllowedExtensionsAsync([FromBody] List<string> extensions, CancellationToken cancellationToken)
         {

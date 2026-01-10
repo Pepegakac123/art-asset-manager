@@ -22,7 +22,7 @@ namespace ArtAssetManager.Api.Data.Repositories
                 .Include(a => a.Tags)
                 .Include(a => a.Children)
                 .Include(a => a.MaterialSets)
-                .AsSplitQuery()
+                .AsSplitQuery() // Optymalizacja dla relacji wiele-do-wielu
                 .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
         }
         public async Task<Asset?> GetAssetByPathAsync(string path, CancellationToken cancellationToken)
@@ -40,6 +40,8 @@ namespace ArtAssetManager.Api.Data.Repositories
             await _context.SaveChangesAsync(cancellationToken);
             return asset;
         }
+        
+        // Aktualizacja tylko zmienionych pól metadanych
         public async Task<Asset?> UpdateAssetMetadataAsync(int id, PatchAssetRequest request, CancellationToken cancellationToken)
         {
             var asset = await _context.Assets.FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
@@ -72,6 +74,8 @@ namespace ArtAssetManager.Api.Data.Repositories
             await _context.SaveChangesAsync(cancellationToken);
             return asset;
         }
+        
+        // Aktualizacja tagów w transakcji (usuń stare -> dodaj nowe)
         public async Task UpdateAssetTagsAsync(int assetId, IEnumerable<Tag> tags, CancellationToken cancellationToken)
         {
 
@@ -79,6 +83,7 @@ namespace ArtAssetManager.Api.Data.Repositories
             .Include(a => a.Tags)
             .FirstOrDefaultAsync(a => a.Id == assetId, cancellationToken);
             if (asset == null) throw new KeyNotFoundException($"Asset {assetId} not found");
+            
             await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
@@ -97,6 +102,8 @@ namespace ArtAssetManager.Api.Data.Repositories
             }
 
         }
+        
+        // Masowa aktualizacja tagów dla wielu plików
         public async Task BulkUpdateAssetTagsAsync(List<int> assetIds, IEnumerable<Tag> tags, CancellationToken cancellationToken)
         {
 
@@ -127,15 +134,18 @@ namespace ArtAssetManager.Api.Data.Repositories
         }
         public async Task UpdateAssetAsync(Asset asset, CancellationToken ct = default)
         {
-            _context.Assets.Update(asset); // To jest bezpieczne - jeśli obiekt jest już śledzony, EF tylko potwierdzi stan.
+            _context.Assets.Update(asset);
             await _context.SaveChangesAsync(ct);
         }
+        
+        // Pobieranie listy z filtrowaniem i paginacją
         public async Task<PagedResult<Asset>> GetPagedAssetsAsync(
             AssetQueryParameters queryParams, CancellationToken cancellationToken
         )
         {
             IQueryable<Asset> query = _context.Assets;
 
+            // Zastosowanie filtrów z klasy pomocniczej Extension
             query = query.ApplyFilteringAndSorting(queryParams);
 
             var totalItems = await query.CountAsync(cancellationToken);
@@ -146,6 +156,8 @@ namespace ArtAssetManager.Api.Data.Repositories
                 TotalItems = totalItems
             };
         }
+        
+        // Pobiera wersje (rodzeństwo) assetu
         public async Task<IEnumerable<Asset>> GetAssetVersionAsync(int id, CancellationToken cancellationToken)
         {
             var rootId = await _context.Assets.Where(a => a.Id == id).Select(a => a.ParentAssetId ?? (int?)a.Id).FirstOrDefaultAsync(cancellationToken);
@@ -161,6 +173,8 @@ namespace ArtAssetManager.Api.Data.Repositories
             return versions;
 
         }
+        
+        // Łączenie assetów w relację Rodzic-Dziecko
         public async Task LinkAssetToParentAsync(int childId, int parentId, CancellationToken cancellationToken)
         {
             var parentAsset = await _context.Assets
@@ -219,6 +233,7 @@ namespace ArtAssetManager.Api.Data.Repositories
             };
         }
 
+        // Pobiera assety bez tagów
         public async Task<PagedResult<Asset>> GetUncategorizedAssetsAsync(
            AssetQueryParameters queryParams, CancellationToken cancellationToken
        )
@@ -239,7 +254,7 @@ namespace ArtAssetManager.Api.Data.Repositories
 
         private async Task<Asset> GetAssetIgnoreFilters(int assetId, CancellationToken cancellationToken)
         {
-
+            // IgnoreQueryFilters pozwala pobrać nawet te assety, które są "usunięte" (IsDeleted=true)
             var markedAsset = await _context.Assets
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(a => a.Id == assetId, cancellationToken);
@@ -251,6 +266,7 @@ namespace ArtAssetManager.Api.Data.Repositories
             return markedAsset;
         }
 
+        // Miękkie usuwanie - ustawia flagę IsDeleted
         public async Task SoftDeleteAssetAsync(int assetId, CancellationToken cancellationToken)
         {
             var markedAsset = await GetAssetIgnoreFilters(assetId, cancellationToken);
@@ -299,6 +315,8 @@ namespace ArtAssetManager.Api.Data.Repositories
                 TotalItems = totalItems
             };
         }
+        
+        // Trwałe usunięcie z bazy danych
         public async Task PermanentDeleteAssetAsync(int assetId, CancellationToken cancellationToken)
         {
             var markedAsset = await GetAssetIgnoreFilters(assetId, cancellationToken);
@@ -312,11 +330,12 @@ namespace ArtAssetManager.Api.Data.Repositories
                 throw new ArgumentException("Lista ID nie może być pusta.");
             }
             await _context.Assets
-.IgnoreQueryFilters()
-.Where(a => assetIds.Contains(a.Id))
-.ExecuteDeleteAsync(cancellationToken);
+            .IgnoreQueryFilters()
+            .Where(a => assetIds.Contains(a.Id))
+            .ExecuteDeleteAsync(cancellationToken);
         }
 
+        // Agregacja statystyk biblioteki
         public async Task<LibraryStatsDto> GetStatsAsync(CancellationToken cancellationToken)
         {
             var totalAssets = await _context.Assets.CountAsync(cancellationToken);
@@ -367,6 +386,8 @@ namespace ArtAssetManager.Api.Data.Repositories
                 TotalTrashed = totalTrashed
             };
         }
+        
+        // Pobiera listę unikalnych kolorów dominujących w bibliotece
         public async Task<List<string>> GetColorsListAsync(CancellationToken cancellationToken)
         {
             var colorList = await _context.Assets
@@ -379,9 +400,4 @@ namespace ArtAssetManager.Api.Data.Repositories
             return colorList;
         }
     };
-
-
-
-
-
 }

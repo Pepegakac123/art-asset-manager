@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { assetService } from "@/services/assetService";
 import { addToast } from "@heroui/toast";
 
+// Hook do aktualizacji tagów assetu
 export const useAssetTagsMutation = (assetId: number) => {
   const queryClient = useQueryClient();
 
@@ -10,6 +11,7 @@ export const useAssetTagsMutation = (assetId: number) => {
       assetService.updateTags(assetId, newTags),
 
     onSuccess: () => {
+      // Po sukcesie odświeżamy dane assetu, listę w galerii oraz globalną listę tagów
       queryClient.invalidateQueries({ queryKey: ["asset", assetId] });
       queryClient.invalidateQueries({ queryKey: ["assets"] });
       queryClient.invalidateQueries({ queryKey: ["tags"] });

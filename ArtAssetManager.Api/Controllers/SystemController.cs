@@ -7,12 +7,15 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ArtAssetManager.Api.Controllers
 {
+    // Kontroler do interakcji z systemem operacyjnym (otwieranie plików, sprawdzanie ścieżek)
     [ApiController]
     [Route("api/system")]
     public class SystemController : ControllerBase
     {
         [HttpGet("status")]
         public IActionResult GetStatus() => Ok(new { msg = "OK" });
+
+        // Sprawdza, czy podana ścieżka istnieje i czy aplikacja ma do niej dostęp
         [HttpPost("validate-path")]
         public IActionResult ValidatePath([FromBody] ValidatePathRequest request)
         {
@@ -29,6 +32,7 @@ namespace ArtAssetManager.Api.Controllers
                     return Ok(new { isValid = false, message = "directory does not exist" });
                 }
 
+                // Próba odczytu plików, żeby sprawdzić uprawnienia
                 Directory.GetFiles(request.Path, "*", SearchOption.TopDirectoryOnly);
 
                 // Jak przeszło, to znaczy że jest OK
@@ -43,6 +47,8 @@ namespace ArtAssetManager.Api.Controllers
                 return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, "There was an error.", request.Path));
             }
         }
+
+        // Otwiera plik w domyślnym programie systemowym
         [HttpPost("open-in-program")]
         public IActionResult OpenInProgram([FromBody] ValidatePathRequest request)
         {
@@ -61,6 +67,8 @@ namespace ArtAssetManager.Api.Controllers
                 return StatusCode(500, new { message = "Could not open file in program", error = ex.Message });
             }
         }
+
+        // Otwiera lokalizację pliku w eksploratorze plików (Windows Explorer, Finder, etc.)
         [HttpPost("open-in-explorer")]
         public IActionResult OpenInExplorer([FromBody] ValidatePathRequest request)
         {
@@ -73,18 +81,18 @@ namespace ArtAssetManager.Api.Controllers
             }
             try
             {
-                // 2. Wykrywanie systemu i dobór komendy
+                // 2. Wykrywanie systemu i dobór odpowiedniej komendy systemowej
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    // Windows: /select zaznacza plik w oknie
-                    // Podmieniamy / na \ bo Windows woli backslashe w argumentach explorera
-                    string winPath = request.Path.Replace("/", "\\");
+                    // Windows: /select zaznacza konkretny plik w oknie folderu
+                    // Podmieniamy / na \ bo Windows preferuje backslashe w argumentach explorera
+                    string winPath = request.Path.Replace("/", "\");
                     Process.Start("explorer.exe", $"/select,\"{winPath}\"");
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
                     // Linux: xdg-open otwiera folder. 
-                    // Linux rzadko wspiera "zaznaczanie" pliku, więc otwieramy folder nadrzędny.
+                    // Linux rzadko wspiera natywne "zaznaczanie" pliku, więc otwieramy folder nadrzędny.
                     string folderToOpen = request.Path;
 
                     if (System.IO.File.Exists(folderToOpen))
@@ -97,7 +105,7 @@ namespace ArtAssetManager.Api.Controllers
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 {
-                    // Mac: open -R odkrywa plik w Finderze
+                    // Mac: open -R odkrywa (reveal) plik w Finderze
                     Process.Start("open", $"-R \"{request.Path}\"");
                 }
                 else

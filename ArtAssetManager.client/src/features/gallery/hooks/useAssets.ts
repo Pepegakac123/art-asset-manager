@@ -11,16 +11,23 @@ import { addToast } from "@heroui/toast";
 
 type GalleryMode = keyof typeof UI_CONFIG.GALLERY.AllowedDisplayContentModes;
 
+// Hook do pobierania listy assetów z obsługą nieskończonego przewijania (Infinite Scroll)
 export const useAssets = (
   mode: GalleryMode,
   params: AssetQueryParams,
   collectionId?: number,
 ) => {
+  // useInfiniteQuery zarządza stronicowaniem danych
   const getAssetsQuery = useInfiniteQuery({
+    // Klucz cache zależy od trybu, filtrów i kolekcji - zmiana któregokolwiek wymusi odświeżenie
     queryKey: ["assets", mode, params, collectionId],
     initialPageParam: 1,
+    
+    // Funkcja pobierająca dane dla konkretnej strony
     queryFn: async ({ pageParam = 1 }) => {
       const currentParams = { ...params, pageNumber: pageParam as number };
+      
+      // Wybór odpowiedniego endpointu w zależności od trybu galerii
       switch (mode) {
         case UI_CONFIG.GALLERY.AllowedDisplayContentModes.favorites:
           return assetService.getFavorites(currentParams);
@@ -33,27 +40,29 @@ export const useAssets = (
             currentParams,
           );
         case UI_CONFIG.GALLERY.AllowedDisplayContentModes.uncategorized:
-          return assetService.getUncategorizedAssets(currentParams); // TODO: Dodać filtr uncategorized
+          return assetService.getUncategorizedAssets(currentParams);
         default:
           return assetService.getAll(currentParams);
       }
     },
+    // Logika wyznaczania następnej strony (dla React Query)
     getNextPageParam: (lastPage) => {
       if (lastPage.hasNextPage) {
         return lastPage.currentPage + 1;
       }
       return undefined;
     },
+    // Zachowaj poprzednie dane podczas ładowania nowych filtrów (lepsze UX)
     placeholderData: keepPreviousData,
+    // Pobieraj tylko jeśli mamy ID kolekcji (dla trybu kolekcji) lub zawsze dla innych trybów
     enabled: mode === "collection" ? !!collectionId : true,
-    staleTime: 1000 * 60 * 1,
+    staleTime: 1000 * 60 * 1, // Cache ważny przez 1 minutę
   });
 
-  // 2. AKCJA: OTWIERANIE FOLDERU (Mutation)
+  // Mutacja do otwierania folderu w eksploratorze systemowym
   const openExplorerMutation = useMutation({
     mutationFn: (filePath: string) => assetService.openInExplorer(filePath),
     onSuccess: () => {
-      // Opcjonalnie: Toast sukcesu, ale zazwyczaj okno otwiera się po prostu
       console.log("Explorer opened successfully");
     },
     onError: (error: any) => {
@@ -71,6 +80,8 @@ export const useAssets = (
     openExplorer: openExplorerMutation.mutate,
   };
 };
+
+// Hook do pobierania listy dostępnych kolorów dla filtrów
 export const useColors = () => {
   const colorsQuery = useQuery({
     queryKey: ["colors"],

@@ -6,6 +6,7 @@ using ArtAssetManager.Api.DTOs;
 
 namespace ArtAssetManager.Api.Data.Repositories
 {
+    // Repozytorium zarządzające zestawami materiałów (kolekcjami)
     public class MaterialSetRepository : IMaterialSetRepository
     {
         private readonly AssetDbContext _context;
@@ -65,6 +66,8 @@ namespace ArtAssetManager.Api.Data.Repositories
             _context.MaterialSets.Remove(material);
             await _context.SaveChangesAsync(cancellationToken);
         }
+        
+        // Dodawanie assetu do kolekcji + automatyczne ustawienie okładki
         public async Task AddAssetToSetAsync(int assetId, int materialSetId, CancellationToken cancellationToken)
         {
             var asset = await _context.Assets.FindAsync(assetId);
@@ -76,6 +79,8 @@ namespace ArtAssetManager.Api.Data.Repositories
             {
                 throw new InvalidOperationException($"Asset o Nazwie {asset.FileName} jest już w zestawie.");
             }
+            
+            // Jeśli kolekcja nie ma okładki, ustawiamy pierwszy dodany asset jako okładkę
             if (materialSet.CoverAssetId == null && materialSet.CustomCoverUrl == null)
             {
                 materialSet.CoverAssetId = asset.Id;
@@ -83,6 +88,8 @@ namespace ArtAssetManager.Api.Data.Repositories
             materialSet.Assets.Add(asset);
             await _context.SaveChangesAsync(cancellationToken);
         }
+        
+        // Usuwanie assetu z kolekcji + czyszczenie okładki jeśli to był ten asset
         public async Task RemoveAssetFromSetAsync(int assetId, int materialSetId, CancellationToken cancellationToken)
         {
             var asset = await _context.Assets.FindAsync(assetId);

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ArtAssetManager.Api.Data.Repositories
 {
+    // Repozytorium dla zapisanych wyszukiwań użytkownika
     public class SavedSearchRepository : ISavedSearchRepository
     {
         private readonly AssetDbContext _context;

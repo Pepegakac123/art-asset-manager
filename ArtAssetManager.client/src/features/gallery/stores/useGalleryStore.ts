@@ -1,68 +1,73 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 
+// Interfejs reprezentujący filtry dostępne w UI.
+// Odpowiada polom w klasie C# `AssetQueryParameters`.
 export interface GalleryFilters {
-  searchQuery: string; // C#: FileName
-  tags: string[]; // C#: Tags
-  matchAllTags: boolean; // C#: MatchAll
-  fileTypes: string[]; // C#: FileType
-  colors: string[]; // C#: DominantColors
+  searchQuery: string; // Odpowiednik C#: FileName
+  tags: string[]; // Odpowiednik C#: Tags
+  matchAllTags: boolean; // Odpowiednik C#: MatchAll (true = AND, false = OR)
+  fileTypes: string[]; // Odpowiednik C#: FileType (image, model, texture)
+  colors: string[]; // Odpowiednik C#: DominantColors
 
-  ratingRange: [number, number]; // C#: RatingMin, RatingMax (Slider UI zwraca tablicę)
+  ratingRange: [number, number]; // Slider UI zwraca tablicę [min, max]
   dateRange: {
-    // C#: DateFrom, DateTo
+    // Odpowiednik C#: DateFrom, DateTo
     from: string | null;
     to: string | null;
   };
 
-  // Wymiary (Opcjonalne)
-  widthRange: [number, number]; // C#: MinWidth, MaxWidth
-  heightRange: [number, number]; // C#: MinHeight, MaxHeight
-  fileSizeRange: [number, number];
-  hasAlpha: boolean | null; // C#: HasAlphaChannel (null = wszystko, true = z, false = bez)
+  // Filtrowanie techniczne (wymiary, rozmiar pliku)
+  widthRange: [number, number];
+  heightRange: [number, number];
+  fileSizeRange: [number, number]; // W Megabajtach
+  hasAlpha: boolean | null; // null = wszystko, true = tylko z alpha, false = bez alpha
 }
 
 export type SortOption = "dateadded" | "filename" | "filesize" | "lastmodified";
 
+// Główny stan galerii (Global State) zarządzany przez Zustand
 interface GalleryState {
-  // --- UI State ---
-  zoomLevel: number;
-  viewMode: "grid" | "masonry";
-  pageSize: number;
+  // --- UI State (Wygląd) ---
+  zoomLevel: number; // Wielkość kafelków (px)
+  viewMode: "grid" | "masonry"; // Układ siatki
+  pageSize: number; // Ilość elementów na stronę (do paginacji backendowej)
 
-  // --- Data State ---
-  filters: GalleryFilters;
-  sortOption: SortOption;
-  sortDesc: boolean; // C#: SortDesc
+  // --- Data State (Dane) ---
+  filters: GalleryFilters; // Aktualnie aktywne filtry
+  sortOption: SortOption; // Po czym sortujemy
+  sortDesc: boolean; // Kierunek sortowania (C#: SortDesc)
 
-  // Stany Assetów
-  selectedAssetIds: Set<number>;
-  lastSelectedAssetId: number | null;
+  // --- Selection State (Zaznaczanie) ---
+  selectedAssetIds: Set<number>; // Zbiór ID zaznaczonych plików (Set dla wydajności O(1))
+  lastSelectedAssetId: number | null; // Ostatnio kliknięty element (do obsługi Shift+Click)
 
-  // --- Actions ---
+  // --- Actions (Metody zmieniające stan) ---
   setZoomLevel: (zoom: number) => void;
   setViewMode: (mode: "grid" | "masonry") => void;
   setPageSize: (size: number) => void;
 
-  // Update filtrów (Partial pozwala aktualizować tylko jedno pole np. tylko tags)
+  // Partial pozwala aktualizować tylko wybrane pole filtra (np. tylko tagi, bez ruszania reszty)
   setFilters: (newFilters: Partial<GalleryFilters>) => void;
 
-  // Helpersy do sortowania
+  // Sortowanie
   setSortOption: (option: SortOption) => void;
   toggleSortDirection: () => void;
 
-  // Reset
+  // Reset filtrów do wartości domyślnych
   resetFilters: () => void;
 
+  // Obsługa zaznaczania (multi = czy trzymamy Ctrl/Shift)
   selectAsset: (id: number, multi: boolean) => void;
   setSelection: (ids: number[]) => void;
   clearSelection: () => void;
 }
 
+// Domyślne wartości filtrów (startowe)
 const DEFAULT_FILTERS: GalleryFilters = {
   searchQuery: "",
   tags: [],
-  matchAllTags: true,
+  matchAllTags: true, // Domyślnie szukamy plików zawierających WSZYSTKIE wybrane tagi
   fileTypes: [],
   colors: [],
   ratingRange: [0, 5],
@@ -73,6 +78,7 @@ const DEFAULT_FILTERS: GalleryFilters = {
   hasAlpha: null,
 };
 
+// Utworzenie Store'a Zustand
 export const useGalleryStore = create<GalleryState>()(
   devtools((set) => ({
     // Initial State
@@ -80,16 +86,17 @@ export const useGalleryStore = create<GalleryState>()(
     viewMode: "grid",
     pageSize: 20,
     filters: DEFAULT_FILTERS,
-    sortOption: "dateadded", // Default z C#
-    sortDesc: true, // Default z C# (OrderByDescending)
+    sortOption: "dateadded", // Domyślnie najnowsze
+    sortDesc: true, // Domyślnie malejąco (najnowsze na górze)
     selectedAssetIds: new Set<number>(),
     lastSelectedAssetId: null,
 
-    // Actions
+    // Actions Implementation
     setZoomLevel: (zoom) => set({ zoomLevel: zoom }),
     setViewMode: (mode) => set({ viewMode: mode }),
     setPageSize: (size) => set({ pageSize: size }),
 
+    // Scalanie starych filtrów z nowymi (Shallow Merge)
     setFilters: (newFilters) =>
       set((state) => ({
         filters: { ...state.filters, ...newFilters },
@@ -101,13 +108,16 @@ export const useGalleryStore = create<GalleryState>()(
 
     resetFilters: () => set({ filters: DEFAULT_FILTERS }),
 
+    // Logika zaznaczania
     selectAsset: (id, multi) => {
       if (multi) {
+        // Jeśli multi (np. z Ctrl), dodajemy do istniejącego zbioru
         set((state) => ({
           selectedAssetIds: new Set([...state.selectedAssetIds, id]),
           lastSelectedAssetId: id,
         }));
       } else {
+        // Jeśli pojedyncze kliknięcie, czyścimy resztę i zaznaczamy tylko ten jeden
         set({ selectedAssetIds: new Set([id]), lastSelectedAssetId: id });
       }
     },

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ArtAssetManager.Api.Data.Repositories
 {
+    // Repozytorium zarządzające ustawieniami aplikacji (foldery, rozszerzenia plików)
     public class SettingsRepository : ISettingsRepository
     {
         private readonly AssetDbContext _context;
@@ -18,9 +19,11 @@ namespace ArtAssetManager.Api.Data.Repositories
 
         public async Task<ScanFolder> AddScanFolderAsync(ScanFolder folder, CancellationToken cancellationToken)
         {
+            // Sprawdzenie czy folder był kiedyś dodany ale został usunięty (soft delete)
             var oldFolder = await _context.ScanFolders.IgnoreQueryFilters().FirstOrDefaultAsync(f => f.Path == folder.Path, cancellationToken);
             if (oldFolder != null)
             {
+                // Przywrócenie starego folderu zamiast tworzenia nowego
                 oldFolder.IsDeleted = false;
                 await _context.SaveChangesAsync(cancellationToken);
                 return oldFolder;
@@ -31,6 +34,8 @@ namespace ArtAssetManager.Api.Data.Repositories
 
 
         }
+        
+        // Usunięcie folderu z listy skanowania
         public async Task DeleteScanFolderAsync(int id, CancellationToken cancellationToken)
         {
 
@@ -39,6 +44,8 @@ namespace ArtAssetManager.Api.Data.Repositories
             if (folderToDelete == null)
                 throw new KeyNotFoundException($"Folder with ID {id} not found");
 
+            // Logika: Jeśli usuwamy podfolder, a jego rodzic też jest skanowany,
+            // to przenosimy assety do rodzica zamiast je "gubić".
             var parentFolder = await _context.ScanFolders
                 .Where(f => f.Id != id && !f.IsDeleted)
                 .Where(f => folderToDelete.Path.StartsWith(f.Path))
@@ -67,6 +74,8 @@ namespace ArtAssetManager.Api.Data.Repositories
             await _context.SaveChangesAsync(cancellationToken);
             return folder;
         }
+        
+        // Generyczne pobieranie ustawień z tabeli SystemSettings (klucz-wartość)
         public async Task<string?> GetValueAsync(string key, CancellationToken ct = default)
         {
             var setting = await _context.SystemSettings.FirstOrDefaultAsync(s => s.Key == key, ct);
@@ -90,6 +99,7 @@ namespace ArtAssetManager.Api.Data.Repositories
         }
 
         List<string> DefaultAllowedExtensions = new() { ".jpg", ".jpeg", ".gif", ".png", ".webp", ".blend", ".fbx", ".obj", ".ztl", ".zpr", ".exr", ".hdr", ".tif", ".tiff", ".max", ".ma", ".mb", ".zbr", ".spp", ".sbs", ".sbsar", ".hip", ".hipnc", ".hiplc", ".psd", ".psb", ".ai", ".eps", ".uasset", ".umap", ".unity", ".prefab", ".mat", ".asset" };
+        
         public async Task<List<string>> GetAllowedExtensionsAsync(CancellationToken ct = default)
         {
             var extensions = await GetValueAsync("Scanner_AllowedExtensions");
@@ -100,6 +110,8 @@ namespace ArtAssetManager.Api.Data.Repositories
             }
             return extensions.Split(';').ToList();
         }
+        
+        // Zapis listy dozwolonych rozszerzeń z walidacją bezpieczeństwa
         public async Task SetAllowedExtensionsAsync(List<string> extensions, CancellationToken ct = default)
         {
 
@@ -113,6 +125,7 @@ namespace ArtAssetManager.Api.Data.Repositories
         ".exe", ".dll", ".bat", ".cmd", ".sh", ".vbs", ".msi", ".com", ".scr", ".js", ".ps1", ".bin"
     };
 
+            // Blokada dodawania plików wykonywalnych
             var detectedThreat = extensions.FirstOrDefault(ext => dangerousExtensions.Contains(ext.Trim()));
 
             if (detectedThreat != null)

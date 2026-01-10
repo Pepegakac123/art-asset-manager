@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ArtAssetManager.Api.Entities;
 namespace ArtAssetManager.Api.Data
 {
+    // Główny kontekst bazy danych EF Core
     public class AssetDbContext : DbContext
     {
         public AssetDbContext(DbContextOptions<AssetDbContext> options) : base(options)
@@ -24,9 +25,13 @@ namespace ArtAssetManager.Api.Data
             modelBuilder.Entity<ScanFolder>()
                 .HasIndex(s => s.Path)
                 .IsUnique();
+            // Globalny filtr: domyślnie ukrywamy usunięte (soft delete) foldery
             modelBuilder.Entity<ScanFolder>().HasQueryFilter(a => a.IsDeleted == false);
 
             modelBuilder.Entity<SavedSearch>().HasIndex(s => s.Name).IsUnique();
+            
+            // Konfiguracja relacji Asset <-> ScanFolder
+            // Restrict: Usunięcie folderu nie usuwa kaskadowo assetów (robimy to ręcznie w repozytorium)
             modelBuilder.Entity<Asset>()
                     .HasOne(a => a.ScanFolder)
                     .WithMany(s => s.Assets)
@@ -35,13 +40,16 @@ namespace ArtAssetManager.Api.Data
             modelBuilder.Entity<Asset>()
                 .HasIndex(a => a.FilePath)
                 .IsUnique();
+            
+            // Relacja rodzic-dziecko (wersjonowanie/grupowanie assetów)
             modelBuilder.Entity<Asset>()
                 .HasOne(a => a.Parent)
                 .WithMany(a => a.Children)
                 .HasForeignKey(a => a.ParentAssetId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // INDEKSY DLA WYDAJNOŚCI FILTROWANIA I SORTOWANIA
+            // === INDEKSY DLA WYDAJNOŚCI ===
+            // SQLite używa ich do przyspieszenia sortowania i filtrowania w galerii
             modelBuilder.Entity<Asset>()
                 .HasIndex(a => a.ParentAssetId);
             modelBuilder.Entity<Asset>().HasIndex(a => a.FileType);
@@ -54,6 +62,8 @@ namespace ArtAssetManager.Api.Data
             modelBuilder.Entity<Asset>().HasIndex(a => a.FileHash);
             modelBuilder.Entity<Asset>().HasIndex(a => a.DateAdded);
             modelBuilder.Entity<Asset>().HasIndex(a => a.LastModified);
+            
+            // Globalny filtr dla assetów (soft delete)
             modelBuilder.Entity<Asset>().HasQueryFilter(a => a.IsDeleted == false);
 
             modelBuilder.Entity<MaterialSet>()
@@ -64,10 +74,6 @@ namespace ArtAssetManager.Api.Data
           .WithMany()
           .HasForeignKey(m => m.CoverAssetId)
           .OnDelete(DeleteBehavior.SetNull);
-
-
-
-
         }
     }
 }

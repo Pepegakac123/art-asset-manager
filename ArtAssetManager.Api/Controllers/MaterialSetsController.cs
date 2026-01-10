@@ -12,6 +12,7 @@ using ArtAssetManager.Api.Entities;
 
 namespace ArtAssetManager.Api.Controllers
 {
+    // Kontroler do zarządzania "Material Sets" - grupami assetów tworzących jeden materiał (np. tekstury PBR)
     [ApiController]
     [Route("api/materialsets")]
     public class MaterialSetsController : ControllerBase
@@ -50,6 +51,8 @@ namespace ArtAssetManager.Api.Controllers
                 return NotFound(new ApiErrorResponse(HttpStatusCode.NotFound, $"Błąd: {ex.Message}", HttpContext.Request.Path));
             }
         }
+
+        // Tworzy nową kolekcję materiałów
         [HttpPost]
         public async Task<ActionResult<MaterialSetDto>> AddMaterialSet([FromBody] CreateMaterialSetRequest request, CancellationToken cancellationToken)
         {
@@ -108,6 +111,7 @@ namespace ArtAssetManager.Api.Controllers
             }
         }
 
+        // Pobiera wszystkie assety przypisane do danego zestawu materiałów
         [HttpGet("{setId}/assets")]
         public async Task<ActionResult<PagedResponse<AssetDto>>> GetAssets(
                     [FromRoute] int setId, [FromQuery] AssetQueryParameters queryParams, CancellationToken cancellationToken
@@ -143,6 +147,7 @@ namespace ArtAssetManager.Api.Controllers
             return Ok(response);
         }
 
+        // Dodaje asset do kolekcji
         [HttpPost("{setId}/assets/{assetId}")]
         public async Task<ActionResult> AddAssetToMaterialSet([FromRoute] int setId, [FromRoute] int assetId, CancellationToken cancellationToken)
         {
@@ -166,6 +171,8 @@ namespace ArtAssetManager.Api.Controllers
                 return BadRequest(new ApiErrorResponse(HttpStatusCode.BadRequest, $"Błąd: {ex.Message}", HttpContext.Request.Path));
             }
         }
+        
+        // Usuwa asset z kolekcji (nie usuwa samego pliku)
         [HttpDelete("{setId}/assets/{assetId}")]
         public async Task<ActionResult> RemoveAssetFromMaterialSet([FromRoute] int setId, [FromRoute] int assetId, CancellationToken cancellationToken)
         {

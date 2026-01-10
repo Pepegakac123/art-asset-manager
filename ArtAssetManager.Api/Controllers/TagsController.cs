@@ -4,6 +4,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 namespace ArtAssetManager.Api.Controllers
 {
+    // Kontroler do zarządzania słownikiem tagów
     [ApiController]
     [Route("api/tags")]
     public class TagsController : ControllerBase
@@ -17,6 +18,7 @@ namespace ArtAssetManager.Api.Controllers
             _mapper = mapper;
         }
 
+        // Pobiera listę wszystkich dostępnych tagów (używanych w autouzupełnianiu)
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TagDto>>> GetTags(CancellationToken cancellationToken)
         {

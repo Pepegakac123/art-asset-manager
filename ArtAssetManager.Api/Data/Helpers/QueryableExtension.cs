@@ -4,21 +4,24 @@ using System.Linq;
 
 namespace ArtAssetManager.Api.Data.Helpers
 {
+    // Logika budowania dynamicznego zapytania SQL na podstawie filtrów
     public static class QueryableExtensions
     {
         public static IQueryable<Asset> ApplyFilteringAndSorting(this IQueryable<Asset> query, AssetQueryParameters queryParams)
         {
+            // Wyszukiwanie po nazwie pliku (SQL LIKE)
             if (!string.IsNullOrEmpty(queryParams.FileName))
             {
                 var keyword = $"%{queryParams.FileName}%";
                 query = query.Where(a => EF.Functions.Like(a.FileName, keyword));
             }
 
-            // Filtrowanie po Tagach (logika MatchAll/MatchAny)
+            // Filtrowanie po Tagach
             if (queryParams.Tags?.Count > 0)
             {
                 if (queryParams.MatchAll)
                 {
+                    // AND: Asset musi mieć WSZYSTKIE podane tagi
                     foreach (var tagName in queryParams.Tags)
                     {
                         query = query.Where(a => a.Tags.Any(t => tagName == t.Name));
@@ -26,17 +29,18 @@ namespace ArtAssetManager.Api.Data.Helpers
                 }
                 else
                 {
+                    // OR: Asset musi mieć PRZYNAJMNIEJ JEDEN z podanych tagów
                     query = query.Where(a => a.Tags.Any(t => queryParams.Tags.Contains(t.Name)));
                 }
             }
 
-            // Filtrowanie po FileType
+            // Filtrowanie po Typie pliku (np. image, model)
             if (queryParams.FileType?.Count > 0)
             {
                 query = query.Where(a => queryParams.FileType.Any(type => a.FileType == type));
             }
 
-            // Filtrowanie po Rating
+            // Filtrowanie po Ocenie (Rating 0-5)
             if (queryParams.RatingMin != null)
             {
                 var minRating = Math.Min(Math.Max(0, Math.Abs(queryParams.RatingMin.Value)), 5);
@@ -49,7 +53,7 @@ namespace ArtAssetManager.Api.Data.Helpers
                 query = query.Where(a => a.Rating <= maxRating);
             }
 
-            // Filtrowanie po FileSize
+            // Filtrowanie po Rozmiarze pliku
             if (queryParams.FileSizeMin != null)
             {
                 query = query.Where(a => a.FileSize >= Math.Abs((decimal)queryParams.FileSizeMin));
@@ -59,7 +63,7 @@ namespace ArtAssetManager.Api.Data.Helpers
                 query = query.Where(a => a.FileSize <= Math.Abs((decimal)queryParams.FileSizeMax));
             }
 
-            // Filtrowanie po Width
+            // Filtrowanie po Wymiarach (dla obrazów)
             if (queryParams.MinWidth != null)
             {
                 query = query.Where(a => a.ImageWidth >= queryParams.MinWidth);
@@ -68,8 +72,6 @@ namespace ArtAssetManager.Api.Data.Helpers
             {
                 query = query.Where(a => a.ImageWidth <= queryParams.MaxWidth);
             }
-
-            // Filtrowanie po Height
             if (queryParams.MinHeight != null)
             {
                 query = query.Where(a => a.ImageHeight >= queryParams.MinHeight);
@@ -79,26 +81,26 @@ namespace ArtAssetManager.Api.Data.Helpers
                 query = query.Where(a => a.ImageHeight <= queryParams.MaxHeight);
             }
 
-            //Filtrowanie po Kolorach
+            // Filtrowanie po Kolorach
             if (queryParams.DominantColors?.Count > 0)
             {
                 query = query.Where(a => a.DominantColor != null && queryParams.DominantColors.Contains(a.DominantColor));
             }
 
-            //Filtrowanie po Alpha
+            // Filtrowanie po Kanale Alpha (przezroczystość)
             if (queryParams.HasAlphaChannel != null)
             {
                 query = query.Where(a => a.HasAlphaChannel == queryParams.HasAlphaChannel);
             }
 
-            // Filtrowanie po hashData
+            // Filtrowanie po Hashu (wykrywanie duplikatów)
             if (!string.IsNullOrEmpty(queryParams.FileHash))
             {
 
                 query = query.Where(a => a.FileHash == queryParams.FileHash);
             }
 
-            // Filtrowanie po DateRange
+            // Filtrowanie po Dacie dodania
             if (queryParams.DateFrom != null)
             {
                 query = query.Where(a => a.DateAdded >= queryParams.DateFrom);
@@ -108,7 +110,7 @@ namespace ArtAssetManager.Api.Data.Helpers
                 query = query.Where(a => a.DateAdded <= queryParams.DateTo);
             }
 
-            // SORTOWANIE
+            // SORTOWANIE WYNIKÓW
             if (!string.IsNullOrEmpty(queryParams.SortBy))
             {
                 var normalizedSortBy = queryParams.SortBy.ToLowerInvariant();
@@ -130,7 +132,7 @@ namespace ArtAssetManager.Api.Data.Helpers
             }
             else
             {
-                // Domyślne sortowanie
+                // Domyślne sortowanie: od najnowszych
                 query = query.OrderByDescending(a => a.DateAdded);
             }
 

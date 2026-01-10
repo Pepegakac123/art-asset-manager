@@ -12,16 +12,18 @@ interface ScanState {
   current: number;
 }
 
+// Hook obsługujący połączenie WebSocket (SignalR) do odbierania postępu skanowania
 export const useScanProgress = () => {
   const queryClient = useQueryClient();
   const [scanState, setScanState] = useState<ScanState>({
-    isScanning: false, // Domyślnie false, ale zaraz to sprawdzimy
+    isScanning: false, 
     progress: 0,
     message: "",
     total: 0,
     current: 0,
   });
 
+  // 1. Sprawdzenie stanu początkowego (czy skaner już działa po odświeżeniu strony?)
   useEffect(() => {
     const fetchInitialStatus = async () => {
       try {
@@ -43,19 +45,22 @@ export const useScanProgress = () => {
     fetchInitialStatus();
   }, []);
 
-  // 2. SIGNALR (Nasłuchiwanie)
+  // 2. Konfiguracja połączenia SIGNALR
   useEffect(() => {
     const cleanBaseUrl = API_BASE_URL.replace(/\/$/, "");
     const hubUrl = `${cleanBaseUrl}/hubs/scan`;
+    
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(hubUrl)
       .configureLogging(signalR.LogLevel.Error) // Mniej logów w konsoli
-      .withAutomaticReconnect()
+      .withAutomaticReconnect() // Automatyczne wznawianie połączenia
       .build();
 
     // HANDLER 1: Tylko zmiana stanu (Start/Stop)
     connection.on("ReceiveScanStatus", (status: string) => {
       const isNowScanning = status === "scanning";
+      
+      // Jeśli skanowanie się zakończyło, odświeżamy dane w aplikacji
       if (!isNowScanning) {
         console.log(
           "✅ Scan finished (Idle signal received). Refreshing data...",
@@ -64,17 +69,18 @@ export const useScanProgress = () => {
         queryClient.invalidateQueries({ queryKey: ["sidebar-stats"] });
         queryClient.invalidateQueries({ queryKey: ["colors"] });
       }
+      
       setScanState((prev) => {
         return {
           ...prev,
           isScanning: isNowScanning,
-          // Jeśli startujemy, resetujemy progress. Jeśli kończymy, zostawiamy 100% na chwilę
+          // Jeśli startujemy, resetujemy progress. Jeśli kończymy, zostawiamy 100% na chwilę dla efektu wizualnego
           progress: isNowScanning ? 0 : 100,
         };
       });
     });
 
-    // HANDLER 2: Tylko aktualizacja paska postępu
+    // HANDLER 2: Ciągła aktualizacja paska postępu (co X plików)
     connection.on(
       "ReceiveProgress",
       (msg: string, total: number, current: number) => {

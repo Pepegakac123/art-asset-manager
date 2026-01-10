@@ -37,7 +37,7 @@ namespace ArtAssetManager.Api.Services
                 }
                 
                 // 2. Sprawdź obecność domyślnego placeholdera (ważne dla UI)
-                var placeholderPath = Path.Combine(_env.WebRootPath, _settings.PlaceholderThumbnail.TrimStart('/', '\'));
+                var placeholderPath = Path.Combine(_env.WebRootPath, _settings.PlaceholderThumbnail.TrimStart('/', '\\'));
                 if (!File.Exists(placeholderPath))
                 {
                     _logger.LogWarning("⚠️ Placeholder not found at: {Path} - Make sure to put 'placeholder.png' in wwwroot/thumbnails!", placeholderPath);

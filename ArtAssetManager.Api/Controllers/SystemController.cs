@@ -86,7 +86,7 @@ namespace ArtAssetManager.Api.Controllers
                 {
                     // Windows: /select zaznacza konkretny plik w oknie folderu
                     // Podmieniamy / na \ bo Windows preferuje backslashe w argumentach explorera
-                    string winPath = request.Path.Replace("/", "\");
+                    string winPath = request.Path.Replace("/", "\\");
                     Process.Start("explorer.exe", $"/select,\"{winPath}\"");
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))

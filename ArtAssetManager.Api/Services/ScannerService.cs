@@ -370,7 +370,7 @@ namespace ArtAssetManager.Api.Services
                         var fullSavePath = Path.Combine(thumbsFolder, uniqueFileName);
                         await image.SaveAsWebpAsync(fullSavePath);
 
-                        var webPath = Path.Combine("/", _scannerSettings.ThumbnailsFolder, uniqueFileName).Replace("\", "/");
+                        var webPath = Path.Combine("/", _scannerSettings.ThumbnailsFolder, uniqueFileName).Replace("\\", "/");
 
                         return (webPath, metadata);
                     }
@@ -393,7 +393,7 @@ namespace ArtAssetManager.Api.Services
             }
 
             var finalPath = Path.Combine("/", _scannerSettings.ThumbnailsFolder, placeholderDir, placeholderFile)
-                                .Replace("\", "/");
+                                .Replace("\\", "/");
 
             return (finalPath, null);
         }
